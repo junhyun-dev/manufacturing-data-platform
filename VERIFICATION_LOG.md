@@ -2147,3 +2147,47 @@ moved 159 -> 161 for the same reason.
 
 Status: `returned-unreviewed / Codex review required`. Not approved, nothing committed or pushed.
 GitHub Actions has still never run from this environment.
+
+## 2026-07-27 — Portfolio release accepted and public CI verified
+
+Codex independently reviewed the returned portfolio candidate and closed the remaining public
+release gate.
+
+Local verification:
+
+```text
+Python 3.10.12 (.venv)                   161 passed, 17 skipped
+Python 3.12.3 (fresh requirements-only)  161 passed, 17 skipped
+tests/test_portfolio_release.py           37 passed
+builder with the Spark interpreter       committed JSON and report reproduced byte-for-byte
+three PNG evidence screens               opened and visually inspected
+base pipeline CLI                        success
+operator report CLI                      success
+EAV pipeline CLI                         success
+public path / secret scans               no reader-facing leak found
+git diff --check                         clean
+```
+
+The portfolio release was committed as `c8164d0`. Its first GitHub Actions run passed but emitted
+Node.js 20 deprecation warnings for `actions/checkout@v4` and `actions/setup-python@v5`. The
+workflow was updated to the official Node.js 24 majors in `8287da6`:
+
+```text
+actions/checkout@v5
+actions/setup-python@v6
+```
+
+The updated public workflow completed successfully:
+
+```text
+workflow    Base unit and contract tests
+commit      8287da6
+run         https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/runs/30239955776
+Python 3.10 success
+Python 3.12 success
+```
+
+The badge proves only the base Python unit/contract suite. Kafka, Spark/Iceberg, and Airflow
+runtime evidence remains local-runbook evidence and is not attributed to public CI.
+
+Status: `accepted-closed`. The manufacturing platform v1 portfolio release is approved.

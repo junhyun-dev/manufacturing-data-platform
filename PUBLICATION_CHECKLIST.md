@@ -71,6 +71,9 @@ Expected:
 - [x] No `/home/...` path, credential, customer identifier, or internal URL in reader-facing files.
       Generic `/tmp/...` reproduction paths are allowed.
 - [x] No runtime warehouse, Kafka archive, jar, database, or local venv is committed.
+- [x] Public GitHub Actions run
+      [`30239955776`](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/runs/30239955776)
+      passed for Python 3.10 and 3.12 after the workflow moved to the Node.js 24 action runtimes.
 
 Release-specific claim rules:
 
