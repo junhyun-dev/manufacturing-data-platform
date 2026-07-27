@@ -1,0 +1,53 @@
+name: Base unit and contract tests
+
+# Scope on purpose: this workflow installs `requirements.txt` only and runs the base Python
+# unit/contract suite. It does NOT install pyspark, Airflow, confluent-kafka, an Iceberg jar,
+# Docker, or a Kafka broker, and it therefore proves nothing about those runtimes. The optional
+# Spark/Airflow/Kafka tests skip in this job by design; that runtime evidence comes from the
+# documented local runbooks under `scripts/` and is recorded in `VERIFICATION_LOG.md`.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  base-tests:
+    name: Base unit/contract suite (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install base dependencies only
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Report skipped optional runtimes
+        run: |
+          python - <<'PY'
+          import importlib.util as u
+          for name in ("pyspark", "airflow", "confluent_kafka"):
+              print(f"{name}: {'present' if u.find_spec(name) else 'absent (optional tests will skip)'}")
+          PY
+
+      - name: Run base unit and contract tests
+        run: PYTHONPATH=src python -m pytest -q

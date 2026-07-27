@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manufacturing Data Platform - Recovery-Gated Publish Runtime Evidence</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #17202a; --muted: #5c6874; --line: #d8dee4; --paper: #f7f8fa; --white: #fff;
+    --green: #147d64; --green-soft: #e8f5f0; --red: #b63b45; --red-soft: #fff0f1;
+    --blue: #1769aa; --blue-soft: #eaf3fb; --amber: #a85f00; --amber-soft: #fff4df;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background: var(--paper); color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .screen { width: min(100%, 1440px); margin: 0 auto; padding: 28px 32px 36px; }
+  h1 { font-size: 25px; margin: 0 0 6px; letter-spacing: -0.2px; }
+  h2 { font-size: 16px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.7px;
+       color: var(--muted); }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; max-width: 105ch; line-height:1.5; }
+  .meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 20px; }
+  .tag { font-size:12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         background: var(--white); border:1px solid var(--line); border-radius:999px; padding:4px 11px; }
+  .card { background: var(--white); border:1px solid var(--line); border-radius:12px;
+          padding:18px 20px; margin-bottom:16px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:14px; }
+  table { width:100%; border-collapse: collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight:600; font-size:12px; text-transform:uppercase;
+       letter-spacing:0.5px; }
+  tr:last-child td { border-bottom:none; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12.5px; }
+  .pill { display:inline-block; font-size:12px; font-weight:600; padding:2px 9px; border-radius:999px; }
+  .ok { background: var(--green-soft); color: var(--green); }
+  .block { background: var(--red-soft); color: var(--red); }
+  .info { background: var(--blue-soft); color: var(--blue); }
+  .warn { background: var(--amber-soft); color: var(--amber); }
+  .flow { display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; margin: 4px 0 2px; }
+  .step { flex:1 1 150px; background:var(--paper); border:1px solid var(--line); border-radius:9px;
+          padding:10px 12px; font-size:12.5px; line-height:1.45; }
+  .step b { display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+            color:var(--muted); margin-bottom:3px; }
+  ul { margin:6px 0 0; padding-left:18px; font-size:13.5px; line-height:1.6; }
+  li { margin-bottom:3px; }
+  .kv { font-size:13.5px; line-height:1.7; }
+  .kv b { color: var(--muted); font-weight:600; }
+  .foot { color:var(--muted); font-size:12px; margin-top:6px; line-height:1.6; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<script id="evidence" type="application/json">{
+  "claim_boundary": {
+    "not_verified": [
+      "production or multi-broker Kafka",
+      "continuous or large-scale streaming, or a direct Kafka-to-Iceberg sink",
+      "cluster Spark, throughput, or any performance claim",
+      "production, HA, or distributed Airflow operation",
+      "concurrent Iceberg writers, distributed atomicity, or end-to-end exactly-once",
+      "real OT/ROS2/MCAP/edge-hardware integration",
+      "Kafka, Spark, Iceberg, or Airflow runtime proven by the public CI badge"
+    ],
+    "verified": [
+      "a sealed edge session buffered while no broker was running, then replayed through a real local Kafka broker",
+      "partial recovery blocks publication before any Spark or Iceberg state exists",
+      "the selected batch input equals the sealed event set exactly, not merely contains it",
+      "only quality-passed data advanced the local Iceberg gold table",
+      "a same-source retry created no new snapshot and performed no partition overwrite",
+      "the reused snapshot is recorded as reused, with the producer attempt marked unknown"
+    ]
+  },
+  "complete_replay": {
+    "central_accepted_total": 3,
+    "missing_sequences": [],
+    "produced_kafka_offsets": [
+      2,
+      3,
+      4
+    ],
+    "recovery_complete": true,
+    "replayed_edge_sequences": [
+      1,
+      2,
+      3
+    ]
+  },
+  "edge_session": {
+    "boot_session_id": "boot-s9-0001",
+    "broker_absent_during_spool": true,
+    "business_date": "2026-06-29",
+    "edge_source_id": "edge-plant-a",
+    "machine_id": "mc-101",
+    "seal_contract": "expected_last_sequence distinguishes 'not yet arrived' from 'lost'",
+    "sealed_event_count": 3
+  },
+  "evidence_version": 1,
+  "exact_session_input": {
+    "contract": "membership (sealed subset of accepted) is not sufficient; the adapter selects every accepted event for the date, so the selected set must EQUAL the sealed set",
+    "sealed_event_ids": [
+      "evt-20260629-000001",
+      "evt-20260629-000002",
+      "evt-20260629-000003"
+    ],
+    "selected_event_ids": [
+      "evt-20260629-000001",
+      "evt-20260629-000002",
+      "evt-20260629-000003"
+    ],
+    "sets_equal": "pass",
+    "sets_equal_rechecked_by_builder": true
+  },
+  "first_publish": {
+    "gold_snapshot_id": "472417168912431048",
+    "producer_attempt_run_id": "2026-06-29-20260723T100617Z-f62e2729",
+    "snapshot_count": 1,
+    "snapshot_created_by_current_attempt": true,
+    "snapshot_relation": "created_by_current_attempt",
+    "source_hash": "ec99bd1d1a16c684818d65899fbd97472085e54e6392281d62b40aa28927c3bb",
+    "spark_attempt_run_id": "2026-06-29-20260723T100617Z-f62e2729",
+    "status": "published",
+    "table": "local.db.gold_daily_metrics",
+    "target_partition_row_count": 1
+  },
+  "generated_by": "scripts/build_platform_portfolio_evidence.py",
+  "identity_spaces": {
+    "adapter_source_hash": "ec99bd1d1a16c684818d65899fbd97472085e54e6392281d62b40aa28927c3bb",
+    "edge_sequence": [
+      1,
+      2,
+      3
+    ],
+    "event_id": [
+      "evt-20260629-000001",
+      "evt-20260629-000002",
+      "evt-20260629-000003"
+    ],
+    "iceberg_snapshot_id": "472417168912431048",
+    "kafka_offsets": [
+      0,
+      1,
+      4
+    ],
+    "observed_counterexample": "edge sequence differs from the Kafka offsets carrying the same events, so completeness cannot be decided by offset continuity",
+    "spark_attempt_run_id": "2026-06-29-20260723T100617Z-f62e2729"
+  },
+  "partial_replay": {
+    "central_accepted_total": 2,
+    "check_partial_left_no_spark_iceberg_state": "pass",
+    "missing_sequences": [
+      3
+    ],
+    "no_adapter_created": true,
+    "no_warehouse_created": true,
+    "produced_kafka_offsets": [
+      0,
+      1
+    ],
+    "publish_blocked": true,
+    "recovery_complete": false,
+    "refusal_reason": "RecoveryIncompleteError: recovery incomplete: missing edge sequences [3] of 1..3; downstream promotion is blocked",
+    "replayed_edge_sequences": [
+      1,
+      2
+    ]
+  },
+  "quality": {
+    "checks": [
+      {
+        "name": "row_count_source_to_silver",
+        "status": "pass"
+      },
+      {
+        "name": "unit_conservation_silver_to_gold",
+        "status": "pass"
+      },
+      {
+        "name": "not_null_required_columns",
+        "status": "pass"
+      },
+      {
+        "name": "unique_natural_key",
+        "status": "pass"
+      },
+      {
+        "name": "accepted_values_operation",
+        "status": "pass"
+      },
+      {
+        "name": "numeric_range_within_bounds",
+        "status": "pass"
+      },
+      {
+        "name": "freshness_business_date",
+        "status": "pass"
+      }
+    ],
+    "passed": true,
+    "row_counts": {
+      "gold": 1,
+      "input": 3,
+      "silver": 3
+    }
+  },
+  "retry": {
+    "attempt_run_ids_differ": "pass",
+    "creates_no_new_snapshot": "pass",
+    "gold_snapshot_id": "472417168912431048",
+    "meaning": "no new snapshot and no partition overwrite; NOT a whole-pipeline no-op, because Spark and the quality suite still run before the skip decision",
+    "producer_attempt_run_id": null,
+    "same_snapshot_id": "pass",
+    "same_source_hash": "pass",
+    "snapshot_count": 1,
+    "snapshot_created_by_current_attempt": false,
+    "snapshot_relation": "reused_from_prior_attempt",
+    "source_hash": "ec99bd1d1a16c684818d65899fbd97472085e54e6392281d62b40aa28927c3bb",
+    "spark_attempt_run_id": "2026-06-29-20260723T100631Z-6e246442",
+    "status": "skipped"
+  },
+  "runtime": {
+    "iceberg_runtime_coordinate": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.11.0",
+    "int64_id_encoding": "Iceberg snapshot ids are stored as exact decimal strings because they exceed the range JavaScript can parse without rounding",
+    "kafka_partitions": 1,
+    "kafka_topic": "manufacturing.machine-events.v1",
+    "note": "single local broker, single partition, single writer; versions are read from the interpreter and source that produced this run",
+    "pyspark": "pyspark 3.5.8",
+    "python": "Python 3.10.12"
+  },
+  "runtime_source": "scripts/verify_recovered_telemetry_publish.sh (three phases, one process each)",
+  "scope": "one synthetic, local, bounded manufacturing telemetry failure/recovery path: sealed edge session -> local Kafka replay -> recovery + exact-session-input gate -> Spark quality gate -> one local Iceberg gold table",
+  "source_commit": "d8ec816",
+  "state_transition": [
+    "sealed while no broker is running",
+    "partial replay -> publication blocked, no Spark or Iceberg state",
+    "complete replay -> recovery complete",
+    "published with quality passed and a snapshot",
+    "same-source retry -> skipped, no new snapshot, no partition overwrite"
+  ],
+  "verification_boundary": {
+    "automated_public_ci": {
+      "covers": "base Python unit/contract suite on Python 3.10 and 3.12",
+      "does_not_cover": [
+        "Kafka broker runtime",
+        "Spark/Iceberg runtime",
+        "Airflow runtime"
+      ],
+      "github_actions_status_at_evidence_capture": "not_yet_run",
+      "installs": "requirements.txt only",
+      "workflow": ".github/workflows/ci.yml"
+    },
+    "documented_local_runtime": {
+      "airflow": "airflow dags test in a separately pinned local environment",
+      "edge_recovery": "scripts/verify_edge_recovery.sh",
+      "history": "VERIFICATION_LOG.md",
+      "kafka_and_publish": "scripts/verify_recovered_telemetry_publish.sh",
+      "kafka_landing": "scripts/verify_kafka_k1.sh, scripts/verify_kafka_k1_5.sh",
+      "spark_batch": "scripts/verify_spark_machine_event_batch.sh"
+    }
+  },
+  "verified_on": "2026-07-23"
+}</script>
+<div class="screen" id="root"></div>
+<script>
+const E = JSON.parse(document.getElementById('evidence').textContent);
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const mono = s => `<code>${esc(s)}</code>`;
+const passPill = v => (v === true || v === 'pass')
+  ? '<span class="pill ok">pass</span>' : `<span class="pill block">${esc(v)}</span>`;
+const rows = pairs => pairs.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+
+const q = E.quality, fp = E.first_publish, rt = E.retry, pr = E.partial_replay, cr = E.complete_replay;
+
+document.getElementById('root').innerHTML = `
+  <h1>Recovery-gated Spark/Iceberg publish &mdash; runtime evidence</h1>
+  <p class="sub">${esc(E.scope)}</p>
+  <div class="meta">
+    <span class="tag">source_commit ${esc(E.source_commit)}</span>
+    <span class="tag">verified_on ${esc(E.verified_on)}</span>
+    <span class="tag">${esc(E.runtime.python)}</span>
+    <span class="tag">${esc(E.runtime.pyspark)}</span>
+    <span class="tag">evidence_version ${esc(E.evidence_version)}</span>
+  </div>
+
+  <div class="card" id="screen-1">
+    <h2>1 &middot; Architecture and scope</h2>
+    <div class="flow">
+      ${E.state_transition.map((s, i) => `<div class="step"><b>step ${i + 1}</b>${esc(s)}</div>`).join('')}
+    </div>
+    <div class="two" style="margin-top:16px">
+      <div>
+        <table>${rows([
+          ['edge_source_id', mono(E.edge_session.edge_source_id)],
+          ['machine_id', mono(E.edge_session.machine_id)],
+          ['business_date', mono(E.edge_session.business_date)],
+          ['sealed_event_count', mono(E.edge_session.sealed_event_count)],
+          ['broker absent while spooling', passPill(E.edge_session.broker_absent_during_spool)],
+          ['Kafka topic / partitions', mono(E.runtime.kafka_topic) + ' / ' + mono(E.runtime.kafka_partitions)],
+          ['Iceberg runtime', mono(E.runtime.iceberg_runtime_coordinate)],
+        ])}</table>
+      </div>
+      <div>
+        <table>${rows([
+          ['automated public CI', esc(E.verification_boundary.automated_public_ci.covers)],
+          ['CI installs', mono(E.verification_boundary.automated_public_ci.installs)],
+          ['CI does NOT cover', E.verification_boundary.automated_public_ci.does_not_cover.map(esc).join(', ')],
+          ['GitHub Actions at evidence capture', `<span class="pill warn">${esc(E.verification_boundary.automated_public_ci.github_actions_status_at_evidence_capture)}</span>`],
+          ['local runtime source', mono(E.verification_boundary.documented_local_runtime.kafka_and_publish)],
+        ])}</table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="screen-2">
+    <h2>2 &middot; Partial recovery is refused before any Spark or Iceberg state exists</h2>
+    <div class="two">
+      <div>
+        <table>${rows([
+          ['replayed edge sequences', mono(JSON.stringify(pr.replayed_edge_sequences))],
+          ['Kafka offsets produced', mono(JSON.stringify(pr.produced_kafka_offsets))],
+          ['centrally accepted', mono(pr.central_accepted_total)],
+          ['missing edge sequences', `<span class="pill block">${esc(JSON.stringify(pr.missing_sequences))}</span>`],
+          ['recovery_complete', `<span class="pill block">${esc(pr.recovery_complete)}</span>`],
+          ['publication', `<span class="pill block">blocked</span>`],
+          ['Iceberg warehouse left behind', pr.no_warehouse_created === true
+              ? '<span class="pill ok">none</span>' : '<span class="pill block">present</span>'],
+          ['adapter output left behind', pr.no_adapter_created === true
+              ? '<span class="pill ok">none</span>' : '<span class="pill block">present</span>'],
+        ])}</table>
+        <p class="foot">refusal: ${mono(pr.refusal_reason)}</p>
+      </div>
+      <div>
+        <table>${rows([
+          ['replayed edge sequences', mono(JSON.stringify(cr.replayed_edge_sequences))],
+          ['Kafka offsets produced', mono(JSON.stringify(cr.produced_kafka_offsets))],
+          ['centrally accepted', mono(cr.central_accepted_total)],
+          ['missing edge sequences', `<span class="pill ok">${esc(JSON.stringify(cr.missing_sequences))}</span>`],
+          ['recovery_complete', `<span class="pill ok">${esc(cr.recovery_complete)}</span>`],
+          ['sealed set == selected set', passPill(E.exact_session_input.sets_equal)],
+          ['sealed event ids', mono(E.exact_session_input.sealed_event_ids.join(', '))],
+        ])}</table>
+        <p class="foot">${esc(E.exact_session_input.contract)}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="screen-3">
+    <h2>3 &middot; Quality-gated publish, then a retry that changes nothing in the table</h2>
+    <div class="grid">
+      <div>
+        <p class="kv"><b>quality gate</b> ${passPill(q.passed)}
+          &nbsp;<span class="mono">${q.checks.length} checks</span></p>
+        <ul>${q.checks.map(c => `<li>${esc(c.name)} ${passPill(c.status)}</li>`).join('')}</ul>
+        <p class="foot">rows: input ${q.row_counts.input} &rarr; silver ${q.row_counts.silver} &rarr; gold ${q.row_counts.gold}</p>
+      </div>
+      <div>
+        <table>${rows([
+          ['first attempt', `<span class="pill ok">${esc(fp.status)}</span>`],
+          ['table', mono(fp.table)],
+          ['gold_snapshot_id', mono(fp.gold_snapshot_id)],
+          ['snapshot_count', mono(fp.snapshot_count)],
+          ['snapshot_relation', mono(fp.snapshot_relation)],
+          ['producer_attempt_run_id', mono(fp.producer_attempt_run_id)],
+          ['source_hash', mono(String(fp.source_hash).slice(0, 24) + '...')],
+        ])}</table>
+      </div>
+      <div>
+        <table>${rows([
+          ['retry', `<span class="pill info">${esc(rt.status)}</span>`],
+          ['same source_hash', passPill(rt.same_source_hash)],
+          ['same snapshot_id', passPill(rt.same_snapshot_id)],
+          ['no new snapshot', passPill(rt.creates_no_new_snapshot)],
+          ['attempt ids differ', passPill(rt.attempt_run_ids_differ)],
+          ['snapshot_relation', mono(rt.snapshot_relation)],
+          ['producer_attempt_run_id', mono(String(rt.producer_attempt_run_id))],
+        ])}</table>
+        <p class="foot">${esc(rt.meaning)}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4 &middot; Identity spaces stay separate</h2>
+    <table>${rows([
+      ['edge sequence', mono(JSON.stringify(E.identity_spaces.edge_sequence))],
+      ['business event_id', mono(E.identity_spaces.event_id.join(', '))],
+      ['Kafka offsets', mono(JSON.stringify(E.identity_spaces.kafka_offsets))],
+      ['batch source_hash', mono(E.identity_spaces.adapter_source_hash)],
+      ['Spark attempt run_id', mono(E.identity_spaces.spark_attempt_run_id)],
+      ['Iceberg snapshot_id', mono(E.identity_spaces.iceberg_snapshot_id)],
+    ])}</table>
+    <p class="foot">${esc(E.identity_spaces.observed_counterexample)}</p>
+  </div>
+
+  <div class="card">
+    <h2>5 &middot; Claim boundary</h2>
+    <div class="two">
+      <div><p class="kv"><b>verified here</b></p>
+        <ul>${E.claim_boundary.verified.map(v => `<li>${esc(v)}</li>`).join('')}</ul></div>
+      <div><p class="kv"><b>not verified &mdash; do not claim</b></p>
+        <ul>${E.claim_boundary.not_verified.map(v => `<li>${esc(v)}</li>`).join('')}</ul></div>
+    </div>
+    <p class="foot">Every value on this page is rendered from
+      <code>evidence/runtime-evidence.json</code>, produced by
+      <code>${esc(E.runtime_source)}</code> and normalized by <code>${esc(E.generated_by)}</code>.
+      Execution history lives in <code>VERIFICATION_LOG.md</code>.</p>
+  </div>
+`;
+</script>
+</body>
+</html>

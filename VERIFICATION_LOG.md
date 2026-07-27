@@ -1984,3 +1984,166 @@ for the unchanged published/skipped path.
 
 Status: `accepted-closed`. S9 is approved for commit. No S10 or portfolio-release change is part
 of this acceptance.
+
+## 2026-07-23 — Portfolio release candidate (returned-unreviewed)
+
+Portfolio Promotion package
+`learn/reference-evidence/implementation-inputs/2026-07-23-portfolio-release/`.
+No pipeline, DAG, or runtime source changed — this release only adds public-facing packaging,
+public base CI, and a committed evidence contract. Status is
+`returned-unreviewed / Codex review required`; the release is **not** approved and nothing was
+committed or pushed.
+
+Preflight:
+
+```text
+git show -s --oneline HEAD  ->  d8ec816 Implement recovery-gated Spark Iceberg publish  (matches target)
+git status --short          ->  clean except this untracked package                     (matches expected)
+```
+
+Runtime evidence regenerated from clean `d8ec816`:
+
+```text
+OUTPUT_DIR=/tmp/manufacturing-mini-s9-release PYTHON_BIN=python \
+  ./scripts/verify_recovered_telemetry_publish.sh   -> passed
+
+spool           3 events sealed, broker_absent_during_spool=true
+partial replay  accepted 2, missing [3], offsets [0,1]
+                publication blocked by RecoveryIncompleteError
+                no_warehouse_created=true, no_adapter_created=true
+complete replay accepted 3, missing [], offsets [2,3,4], recovery_complete=true
+exact input     3 sealed event ids == 3 selected event ids
+quality         7/7 checks pass, rows 3 -> 3 -> 1
+first publish   published, snapshot 472417168912431048, created_by_current_attempt
+retry           skipped, same source_hash, same snapshot, snapshot_count unchanged,
+                reused_from_prior_attempt with producer_attempt_run_id=null
+identity        edge sequence [1,2,3] vs Kafka offsets [0,1,4] for the same three events
+```
+
+Evidence pipeline (each stage mechanical, so the report cannot drift from the runtime):
+
+```text
+verify_recovered_telemetry_publish.sh
+-> scripts/build_platform_portfolio_evidence.py --source-commit d8ec816 --verified-on 2026-07-23
+-> docs/portfolio/platform-overview/evidence/runtime-evidence.json   (evidence_version 1)
+-> report.html embeds that exact document and renders it in the browser
+-> scripts/capture_platform_portfolio.py captures three screens of the rendered report
+```
+
+One fidelity defect was found and fixed during this work: Iceberg snapshot ids exceed 2**53, so a
+browser parsing them as JSON numbers displayed `472417168912431040` for an id that was actually
+`472417168912431048`. The committed document now stores int64 ids as exact decimal strings, and
+`tests/test_portfolio_release.py` asserts that property so the rounding cannot return silently.
+
+Verification, per interpreter, never summed:
+
+```text
+Python 3.10.12 (.venv)                       159 passed, 17 skipped
+Python 3.12.3 (fresh venv, requirements.txt only, CI equivalent)
+                                             159 passed, 17 skipped
+  optional runtimes in that env: pyspark absent, airflow absent, confluent_kafka absent
+tests/test_portfolio_release.py   3.10 -> 35 passed | 3.12 -> 35 passed
+git diff --check                             clean
+```
+
+Reader and publication checks:
+
+```text
+relative links in both root READMEs and both walkthroughs   all resolve
+private /home path scan over reader-facing release files    none
+secret scan using PUBLICATION_CHECKLIST patterns            none
+committed release artifacts                                 288K total, largest asset 88K
+accidental warehouse/broker/jar/db/venv output              none
+forbidden paths (src, dags, requirements, ROADMAP/DESIGN/progress map,
+  kafka-k1-k1-5 milestone, accepted S7/S8/S9 documents)     unmodified
+```
+
+Public CI: `.github/workflows/ci.yml` runs the base unit/contract suite on Python 3.10 and 3.12,
+installs `requirements.txt` only, triggers on `pull_request`, `push` to `main`, and
+`workflow_dispatch`, with `contents: read` and a 15-minute timeout. It installs no Spark, Airflow,
+Kafka client, broker, Docker, or Iceberg jar, and the optional tests for those runtimes skip by
+design.
+
+```text
+github_actions_status_at_evidence_capture: not_yet_run
+```
+
+The workflow had never executed on GitHub when this evidence was captured. That field is historical
+by design, so a later green run does not turn the committed document or the permanent screenshots
+into a contradiction; the live badge is the current signal. Only after a push and an observed run
+may the release be described as public-CI verified — that gate belongs to Codex.
+
+`LICENSE` remains absent. That is a user legal decision and was deliberately not added.
+
+Claim boundary for this release:
+
+- Allowed: one synthetic, local, bounded manufacturing telemetry failure/recovery path is presented
+  publicly; base Python unit/contract tests are configured for public CI; Kafka, Spark/Iceberg, and
+  Airflow evidence comes from separate documented local runbooks; a sealed session must be
+  completely recovered and exactly match the batch input before quality-gated Iceberg publication;
+  a same-source retry creates no new snapshot or partition overwrite.
+- Not allowed: production manufacturing/industrial IoT platform, continuous or large-scale
+  streaming, production/multi-broker Kafka, cluster or performance-tested Spark,
+  production/HA/distributed Airflow, concurrent Iceberg writer correctness, end-to-end exactly-once
+  or distributed atomicity, real OT/ROS2/MCAP/edge-hardware integration, any heavy runtime proven
+  by the base CI badge, or AI output accepted without independent evidence gates.
+
+## 2026-07-24 — Portfolio release revision R1-R4 (returned-unreviewed)
+
+Codex independently reproduced the candidate (byte-exact builder regeneration, both interpreters,
+visual screenshot inspection) and requested four bounded corrections. All four applied on the same
+candidate. The heavy S9 runtime was **not** rerun: §11.6 forbids it, the preserved raw runbook files
+under `/tmp/manufacturing-mini-s9-release/` are unchanged, and the source commit is still `d8ec816`.
+
+```text
+R1  GitHub Actions status is now historical, not a current claim.
+    github_actions_status -> github_actions_status_at_evidence_capture
+    unknown_requires_push -> not_yet_run
+    Screen 1 label reads "GitHub Actions at evidence capture". The committed evidence and the
+    permanent screenshots therefore stay true after the first green run; the live badge is the
+    current signal. A test now fails if a bare current-status field reappears.
+
+R2  The exact-set claim is enforced independently of the runtime check string.
+    The builder recomputes set equality, length agreement with sealed_event_count, and duplicate
+    rejection from the values actually being committed, and raises EvidenceBuildError otherwise.
+    The evidence records sets_equal_rechecked_by_builder: true. Two tests were added: one compares
+    the committed lists directly, one drives the builder guard through mismatch, missing,
+    duplicate, and count-disagreement cases.
+    Rationale: previously a false-positive runtime check could have published a document whose own
+    two visible lists disagreed while the portfolio suite still passed.
+
+R3  README.md no longer says "Until a machine/session source slice exists". Synthetic
+    machine/session telemetry exists (S8/S9); real OT/ROS2/MCAP/Jetson and production manufacturing
+    input do not. README.ko.md had no equivalent stale sentence, so EN/KO claims stay aligned.
+
+R4  The full S9 reproduction command is self-contained: requirements.txt + requirements-spark.txt,
+    because the Spark interpreter imports the base pipeline, which imports pymongo. The Kafka client
+    is no longer listed because scripts/run_with_local_kafka.sh installs requirements-kafka.txt into
+    its own pinned venv; Java 17+, curl, and first-download network access are named instead.
+    The walkthrough limitation is now scoped precisely: the S9 DAG path is DagBag/dags test only,
+    the earlier Spark/Iceberg skeleton has local standalone/LocalExecutor evidence, and neither is
+    production Airflow. The previous blanket sentence was true for S9 but false for the repository.
+```
+
+Verification (per interpreter, never summed):
+
+```text
+builder regeneration from preserved raw S9 files into a temp dir
+  runtime-evidence.json vs committed    byte-for-byte exact
+  report.html vs committed              byte-for-byte exact
+Python 3.10.12 (.venv)        base 161 passed, 17 skipped | portfolio 37 passed
+Python 3.12.3 (fresh venv, requirements.txt only)
+                              base 161 passed, 17 skipped | portfolio 37 passed
+screenshots regenerated and visually inspected: screen 1 now reads
+  "GitHub Actions at evidence capture: not_yet_run"; screen 3 still shows the exact int64
+  snapshot id 472417168912431048; none blank
+git diff --check              clean
+forbidden paths               unmodified (src, dags, requirements, accepted S7/S8/S9 docs,
+                              ROADMAP/DESIGN/progress maps, kafka-k1-k1-5 milestone, LICENSE)
+```
+
+Test count moved 35 -> 37 in the portfolio suite (both new tests are from R2). Base suite counts
+moved 159 -> 161 for the same reason.
+
+Status: `returned-unreviewed / Codex review required`. Not approved, nothing committed or pushed.
+GitHub Actions has still never run from this environment.

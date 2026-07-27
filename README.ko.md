@@ -1,6 +1,96 @@
 # manufacturing-data-platform-mini 한국어판
 
-원문: [`README.md`](README.md)
+> English: [`README.md`](README.md)
+
+[![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml)
+
+**질문 하나로 만든 작은 manufacturing-style 데이터 플랫폼: 복구된 설비 telemetry가 trusted table을
+바꿔도 된다고 말하려면, 그 전에 무엇이 증명돼야 하는가?**
+
+```mermaid
+flowchart LR
+  edge["Edge spool<br/>단절 중 봉인"] --> kafka["Kafka landing<br/>durable 후 offset commit"]
+  kafka --> gate{"복구 gate<br/>완결 AND 집합 동일?"}
+  gate -- "아니오" --> blocked["거부<br/>Spark·Iceberg state 없음"]
+  gate -- "예" --> spark["Spark silver/gold<br/>+ quality suite"]
+  spark --> iceberg["Iceberg gold table<br/>business_date overwrite"]
+  csv["Synthetic CSV / EAV intake"] --> spark
+  spark --> catalog["Catalog · lineage<br/>run evidence"]
+```
+
+## 이 프로젝트를 떠받치는 계약 셋
+
+1. **durability가 progress보다 먼저** — record가 durable하게 landing된 뒤에만 Kafka offset을
+   commit한다. 그 사이에 죽으면 재전달이 생길 뿐 record는 사라지지 않는다.
+2. **복구가 발행보다 먼저** — 봉인 세션이 *완전히* 복구되고 **동시에** 선택된 batch 입력이 봉인 event
+   집합과 *같아야* Spark가 시작된다. membership만으로는 부족하다: adapter는 그 날짜의 accepted
+   event를 전부 고르므로, 같은 날짜 event가 하나만 더 있어도 복구한 세션이 아닌 batch가 발행된다.
+3. **quality와 current-state 안전성** — quality를 통과한 데이터만 Iceberg table을 전진시키고, 같은
+   source 재실행은 새 snapshot을 만들지 않고 partition overwrite도 하지 않는다.
+
+## 무엇이 어떻게 검증됐나
+
+| | 커버하는 것 | 커버하지 **않는** 것 |
+|---|---|---|
+| 자동 public CI — [`ci.yml`](.github/workflows/ci.yml) | base Python unit/contract suite, Python 3.10·3.12, `requirements.txt`만 설치 | Kafka · Spark/Iceberg · Airflow runtime |
+| 문서화된 로컬 runbook — [`scripts/`](scripts/) | 실제 local Kafka broker, Spark/Iceberg 발행, Airflow `dags test` | production · HA · cluster · throughput · exactly-once |
+
+CI job에서 Spark/Airflow/Kafka 관련 optional 테스트는 **설계상 skip**된다. 위 badge는 base suite만
+증명한다. 무거운 runtime 증거는 runbook에서 나오고 [`VERIFICATION_LOG.md`](VERIFICATION_LOG.md)에
+기록된다.
+
+## 대표 walkthrough
+
+**[Platform overview: 복구된 edge 세션은 "완결이 증명될 때만" gold table에 도달한다](docs/portfolio/platform-overview/README.ko.md)**
+— 문제, 실패 시나리오, 계약, 잡아낸 반례, 재현 가능한 runtime evidence
+([`runtime-evidence.json`](docs/portfolio/platform-overview/evidence/runtime-evidence.json),
+렌더링: [`report.html`](docs/portfolio/platform-overview/report.html)).
+
+입력 경로 supporting deep dive:
+[Kafka K1/K1.5 milestone](docs/portfolio/kafka-k1-k1-5/README.ko.md).
+
+## 실행
+
+```bash
+# base unit/contract suite — public CI가 돌리는 것과 동일
+pip install -r requirements.txt
+PYTHONPATH=src python -m pytest -q
+
+# 복구 완결 gate 발행 전체: 봉인 edge 세션 -> local Kafka replay -> Spark -> Iceberg
+# Spark 인터프리터가 base pipeline을 import하므로 requirements.txt도 함께 필요하다.
+# runbook은 자체 pinned Kafka client venv를 만들고 첫 실행 시 Kafka를 내려받는다.
+# 이때 Java 17+, curl, 네트워크 접근이 필요하다.
+pip install -r requirements.txt -r requirements-spark.txt
+PYTHON_BIN=python ./scripts/verify_recovered_telemetry_publish.sh
+```
+
+## Claim boundary
+
+**synthetic** 데이터로 만든 개인 포트폴리오 프로젝트다. **local·bounded** telemetry
+failure/recovery 경로 하나를 다룬다: session 1개 · machine 1개 · `business_date` 1개 · topic
+partition 1개 · local Iceberg gold table 1개 · single writer.
+
+synthetic machine/session telemetry는 구현했지만 **실제 OT / ROS2 / MCAP / edge 하드웨어 입력은
+구현하지 않았다** — edge는 로컬 spool로 모사한 것이다. 어디에서도 주장하지 않는 것: production ·
+multi-broker Kafka, continuous·대규모 streaming, cluster·성능 측정된 Spark,
+production/HA/분산 Airflow, concurrent Iceberg writer, end-to-end exactly-once.
+
+## 다음에 볼 문서
+
+| 주제 | 문서 |
+|---|---|
+| 한 화면 프로젝트 현황 | [`PROJECT_PROGRESS_MAP.ko.md`](PROJECT_PROGRESS_MAP.ko.md) |
+| 설계 결정과 계약 | [`DESIGN.ko.md`](DESIGN.ko.md) · [`learn/reference-decisions/`](learn/reference-decisions/) |
+| 시나리오 → 질문 → 계약 → evidence 추적 | [`learn/system-design/01-system-traceability-map.ko.md`](learn/system-design/01-system-traceability-map.ko.md) |
+| 실행 이력과 runtime 결과 | [`VERIFICATION_LOG.md`](VERIFICATION_LOG.md) |
+| 범위와 로드맵 | [`ROADMAP.ko.md`](ROADMAP.ko.md) · [`BENCHMARKS.ko.md`](BENCHMARKS.ko.md) |
+
+---
+
+# 상세 구현 이력
+
+아래는 slice를 구현한 순서 그대로 남긴 전체 build 이력이다. 위 첫 화면이 요약이고, 아래에서
+삭제된 내용은 없다.
 
 ## 한 줄 요약
 

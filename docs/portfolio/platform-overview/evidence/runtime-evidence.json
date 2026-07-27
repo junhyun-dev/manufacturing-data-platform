@@ -1,0 +1,209 @@
+{
+  "claim_boundary": {
+    "not_verified": [
+      "production or multi-broker Kafka",
+      "continuous or large-scale streaming, or a direct Kafka-to-Iceberg sink",
+      "cluster Spark, throughput, or any performance claim",
+      "production, HA, or distributed Airflow operation",
+      "concurrent Iceberg writers, distributed atomicity, or end-to-end exactly-once",
+      "real OT/ROS2/MCAP/edge-hardware integration",
+      "Kafka, Spark, Iceberg, or Airflow runtime proven by the public CI badge"
+    ],
+    "verified": [
+      "a sealed edge session buffered while no broker was running, then replayed through a real local Kafka broker",
+      "partial recovery blocks publication before any Spark or Iceberg state exists",
+      "the selected batch input equals the sealed event set exactly, not merely contains it",
+      "only quality-passed data advanced the local Iceberg gold table",
+      "a same-source retry created no new snapshot and performed no partition overwrite",
+      "the reused snapshot is recorded as reused, with the producer attempt marked unknown"
+    ]
+  },
+  "complete_replay": {
+    "central_accepted_total": 3,
+    "missing_sequences": [],
+    "produced_kafka_offsets": [
+      2,
+      3,
+      4
+    ],
+    "recovery_complete": true,
+    "replayed_edge_sequences": [
+      1,
+      2,
+      3
+    ]
+  },
+  "edge_session": {
+    "boot_session_id": "boot-s9-0001",
+    "broker_absent_during_spool": true,
+    "business_date": "2026-06-29",
+    "edge_source_id": "edge-plant-a",
+    "machine_id": "mc-101",
+    "seal_contract": "expected_last_sequence distinguishes 'not yet arrived' from 'lost'",
+    "sealed_event_count": 3
+  },
+  "evidence_version": 1,
+  "exact_session_input": {
+    "contract": "membership (sealed subset of accepted) is not sufficient; the adapter selects every accepted event for the date, so the selected set must EQUAL the sealed set",
+    "sealed_event_ids": [
+      "evt-20260629-000001",
+      "evt-20260629-000002",
+      "evt-20260629-000003"
+    ],
+    "selected_event_ids": [
+      "evt-20260629-000001",
+      "evt-20260629-000002",
+      "evt-20260629-000003"
+    ],
+    "sets_equal": "pass",
+    "sets_equal_rechecked_by_builder": true
+  },
+  "first_publish": {
+    "gold_snapshot_id": "472417168912431048",
+    "producer_attempt_run_id": "2026-06-29-20260723T100617Z-f62e2729",
+    "snapshot_count": 1,
+    "snapshot_created_by_current_attempt": true,
+    "snapshot_relation": "created_by_current_attempt",
+    "source_hash": "ec99bd1d1a16c684818d65899fbd97472085e54e6392281d62b40aa28927c3bb",
+    "spark_attempt_run_id": "2026-06-29-20260723T100617Z-f62e2729",
+    "status": "published",
+    "table": "local.db.gold_daily_metrics",
+    "target_partition_row_count": 1
+  },
+  "generated_by": "scripts/build_platform_portfolio_evidence.py",
+  "identity_spaces": {
+    "adapter_source_hash": "ec99bd1d1a16c684818d65899fbd97472085e54e6392281d62b40aa28927c3bb",
+    "edge_sequence": [
+      1,
+      2,
+      3
+    ],
+    "event_id": [
+      "evt-20260629-000001",
+      "evt-20260629-000002",
+      "evt-20260629-000003"
+    ],
+    "iceberg_snapshot_id": "472417168912431048",
+    "kafka_offsets": [
+      0,
+      1,
+      4
+    ],
+    "observed_counterexample": "edge sequence differs from the Kafka offsets carrying the same events, so completeness cannot be decided by offset continuity",
+    "spark_attempt_run_id": "2026-06-29-20260723T100617Z-f62e2729"
+  },
+  "partial_replay": {
+    "central_accepted_total": 2,
+    "check_partial_left_no_spark_iceberg_state": "pass",
+    "missing_sequences": [
+      3
+    ],
+    "no_adapter_created": true,
+    "no_warehouse_created": true,
+    "produced_kafka_offsets": [
+      0,
+      1
+    ],
+    "publish_blocked": true,
+    "recovery_complete": false,
+    "refusal_reason": "RecoveryIncompleteError: recovery incomplete: missing edge sequences [3] of 1..3; downstream promotion is blocked",
+    "replayed_edge_sequences": [
+      1,
+      2
+    ]
+  },
+  "quality": {
+    "checks": [
+      {
+        "name": "row_count_source_to_silver",
+        "status": "pass"
+      },
+      {
+        "name": "unit_conservation_silver_to_gold",
+        "status": "pass"
+      },
+      {
+        "name": "not_null_required_columns",
+        "status": "pass"
+      },
+      {
+        "name": "unique_natural_key",
+        "status": "pass"
+      },
+      {
+        "name": "accepted_values_operation",
+        "status": "pass"
+      },
+      {
+        "name": "numeric_range_within_bounds",
+        "status": "pass"
+      },
+      {
+        "name": "freshness_business_date",
+        "status": "pass"
+      }
+    ],
+    "passed": true,
+    "row_counts": {
+      "gold": 1,
+      "input": 3,
+      "silver": 3
+    }
+  },
+  "retry": {
+    "attempt_run_ids_differ": "pass",
+    "creates_no_new_snapshot": "pass",
+    "gold_snapshot_id": "472417168912431048",
+    "meaning": "no new snapshot and no partition overwrite; NOT a whole-pipeline no-op, because Spark and the quality suite still run before the skip decision",
+    "producer_attempt_run_id": null,
+    "same_snapshot_id": "pass",
+    "same_source_hash": "pass",
+    "snapshot_count": 1,
+    "snapshot_created_by_current_attempt": false,
+    "snapshot_relation": "reused_from_prior_attempt",
+    "source_hash": "ec99bd1d1a16c684818d65899fbd97472085e54e6392281d62b40aa28927c3bb",
+    "spark_attempt_run_id": "2026-06-29-20260723T100631Z-6e246442",
+    "status": "skipped"
+  },
+  "runtime": {
+    "iceberg_runtime_coordinate": "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.11.0",
+    "int64_id_encoding": "Iceberg snapshot ids are stored as exact decimal strings because they exceed the range JavaScript can parse without rounding",
+    "kafka_partitions": 1,
+    "kafka_topic": "manufacturing.machine-events.v1",
+    "note": "single local broker, single partition, single writer; versions are read from the interpreter and source that produced this run",
+    "pyspark": "pyspark 3.5.8",
+    "python": "Python 3.10.12"
+  },
+  "runtime_source": "scripts/verify_recovered_telemetry_publish.sh (three phases, one process each)",
+  "scope": "one synthetic, local, bounded manufacturing telemetry failure/recovery path: sealed edge session -> local Kafka replay -> recovery + exact-session-input gate -> Spark quality gate -> one local Iceberg gold table",
+  "source_commit": "d8ec816",
+  "state_transition": [
+    "sealed while no broker is running",
+    "partial replay -> publication blocked, no Spark or Iceberg state",
+    "complete replay -> recovery complete",
+    "published with quality passed and a snapshot",
+    "same-source retry -> skipped, no new snapshot, no partition overwrite"
+  ],
+  "verification_boundary": {
+    "automated_public_ci": {
+      "covers": "base Python unit/contract suite on Python 3.10 and 3.12",
+      "does_not_cover": [
+        "Kafka broker runtime",
+        "Spark/Iceberg runtime",
+        "Airflow runtime"
+      ],
+      "github_actions_status_at_evidence_capture": "not_yet_run",
+      "installs": "requirements.txt only",
+      "workflow": ".github/workflows/ci.yml"
+    },
+    "documented_local_runtime": {
+      "airflow": "airflow dags test in a separately pinned local environment",
+      "edge_recovery": "scripts/verify_edge_recovery.sh",
+      "history": "VERIFICATION_LOG.md",
+      "kafka_and_publish": "scripts/verify_recovered_telemetry_publish.sh",
+      "kafka_landing": "scripts/verify_kafka_k1.sh, scripts/verify_kafka_k1_5.sh",
+      "spark_batch": "scripts/verify_spark_machine_event_batch.sh"
+    }
+  },
+  "verified_on": "2026-07-23"
+}

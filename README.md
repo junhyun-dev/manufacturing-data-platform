@@ -2,7 +2,97 @@
 
 > 한국어판: [`README.ko.md`](README.ko.md)
 
-**A thin, end-to-end slice of a manufacturing-style/tabular data platform: ingest synthetic event files, catalog their metadata, and version each dataset for reproducibility.**
+[![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml)
+
+**A small manufacturing-style data platform built around one question: what has to be provably
+true before recovered plant telemetry is allowed to change a trusted table?**
+
+```mermaid
+flowchart LR
+  edge["Edge spool<br/>sealed while offline"] --> kafka["Kafka landing<br/>durable, then offset commit"]
+  kafka --> gate{"Recovery gate<br/>complete AND exact set?"}
+  gate -- "no" --> blocked["Refused<br/>no Spark, no Iceberg state"]
+  gate -- "yes" --> spark["Spark silver/gold<br/>+ quality suite"]
+  spark --> iceberg["Iceberg gold table<br/>business_date overwrite"]
+  csv["Synthetic CSV / EAV intake"] --> spark
+  spark --> catalog["Catalog, lineage,<br/>run evidence"]
+```
+
+## Three contracts this project is built on
+
+1. **Durability before progress** — a Kafka offset is committed only after the record is durably
+   landed, so a crash between the two costs a redelivery, never a record.
+2. **Recovery before publication** — a sealed session must be *completely* recovered **and** the
+   selected batch input must *equal* the sealed event set before Spark starts. Membership alone is
+   not enough: the adapter selects every accepted event for the date, so one extra same-date event
+   would publish a batch that is no longer the recovered session.
+3. **Quality and current-state safety** — only quality-passed data advances the Iceberg table, and
+   a same-source retry creates no new snapshot and performs no partition overwrite.
+
+## What is verified, and how
+
+| | Covers | Does **not** cover |
+|---|---|---|
+| Automated public CI — [`ci.yml`](.github/workflows/ci.yml) | base Python unit/contract suite on Python 3.10 and 3.12, installing `requirements.txt` only | Kafka, Spark/Iceberg, and Airflow runtime |
+| Documented local runbooks — [`scripts/`](scripts/) | real local Kafka broker, Spark/Iceberg publish, Airflow `dags test` | production, HA, cluster, throughput, exactly-once |
+
+Optional Spark/Airflow/Kafka tests **skip** in the CI job by design. The badge above proves the
+base suite only; heavy-runtime evidence comes from the runbooks and is recorded in
+[`VERIFICATION_LOG.md`](VERIFICATION_LOG.md).
+
+## Representative walkthrough
+
+**[Platform overview: a recovered edge session reaches the gold table only when it is provably
+complete](docs/portfolio/platform-overview/README.md)** — the problem, the failure scenario, the
+contracts, the counterexamples caught, and reproducible runtime evidence
+([`runtime-evidence.json`](docs/portfolio/platform-overview/evidence/runtime-evidence.json),
+rendered as [`report.html`](docs/portfolio/platform-overview/report.html)).
+
+Supporting deep dive on the input path:
+[Kafka K1/K1.5 milestone](docs/portfolio/kafka-k1-k1-5/README.md).
+
+## Run it
+
+```bash
+# base unit/contract suite — the same thing public CI runs
+pip install -r requirements.txt
+PYTHONPATH=src python -m pytest -q
+
+# full recovery-gated publish: sealed edge session -> local Kafka replay -> Spark -> Iceberg
+# The Spark interpreter imports the base pipeline, so requirements.txt is needed here too.
+# The runbook provisions its own pinned Kafka client venv and downloads Kafka on first use;
+# it needs Java 17+, curl, and network access for that first download.
+pip install -r requirements.txt -r requirements-spark.txt
+PYTHON_BIN=python ./scripts/verify_recovered_telemetry_publish.sh
+```
+
+## Claim boundary
+
+This is a personal portfolio project on **synthetic** data. It presents one **local, bounded**
+telemetry failure/recovery path: one session, one machine, one `business_date`, one topic
+partition, one local Iceberg gold table, single writer.
+
+Synthetic machine/session telemetry is implemented; **real OT / ROS2 / MCAP / edge-hardware input
+is not implemented** — the edge is simulated by a local spool. Not claimed anywhere: production or
+multi-broker Kafka, continuous or large-scale streaming, cluster or performance-tested Spark,
+production/HA/distributed Airflow, concurrent Iceberg writers, or end-to-end exactly-once.
+
+## Where to look next
+
+| Topic | Document |
+|---|---|
+| One-screen project status | [`PROJECT_PROGRESS_MAP.md`](PROJECT_PROGRESS_MAP.md) |
+| Design decisions and contracts | [`DESIGN.md`](DESIGN.md) · [`learn/reference-decisions/`](learn/reference-decisions/) |
+| Scenario → question → contract → evidence trace | [`learn/system-design/01-system-traceability-map.ko.md`](learn/system-design/01-system-traceability-map.ko.md) |
+| Execution history and runtime results | [`VERIFICATION_LOG.md`](VERIFICATION_LOG.md) |
+| Scope and roadmap | [`ROADMAP.md`](ROADMAP.md) · [`BENCHMARKS.md`](BENCHMARKS.md) |
+
+---
+
+# Detailed implementation history
+
+The sections below are the full build history, kept in the order the slices were implemented. The
+first screen above is the summary; nothing here has been deleted.
 
 ## Project Context
 
@@ -12,7 +102,7 @@ This repo is intended as a market-recognizable data engineering proof: metadata 
 
 The architecture source of truth for this project lives in this public repo: `README.md`, `PROJECT_PROGRESS_MAP.md`, `DESIGN.md`, `ROADMAP.md`, `BENCHMARKS.md`, and tests.
 
-This repo exists to close a concrete data-platform gap: **NoSQL/MongoDB-style metadata catalog + dataset version manifest + quality/lineage evidence**. The data is synthetic manufacturing-style CSV, not real ROS2 bag / MCAP / Jetson data. Until a machine/session source slice exists, describe this externally as a **manufacturing-style/tabular mini data platform**, not a production manufacturing data platform. The point is the platform loop, kept deliberately small.
+This repo exists to close a concrete data-platform gap: **NoSQL/MongoDB-style metadata catalog + dataset version manifest + quality/lineage evidence**. The data is synthetic manufacturing-style CSV and synthetic machine/session telemetry. The machine/session source slice now exists (S8 sealed edge sessions and S9 recovery-gated publish); what does **not** exist is real OT / ROS2 bag / MCAP / Jetson or production manufacturing input. So describe this externally as a **manufacturing-style/tabular mini data platform on synthetic telemetry**, not a production manufacturing data platform. The point is the platform loop, kept deliberately small.
 
 **Overall design trace:** [`service purpose -> scenario -> questions -> contracts -> features -> evidence`](learn/system-design/01-system-traceability-map.ko.md) shows how the batch spine, EAV, operator evidence, Spark/Iceberg, Airflow, and Kafka slices fit into one platform.
 
