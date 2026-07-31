@@ -1,0 +1,2 @@
+# Optional S-MFG-10 local industrial-source runtime.
+asyncua==2.0.1

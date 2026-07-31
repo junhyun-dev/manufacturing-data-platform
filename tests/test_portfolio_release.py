@@ -30,12 +30,12 @@ SCREENSHOTS = (
 )
 ACCEPTED_SOURCE_COMMIT = "d8ec816"
 
-ROOT_READMES = (REPO_ROOT / "README.md", REPO_ROOT / "README.ko.md")
+ROOT_README = REPO_ROOT / "README.md"
 WALKTHROUGHS = (OVERVIEW / "README.md", OVERVIEW / "README.ko.md")
 
 # How far into a root README the release contract requires the key items to appear. The package
 # allows a little slack for Mermaid syntax, so this is a ceiling, not an exact position.
-FIRST_SCREEN_LIMIT = 100
+FIRST_SCREEN_LIMIT = 75
 
 
 def _load_builder():
@@ -231,38 +231,59 @@ def test_three_screenshots_exist_and_are_non_trivial_pngs():
 # --------------------------------------------------------------------------- #
 # Reader-facing pages
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("readme", ROOT_READMES, ids=lambda p: p.name)
-def test_root_readme_first_screen_carries_the_release_contract(readme: Path):
-    lines = readme.read_text(encoding="utf-8").splitlines()
+def test_root_readme_first_screen_carries_the_current_release_contract():
+    lines = ROOT_README.read_text(encoding="utf-8").splitlines()
     first_screen = "\n".join(lines[:FIRST_SCREEN_LIMIT])
 
     required = {
         "CI badge": "actions/workflows/ci.yml/badge.svg",
         "architecture diagram": "```mermaid",
-        "walkthrough link": "docs/portfolio/platform-overview/README",
-        "runtime evidence link": "platform-overview/evidence/runtime-evidence.json",
-        "base test command": "PYTHONPATH=src python -m pytest -q",
-        "full runtime command": "scripts/verify_recovered_telemetry_publish.sh",
-        "verification log link": "VERIFICATION_LOG.md",
-        "claim boundary": "Claim boundary",
+        "trust walkthrough": "docs/portfolio/industrial-telemetry-trust/README.md",
+        "trust runtime evidence": (
+            "industrial-telemetry-trust/evidence/runtime-evidence.json"
+        ),
+        "operator screenshot": "01-operator-decisions.png",
+        "publish decision": "PUBLISH",
+        "blocked decision": "BLOCKED",
+        "reprocess decision": "REPROCESS REQUIRED",
     }
     missing = [name for name, needle in required.items() if needle not in first_screen]
-    assert not missing, f"{readme.name} first screen is missing: {missing}"
+    assert not missing, f"README.md first screen is missing: {missing}"
 
 
-@pytest.mark.parametrize("readme", ROOT_READMES, ids=lambda p: p.name)
-def test_root_readme_states_the_synthetic_versus_real_input_boundary(readme: Path):
-    text = readme.read_text(encoding="utf-8")
+def test_root_readme_states_actual_record_replay_and_live_boundary():
+    text = ROOT_README.read_text(encoding="utf-8")
     lowered = text.lower()
+    assert "actual record" in lowered
+    assert "historical_record_replay" not in lowered  # reader-facing prose, not raw enum
+    assert "local opc ua" in lowered
+    assert "실제 공장" in text
     assert "synthetic" in lowered
-    for real_input in ("ot", "ros2", "mcap"):
-        assert real_input in lowered, f"{readme.name} must name {real_input} as not implemented"
+    for absent_claim in ("physical plc", "production opc ua", "continuous kafka"):
+        assert absent_claim in lowered
 
 
-@pytest.mark.parametrize("readme", ROOT_READMES, ids=lambda p: p.name)
-def test_root_readme_does_not_promise_runtime_coverage_from_the_badge(readme: Path):
-    text = readme.read_text(encoding="utf-8")
-    assert "base suite" in text or "base unit" in text.lower()
+def test_root_readme_names_commands_evidence_and_claim_boundary():
+    text = ROOT_README.read_text(encoding="utf-8")
+    required = (
+        "PYTHONPATH=src python -m pytest -q",
+        "scripts/verify_industrial_source_contract.sh",
+        "scripts/verify_event_time_trust.sh",
+        "VERIFICATION_LOG.md",
+        "## 주장 경계",
+        "badge는 이 base suite만 증명",
+        "docs/portfolio/platform-overview/README.ko.md",
+    )
+    for value in required:
+        assert value in text
+
+
+def test_root_readme_is_korean_first():
+    first_screen = "\n".join(
+        ROOT_README.read_text(encoding="utf-8").splitlines()[:FIRST_SCREEN_LIMIT]
+    )
+    assert "제조 설비 데이터는 언제 믿을 수 있는가" in first_screen
+    assert sum("가" <= char <= "힣" for char in first_screen) > 100
 
 
 def test_walkthroughs_expose_the_same_required_sections():
@@ -295,7 +316,7 @@ def test_walkthroughs_share_the_observed_values_with_the_evidence(evidence):
 # --------------------------------------------------------------------------- #
 # Publication safety
 # --------------------------------------------------------------------------- #
-RELEASE_FILES = ROOT_READMES + WALKTHROUGHS + (
+RELEASE_FILES = (ROOT_README,) + WALKTHROUGHS + (
     REPORT_PATH,
     EVIDENCE_PATH,
     REPO_ROOT / ".github" / "workflows" / "ci.yml",
@@ -326,7 +347,7 @@ def test_reader_facing_files_contain_no_obvious_secret(path: Path):
         assert not re.search(pattern, text, re.IGNORECASE), f"{path.name} matches {pattern}"
 
 
-@pytest.mark.parametrize("path", ROOT_READMES + WALKTHROUGHS, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", (ROOT_README,) + WALKTHROUGHS, ids=lambda p: p.name)
 def test_relative_links_in_release_pages_resolve(path: Path):
     text = path.read_text(encoding="utf-8")
     broken = []

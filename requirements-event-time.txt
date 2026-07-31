@@ -1,0 +1,5 @@
+# Optional S-MFG-11 local OPC UA + PySpark verification runtime.
+# Install in one isolated environment when the host Python does not already
+# provide the pinned Spark runtime.
+-r requirements-opcua.txt
+-r requirements-spark.txt

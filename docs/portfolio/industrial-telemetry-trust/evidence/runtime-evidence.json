@@ -1,0 +1,335 @@
+{
+  "claim_boundary": {
+    "not_verified": [
+      "a physical PLC, sensor, plant network, or production OPC UA server",
+      "automatic reconnect without loss, durable subscriptions, HA, or throughput",
+      "Kafka/Spark streaming, an Iceberg telemetry table, or an AI model",
+      "a production lateness SLA or the actual MetroPT sampling contract",
+      "Kafka partition, rebalance, distributed state-store, or cluster Spark correctness",
+      "an Iceberg streaming sink, automatic historical correction, or end-to-end exactly-once",
+      "Kafka source, Iceberg sink, cluster execution, or production checkpoint storage",
+      "automatic correction or end-to-end exactly-once across external systems"
+    ],
+    "not_verified_ko": [
+      "physical PLC\u00b7sensor\u00b7plant network\u00b7production OPC UA server \uc5f0\uacb0",
+      "\ubb34\uc190\uc2e4 \uc790\ub3d9 reconnect\u00b7durable subscription\u00b7HA\u00b7throughput",
+      "Kafka/Spark streaming\u00b7Iceberg telemetry table\u00b7AI model",
+      "production lateness SLA\uc640 \uc2e4\uc81c MetroPT sampling contract",
+      "Kafka partition/rebalance\u00b7distributed state-store\u00b7cluster Spark correctness",
+      "Iceberg streaming sink\u00b7\uc790\ub3d9 historical correction\u00b7end-to-end exactly-once",
+      "Kafka source\u00b7Iceberg sink\u00b7cluster execution\u00b7production checkpoint storage",
+      "\uc678\ubd80 \uc2dc\uc2a4\ud15c \uc804\uccb4\uc758 automatic correction \ub610\ub294 end-to-end exactly-once"
+    ],
+    "verified": [
+      "actual public MetroPT values were replayed through a local OPC UA subscription",
+      "tag, unit, time, quality, mapping, and source identity were preserved",
+      "exact bounded expected-versus-observed collection coverage was evaluated",
+      "bounded source-time and arrival-order classification over canonical telemetry",
+      "exact-set, quality, duplicate, conflict, and too-late publication decisions",
+      "content-addressed local trusted dataset versions with an atomic current pointer",
+      "local Spark file micro-batches used event-time watermark state",
+      "Spark accepted event identities matched the engine-independent contract",
+      "the selected scenario resumed from a local checkpoint when restart_count=1"
+    ],
+    "verified_ko": [
+      "\uc2e4\uc81c \uacf5\uac1c MetroPT \uad00\uce21\uac12\uc744 \ub85c\uceec OPC UA subscription\uc73c\ub85c replay\ud588\ub2e4.",
+      "tag\u00b7\ub2e8\uc704\u00b7\uc2dc\uac04\u00b7\ud488\uc9c8\u00b7mapping\u00b7source identity\ub97c \ubcf4\uc874\ud588\ub2e4.",
+      "bounded source \ubc94\uc704\uc758 expected/observed \uad00\uce21 \uc9d1\ud569\uc744 \uc815\ud655\ud788 \ube44\uad50\ud588\ub2e4.",
+      "canonical telemetry\uc758 source time\uacfc arrival order\ub97c bounded \uc815\ucc45\uc73c\ub85c \ubd84\ub958\ud588\ub2e4.",
+      "exact set\u00b7\ud488\uc9c8\u00b7\uc911\ubcf5\u00b7\ucda9\ub3cc\u00b7too-late\ub97c \uadfc\uac70\ub85c \ubc1c\ud589 \uc5ec\ubd80\ub97c \ud310\uc815\ud588\ub2e4.",
+      "content-addressed \ub85c\uceec trusted dataset version\uacfc atomic current pointer\ub97c \ub9cc\ub4e4\uc5c8\ub2e4.",
+      "\ub85c\uceec Spark file micro-batch\uc5d0\uc11c event-time watermark state\ub97c \uc0ac\uc6a9\ud588\ub2e4.",
+      "Spark\uac00 \uc218\ub77d\ud55c event identity\uac00 engine-independent \uacc4\uc57d\uacfc \uc77c\uce58\ud588\ub2e4.",
+      "restart_count=1 \uc2dc\ub098\ub9ac\uc624\uac00 \ub85c\uceec checkpoint\uc5d0\uc11c \uc7ac\uac1c\ub410\ub2e4."
+    ]
+  },
+  "collection_last_good": {
+    "preserved_when_blocked_or_incomplete": true,
+    "report_sha256": "ca07c678ec1c3ada4523e71aa063959c45af1b255d49266b201e207ee2b9172c",
+    "scenario": "normal"
+  },
+  "collection_scenarios": [
+    {
+      "collection_report_sha256": "ca07c678ec1c3ada4523e71aa063959c45af1b255d49266b201e207ee2b9172c",
+      "collection_status": "complete",
+      "conflict_count": 0,
+      "decision_reason": "9\uac1c \uad00\uce21\uc774 \ubaa8\ub450 \uc874\uc7ac\ud558\uace0 \uc804\ubd80 Good\uc774\uba70 event-time \uc785\ub825\ub3c4 \ubc1c\ud589 \uac00\ub2a5\ud558\ub2e4.",
+      "duplicate_count": 0,
+      "expected_count": 9,
+      "missing_count": 0,
+      "missing_event_ids": [],
+      "observed_count": 9,
+      "operator_action": "PUBLISH",
+      "quality": {
+        "bad": 0,
+        "good": 9,
+        "uncertain": 0
+      },
+      "replay_session_id": "fixture-normal",
+      "scenario": "normal",
+      "unknown_mapping_count": 0,
+      "waiting_notification_count": 3
+    },
+    {
+      "collection_report_sha256": "a4454d4c29cf0f044e641a520ff2c7be453f1e5ed6bf8fd478d34250165af1bd",
+      "collection_status": "blocked_quality",
+      "conflict_count": 0,
+      "decision_reason": "\uad00\uce21 \uc9d1\ud569\uc740 \uc644\uc804\ud558\uc9c0\ub9cc fault injection\uc73c\ub85c Uncertain 1\uac1c\uc640 Bad 1\uac1c\uac00 \ud3ec\ud568\ub410\ub2e4.",
+      "duplicate_count": 0,
+      "expected_count": 9,
+      "missing_count": 0,
+      "missing_event_ids": [],
+      "observed_count": 9,
+      "operator_action": "BLOCKED",
+      "quality": {
+        "bad": 1,
+        "good": 7,
+        "uncertain": 1
+      },
+      "replay_session_id": "fixture-quality",
+      "scenario": "quality",
+      "unknown_mapping_count": 0,
+      "waiting_notification_count": 3
+    },
+    {
+      "collection_report_sha256": "ddfd277ee2871645a2fb931c477306ea6b5f0af591d0d289ab4b98d02dc98210",
+      "collection_status": "incomplete",
+      "conflict_count": 0,
+      "decision_reason": "Collector \uc911\ub2e8\uc73c\ub85c sealed identity 6\uac1c\uac00 \ub204\ub77d\ub3fc \uc774\uc804 last-good\uc744 \uc720\uc9c0\ud574\uc57c \ud55c\ub2e4.",
+      "duplicate_count": 0,
+      "expected_count": 9,
+      "missing_count": 6,
+      "missing_event_ids": [
+        "6105d51b2c1cd2e155f285e0798f8fba2916d12bb0b8b0172651e30ef9978d92",
+        "698757e70c1cdcb7fd7634ff385e997b8015f29901774d5390fc970665166536",
+        "85217aadbc958a82640f74be4440e1af95494231b42c42241c71839456c14ba9",
+        "872a579e7d8c3b5282d9d04612ce0b17a2430dfe734edbd23935c3b95d5fd8fc",
+        "97f61be10a9a72c8abe86dad793dc32a09156e8d4e089c79467dbae83d44e677",
+        "ea08542c1686d04432ce23e1e24f62c440deb4808956b827b06aae6d9dfbc1df"
+      ],
+      "observed_count": 3,
+      "operator_action": "REPROCESS REQUIRED",
+      "quality": {
+        "bad": 0,
+        "good": 3,
+        "uncertain": 0
+      },
+      "replay_session_id": "fixture-interrupted",
+      "scenario": "interrupted",
+      "unknown_mapping_count": 0,
+      "waiting_notification_count": 3
+    }
+  ],
+  "equipment": {
+    "equipment_id": "simulated.metropt3.apu-1",
+    "mapping_version": "metropt3-opcua-v1",
+    "replay_mode": "historical_record_replay",
+    "tags": [
+      {
+        "collected_at": "2026-07-31T02:35:55.128885Z",
+        "opcua_node_id": "ns=2;s=MetroPT3.APU.TP2",
+        "server_timestamp": "2026-07-31T02:35:55.113912Z",
+        "source_timestamp": "2020-02-01T00:00:00Z",
+        "status": "Good",
+        "tag_id": "TP2",
+        "unit": "bar",
+        "value": -0.0120000000000004
+      },
+      {
+        "collected_at": "2026-07-31T02:35:55.148607Z",
+        "opcua_node_id": "ns=2;s=MetroPT3.APU.OilTemperature",
+        "server_timestamp": "2026-07-31T02:35:55.114150Z",
+        "source_timestamp": "2020-02-01T00:00:00Z",
+        "status": "Good",
+        "tag_id": "Oil_temperature",
+        "unit": "\u00b0C",
+        "value": 53.60000000000001
+      },
+      {
+        "collected_at": "2026-07-31T02:35:55.158396Z",
+        "opcua_node_id": "ns=2;s=MetroPT3.APU.MotorCurrent",
+        "server_timestamp": "2026-07-31T02:35:55.114307Z",
+        "source_timestamp": "2020-02-01T00:00:00Z",
+        "status": "Good",
+        "tag_id": "Motor_current",
+        "unit": "A",
+        "value": 0.04
+      }
+    ],
+    "transport": "local OPC UA subscription"
+  },
+  "event_time_scenarios": [
+    {
+      "accepted_count": 9,
+      "conflict_count": 0,
+      "current_advanced": true,
+      "dataset_version": "40631b43288556777629527f1bcbdedc6ecccba87bf60bfbd5af4be335483b88",
+      "duplicate_count": 0,
+      "input_count": 9,
+      "late_within_policy_count": 0,
+      "missing_count": 0,
+      "operator_action": "PUBLISH",
+      "out_of_order_count": 0,
+      "scenario": "in_order",
+      "spark": {
+        "accepted_count": 9,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "publishable",
+      "too_late_count": 0
+    },
+    {
+      "accepted_count": 9,
+      "conflict_count": 0,
+      "current_advanced": true,
+      "dataset_version": "40631b43288556777629527f1bcbdedc6ecccba87bf60bfbd5af4be335483b88",
+      "duplicate_count": 1,
+      "input_count": 10,
+      "late_within_policy_count": 3,
+      "missing_count": 0,
+      "operator_action": "PUBLISH",
+      "out_of_order_count": 3,
+      "scenario": "duplicate_out_of_order",
+      "spark": {
+        "accepted_count": 9,
+        "checkpoint_restart_count": 1,
+        "version": "3.5.8"
+      },
+      "status": "publishable",
+      "too_late_count": 0
+    },
+    {
+      "accepted_count": 6,
+      "conflict_count": 0,
+      "current_advanced": false,
+      "dataset_version": null,
+      "duplicate_count": 0,
+      "input_count": 9,
+      "late_within_policy_count": 0,
+      "missing_count": 3,
+      "operator_action": "REPROCESS",
+      "out_of_order_count": 3,
+      "scenario": "too_late",
+      "spark": {
+        "accepted_count": 6,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "reprocess_required",
+      "too_late_count": 3
+    },
+    {
+      "accepted_count": 8,
+      "conflict_count": 0,
+      "current_advanced": false,
+      "dataset_version": null,
+      "duplicate_count": 0,
+      "input_count": 8,
+      "late_within_policy_count": 0,
+      "missing_count": 1,
+      "operator_action": "INCOMPLETE",
+      "out_of_order_count": 0,
+      "scenario": "missing",
+      "spark": {
+        "accepted_count": 8,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "incomplete",
+      "too_late_count": 0
+    },
+    {
+      "accepted_count": 9,
+      "conflict_count": 0,
+      "current_advanced": false,
+      "dataset_version": null,
+      "duplicate_count": 0,
+      "input_count": 9,
+      "late_within_policy_count": 0,
+      "missing_count": 0,
+      "operator_action": "BLOCK",
+      "out_of_order_count": 0,
+      "scenario": "quality",
+      "spark": {
+        "accepted_count": 9,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "blocked_quality",
+      "too_late_count": 0
+    }
+  ],
+  "evidence_version": 1,
+  "generated_by": "scripts/build_industrial_trust_report.py",
+  "input_evidence": {
+    "collection_last_good": "3a2deb28f716bd27c68c2336b2720dc8a7e5785cee81de0e2cdc70a07ac2d626",
+    "event_time_verification": "99644c9fbdded176db01d3fcde297b96328ebd8bdde9b01f4e44543044976337",
+    "source_collection_reports": {
+      "interrupted": "ddfd277ee2871645a2fb931c477306ea6b5f0af591d0d289ab4b98d02dc98210",
+      "normal": "ca07c678ec1c3ada4523e71aa063959c45af1b255d49266b201e207ee2b9172c",
+      "quality": "a4454d4c29cf0f044e641a520ff2c7be453f1e5ed6bf8fd478d34250165af1bd"
+    },
+    "trusted_current": "ddb7da09b757e50a4c100e30750b6409a2c4c35ce77ca454e28db3938682b7e8",
+    "trusted_data": "e0d10b948f7ac80f7e6246e4b9d3b005f2e311a864457005c13ed69abc269eff",
+    "trusted_manifest": "9b09a5a719938581cfeb2b6e2e577c91a78c590977f5251a2ed3272294fb5c74"
+  },
+  "policy_version": "trust-report-policy-v1",
+  "provenance": {
+    "actual_record": "\uac12\uc740 checksum\uc744 \ub2e4\uc2dc \uac80\uc99d\ud55c \uacf5\uac1c MetroPT-3 historical CSV\uc5d0\uc11c \uc654\ub2e4.",
+    "fault_injection": "\ud488\uc9c8 \uc774\uc0c1 \uc2dc\ub098\ub9ac\uc624\uc5d0\ub9cc Uncertain 1\uac1c\uc640 Bad 1\uac1c StatusCode\ub97c \uc8fc\uc785\ud588\ub2e4.",
+    "fault_observations": [
+      {
+        "fault_injected": true,
+        "severity": "bad",
+        "source_timestamp": "2020-02-01T00:00:19Z",
+        "status": "BadNoData",
+        "tag_id": "Motor_current",
+        "value": null
+      },
+      {
+        "fault_injected": true,
+        "severity": "uncertain",
+        "source_timestamp": "2020-02-01T00:00:10Z",
+        "status": "UncertainSubstituteValue",
+        "tag_id": "TP2",
+        "value": -0.0139999999999993
+      }
+    ],
+    "replay": "\ub85c\uceec OPC UA \uc11c\ubc84\uac00 historical row\ub97c replay\ud588\ub2e4. live plant \uc5f0\uacb0\uc740 \uc544\ub2c8\ub2e4."
+  },
+  "report_contract": "industrial_trust_report_v1",
+  "source": {
+    "dataset_doi": "10.24432/C5VW3R",
+    "dataset_id": "uci-791-metropt3",
+    "historical_time_assumption": "timezone-unknown-wall-clock-encoded-as-utc-for-replay-only",
+    "live_source": false,
+    "selected_physical_rows": [
+      1,
+      2,
+      3
+    ],
+    "selected_tags": [
+      "TP2",
+      "Oil_temperature",
+      "Motor_current"
+    ],
+    "source_file_rows": 1516948,
+    "source_file_sha256": "db30ccb4ea402e3c8bf2c99db06e288d4f2a772f6928f9dbe26a920d69793e24",
+    "source_kind": "actual_historical_public_record"
+  },
+  "trusted_dataset": {
+    "content_sha256": "e0d10b948f7ac80f7e6246e4b9d3b005f2e311a864457005c13ed69abc269eff",
+    "current_verified": true,
+    "dataset_version": "40631b43288556777629527f1bcbdedc6ecccba87bf60bfbd5af4be335483b88",
+    "event_count": 9,
+    "manifest_sha256": "9b09a5a719938581cfeb2b6e2e577c91a78c590977f5251a2ed3272294fb5c74",
+    "mapping_versions": [
+      "metropt3-opcua-v1"
+    ],
+    "normal_and_disorder_converged": true,
+    "policy_version": "bounded-event-time-v1"
+  },
+  "verification_baseline_commit": "36e7344",
+  "verified_on": "2026-07-31"
+}

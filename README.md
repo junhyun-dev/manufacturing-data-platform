@@ -1,545 +1,216 @@
-# manufacturing-data-platform-mini
-
-> 한국어판: [`README.ko.md`](README.ko.md)
+# 제조 설비 데이터는 언제 믿을 수 있는가?
 
 [![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml)
 
-**A small manufacturing-style data platform built around one question: what has to be provably
-true before recovered plant telemetry is allowed to change a trusted table?**
+실제 산업 기록을 센서처럼 수집하고, 값의 의미·시간·품질·완전성을 검증한 뒤
+**trusted dataset으로 발행할지, 차단할지, 재처리할지 결정하는** 로컬·bounded 데이터
+플랫폼 프로젝트입니다.
+
+> 대표 결과: [Industrial Telemetry Trust Report](docs/portfolio/industrial-telemetry-trust/README.md) ·
+> [정적 HTML](docs/portfolio/industrial-telemetry-trust/report.html) ·
+> [runtime evidence JSON](docs/portfolio/industrial-telemetry-trust/evidence/runtime-evidence.json)
+
+![정상·품질 이상·collector 중단 판정 비교](docs/portfolio/industrial-telemetry-trust/assets/01-operator-decisions.png)
+
+## 한눈에 보는 결과
+
+같은 MetroPT-3 source 범위를 세 가지 방식으로 수집해 서로 다른 다음 행동을 냅니다.
+
+| 상황 | 관측 결과 | 판정 | 다음 행동 |
+|---|---|---|---|
+| 정상 수집 | expected 9 / observed 9 / Good 9 | `complete` | `PUBLISH` |
+| 품질 이상 | expected 9 / observed 9 / Uncertain 1 / Bad 1 | `blocked_quality` | `BLOCKED` |
+| collector 중단 | expected 9 / observed 3 / missing 6 | `incomplete` | `REPROCESS REQUIRED` |
+
+중복·역순 입력은 허용 범위 안에서 정상 입력과 같은 dataset version으로 수렴합니다.
+too-late·missing·quality failure는 기존 trusted current를 전진시키지 않습니다.
 
 ```mermaid
 flowchart LR
-  edge["Edge spool<br/>sealed while offline"] --> kafka["Kafka landing<br/>durable, then offset commit"]
-  kafka --> gate{"Recovery gate<br/>complete AND exact set?"}
-  gate -- "no" --> blocked["Refused<br/>no Spark, no Iceberg state"]
-  gate -- "yes" --> spark["Spark silver/gold<br/>+ quality suite"]
-  spark --> iceberg["Iceberg gold table<br/>business_date overwrite"]
-  csv["Synthetic CSV / EAV intake"] --> spark
-  spark --> catalog["Catalog, lineage,<br/>run evidence"]
+  source["MetroPT-3<br/>실제 historical record"]
+  opcua["Local OPC UA server<br/>tag replay"]
+  collector["Subscription collector<br/>value · unit · time · status"]
+  spool["Durable local spool<br/>expected / observed"]
+  trust{"Trust decision<br/>quality · gap · event time"}
+  current["Versioned trusted JSONL<br/>manifest · current"]
+  blocked["Blocked / incomplete<br/>reprocess evidence"]
+  report["Industrial Telemetry<br/>Trust Report"]
+
+  source --> opcua --> collector --> spool --> trust
+  trust -- publish --> current --> report
+  trust -- refuse --> blocked --> report
 ```
 
-## Three contracts this project is built on
+## 어떤 데이터를 사용하는가
 
-1. **Durability before progress** — a Kafka offset is committed only after the record is durably
-   landed, so a crash between the two costs a redelivery, never a record.
-2. **Recovery before publication** — a sealed session must be *completely* recovered **and** the
-   selected batch input must *equal* the sealed event set before Spark starts. Membership alone is
-   not enough: the adapter selects every accepted event for the date, so one extra same-date event
-   would publish a batch that is no longer the recovered session.
-3. **Quality and current-state safety** — only quality-passed data advances the Iceberg table, and
-   a same-source retry creates no new snapshot and performs no partition overwrite.
+[UCI MetroPT-3](https://archive.ics.uci.edu/dataset/791/metropt%203%20dataset)는 지하철
+공기압축기에서 수집된 압력·온도·전류·밸브 계열 기록입니다. 전체 배포 CSV의
+1,516,948개 행과 SHA-256을 검증하고, 재현 가능한 데모에서는 첫 3개 physical row의
+다음 tag를 선택합니다.
 
-## What is verified, and how
+- `TP2`: 압력, `bar`
+- `Oil_temperature`: 오일 온도, `°C`
+- `Motor_current`: 모터 전류, `A`
 
-| | Covers | Does **not** cover |
-|---|---|---|
-| Automated public CI — [`ci.yml`](.github/workflows/ci.yml) | base Python unit/contract suite on Python 3.10 and 3.12, installing `requirements.txt` only | Kafka, Spark/Iceberg, and Airflow runtime |
-| Documented local runbooks — [`scripts/`](scripts/) | real local Kafka broker, Spark/Iceberg publish, Airflow `dags test` | production, HA, cluster, throughput, exactly-once |
+따라서 한 collection의 기대 관측 집합은 `3 rows × 3 tags = 9 observations`입니다.
+저장소에는 CC BY 4.0 출처를 명시한 [3-row fixture](tests/fixtures/metropt3/README.md)만
+포함하며, 전체 CSV는 커밋하지 않습니다.
 
-Optional Spark/Airflow/Kafka tests **skip** in the CI job by design. The badge above proves the
-base suite only; heavy-runtime evidence comes from the runbooks and is recorded in
-[`VERIFICATION_LOG.md`](VERIFICATION_LOG.md).
+## 실제와 simulation의 경계
 
-## Representative walkthrough
+이 프로젝트에서 세 가지를 분리합니다.
 
-**[Platform overview: a recovered edge session reaches the gold table only when it is provably
-complete](docs/portfolio/platform-overview/README.md)** — the problem, the failure scenario, the
-contracts, the counterexamples caught, and reproducible runtime evidence
-([`runtime-evidence.json`](docs/portfolio/platform-overview/evidence/runtime-evidence.json),
-rendered as [`report.html`](docs/portfolio/platform-overview/report.html)).
+```text
+actual record
+  공개 MetroPT-3 historical value
 
-Supporting deep dive on the input path:
-[Kafka K1/K1.5 milestone](docs/portfolio/kafka-k1-k1-5/README.md).
+replay simulation
+  local OPC UA server가 historical row를 DataValue로 재생
 
-## Run it
+fault injection
+  quality 시나리오의 Uncertain/Bad StatusCode와 collector 중단
+```
+
+즉 센서값을 임의로 만든 데모는 아니지만, 실제 공장 네트워크나 현재 동작 중인 설비에
+연결한 것도 아닙니다.
+
+## 수집 단계에서 보존하는 것
+
+`industrial_telemetry_v1`은 다음 정보를 한 관측값의 계약으로 묶습니다.
+
+- equipment ID, tag ID, OPC UA NodeId
+- value와 engineering unit
+- 원본 historical timestamp
+- OPC UA source timestamp와 server timestamp
+- collector가 기록한 collection time
+- Good·Uncertain·Bad StatusCode
+- mapping version과 source file identity
+- actual record·replay·fault injection provenance
+
+OPC UA subscription은 값이 같아도 timestamp가 바뀐 관측을 보존하도록
+`StatusValueTimestamp` trigger를 사용합니다. 수집 완전성은 추정 cadence가 아니라 봉인된
+expected event identity 집합과 실제 observed 집합을 비교해 판단합니다.
+
+## 이벤트 시간과 trusted dataset
+
+수집된 canonical telemetry에 별도 arrival envelope를 씌워 다음을 검증합니다.
+
+| 입력 | Accepted | 핵심 evidence | 판정 |
+|---|---:|---|---|
+| in order | 9 | exact expected set | `publishable` |
+| duplicate + out of order | 9 | duplicate 1, out of order 3 | `publishable` |
+| too late | 6 | too late 3, missing 3 | `reprocess_required` |
+| missing | 8 | missing 1 | `incomplete` |
+| quality failure | 9 | Uncertain 1, Bad 1 | `blocked_quality` |
+
+정상과 허용 범위 내 disorder는 같은 content-addressed dataset version으로 수렴합니다.
+trusted 결과는 JSONL, manifest, `current_trusted.json`으로 구성되며 새 발행 전 기존
+`current → manifest → data` digest chain을 다시 검증합니다. 기존 current가 손상되거나
+symlink로 바뀌면 조용히 교체하지 않고 immutable integrity failure를 남깁니다.
+
+로컬 Spark 3.5.8 file micro-batch에서도 watermark, deduplication, checkpoint restart 후
+accepted event identity가 engine-independent 결과와 일치하는지 확인했습니다. 이 결과는
+Kafka source나 Iceberg streaming sink를 검증한 것이 아닙니다.
+
+## 실행
+
+### Base CI와 같은 테스트
 
 ```bash
-# base unit/contract suite — the same thing public CI runs
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 PYTHONPATH=src python -m pytest -q
-
-# full recovery-gated publish: sealed edge session -> local Kafka replay -> Spark -> Iceberg
-# The Spark interpreter imports the base pipeline, so requirements.txt is needed here too.
-# The runbook provisions its own pinned Kafka client venv and downloads Kafka on first use;
-# it needs Java 17+, curl, and network access for that first download.
-pip install -r requirements.txt -r requirements-spark.txt
-PYTHON_BIN=python ./scripts/verify_recovered_telemetry_publish.sh
 ```
 
-## Claim boundary
+GitHub Actions badge는 이 base suite만 증명합니다. OPC UA, Spark, Kafka, Iceberg,
+Airflow runtime은 optional dependency와 별도 로컬 runbook으로 검증합니다.
 
-This is a personal portfolio project on **synthetic** data. It presents one **local, bounded**
-telemetry failure/recovery path: one session, one machine, one `business_date`, one topic
-partition, one local Iceberg gold table, single writer.
-
-Synthetic machine/session telemetry is implemented; **real OT / ROS2 / MCAP / edge-hardware input
-is not implemented** — the edge is simulated by a local spool. Not claimed anywhere: production or
-multi-broker Kafka, continuous or large-scale streaming, cluster or performance-tested Spark,
-production/HA/distributed Airflow, concurrent Iceberg writers, or end-to-end exactly-once.
-
-## Where to look next
-
-| Topic | Document |
-|---|---|
-| One-screen project status | [`PROJECT_PROGRESS_MAP.md`](PROJECT_PROGRESS_MAP.md) |
-| Design decisions and contracts | [`DESIGN.md`](DESIGN.md) · [`learn/reference-decisions/`](learn/reference-decisions/) |
-| Scenario → question → contract → evidence trace | [`learn/system-design/01-system-traceability-map.ko.md`](learn/system-design/01-system-traceability-map.ko.md) |
-| Execution history and runtime results | [`VERIFICATION_LOG.md`](VERIFICATION_LOG.md) |
-| Scope and roadmap | [`ROADMAP.md`](ROADMAP.md) · [`BENCHMARKS.md`](BENCHMARKS.md) |
-
----
-
-# Detailed implementation history
-
-The sections below are the full build history, kept in the order the slices were implemented. The
-first screen above is the summary; nothing here has been deleted.
-
-## Project Context
-
-This is a personal learning and portfolio project. It uses only synthetic data and does not include company code, customer data, private business logic, credentials, or internal identifiers.
-
-This repo is intended as a market-recognizable data engineering proof: metadata cataloging, medallion-style pipelines, data quality checks, lineage/catalog records, and reproducible dataset versioning.
-
-The architecture source of truth for this project lives in this public repo: `README.md`, `PROJECT_PROGRESS_MAP.md`, `DESIGN.md`, `ROADMAP.md`, `BENCHMARKS.md`, and tests.
-
-This repo exists to close a concrete data-platform gap: **NoSQL/MongoDB-style metadata catalog + dataset version manifest + quality/lineage evidence**. The data is synthetic manufacturing-style CSV and synthetic machine/session telemetry. The machine/session source slice now exists (S8 sealed edge sessions and S9 recovery-gated publish); what does **not** exist is real OT / ROS2 bag / MCAP / Jetson or production manufacturing input. So describe this externally as a **manufacturing-style/tabular mini data platform on synthetic telemetry**, not a production manufacturing data platform. The point is the platform loop, kept deliberately small.
-
-**Overall design trace:** [`service purpose -> scenario -> questions -> contracts -> features -> evidence`](learn/system-design/01-system-traceability-map.ko.md) shows how the batch spine, EAV, operator evidence, Spark/Iceberg, Airflow, and Kafka slices fit into one platform.
-
-**Kafka milestone walkthrough:** [`Kafka K1/K1.5: machine events -> recoverable raw landing -> trusted gold -> local Iceberg`](docs/portfolio/kafka-k1-k1-5/README.md) packages one representative failure/recovery scenario, runtime screens, reproduction commands, evidence, and explicit limitations. It is an ingestion-path milestone, not the whole platform architecture.
-
-## Phase 1 Scope
-
-v0 is the MongoDB catalog gate:
-
-- CSV ingest
-- MongoDB `datasets` document
-- MongoDB `dataset_versions` manifest
-- `source_hash`, `schema_hash`, `row_count`, `null_counts`
-- `GET /datasets`
-- `GET /datasets/{id}`
-
-At the original v0 boundary, `/extract` was v0.5 and Spark, Kafka, Iceberg/Delta,
-ROS2/MCAP, Jetson, auth, lineage graph, and worker queues were intentionally excluded.
-Later sections record the bounded local Kafka, Spark/Iceberg, and Airflow slices that were
-subsequently implemented; ROS2/MCAP, Jetson, production auth, and distributed operation remain backlog.
-
-## Phase 2 Scope
-
-Phase 2 adds a small lakehouse-style pipeline without changing the Phase 1 catalog contract:
-
-```text
-synthetic manufacturing CSV -> bronze -> silver -> gold -> quality -> Mongo catalog/lineage
-```
-
-- `bronze`: raw CSV copy plus a source manifest with `source_hash`, `schema_hash`, `business_date`, and row count.
-- `silver`: typed, normalized, deduplicated manufacturing-style events. Built by a **pure `transform_silver`**; `write_silver` does IO only.
-- `gold`: daily line/product metrics with units, defects, defect rate, average cycle time, and `closing_status`. Built by a **pure `transform_gold`**; `write_gold` does IO only.
-- `quality`: a **dbt-style check suite** (see below), not just row counts. The run fails if any check fails.
-- `catalog/lineage`: MongoDB `lakehouse_runs` and `lineage_events` documents describing the run, parent-child layer paths, and `schema_drift`.
-
-### Quality, schema drift, and idempotency (Slice 1 hardening)
-
-- **Quality suite** (`build_quality_checks`), each check is `{name, status, expected, actual, detail}`:
-  - `row_count_source_to_silver` — reconciliation that **distinguishes expected filtering/dedup from real row loss** (`expected` = distinct natural keys on the active date, computed independently of how silver was built).
-  - `unit_conservation_silver_to_gold` — aggregation preserves total units/defects.
-  - `not_null_required_columns` (dbt `not_null`), `unique_natural_key` (dbt `unique`), `accepted_values_operation` (dbt `accepted_values`), `numeric_range_within_bounds`, `freshness_business_date`.
-- `freshness_business_date` is a partition/date-validity guard for the active `business_date`, not a dbt/DataHub-style data-age SLA. Age-based freshness is backlog.
-- **Schema drift**: `schema_hash` is computed from the **actual CSV header** (`read_rows` returns it), so an added/removed column — not just a type change in a required column — is detected. It is compared to the **previous successful run** for the dataset and reported as a `schema_drift` check. Policy = **`warn`** (surfaced, does not fail the run, so legitimate schema evolution is not blocked). Stored on the run/lineage doc.
-- **Idempotency**: a re-run with the same `dataset_id + business_date + source_hash` that already has a successful run is **skipped** (returns the prior run, `status="skipped"`, increments `reuse_count`). This makes retries and backfills safe no-ops.
-
-The Airflow DAG is an operational wrapper, not the business logic. The pipeline must run from the CLI first; Airflow only schedules, retries, passes dates, and triggers the same CLI entrypoint.
-
-> **Known limitation (honest):** `transform_silver` casts numeric columns strictly, so an unparseable numeric value fails fast at transform time rather than being captured as a graceful quality `fail`. Graceful null/bad-row quarantine is **backlog**. Runtime MongoDB is **not yet verified** in this environment (no Docker engine); the Mongo path is covered by `mongomock` tests and the offline path by the `--catalog-backend json` CLI. Airflow is verified locally via `airflow dags test` and an Airflow 3.3.0 `standalone` scheduler/LocalExecutor run, not as a production deployment.
-
-See **[BENCHMARKS.md](BENCHMARKS.md)** for the reference patterns, JD keyword mapping, and what was deliberately excluded.
-
-## Phase 2 — EAV mini slice (data modeling / multi-format intake)
-
-A **core** slice that ingests several differently-shaped wide files and unifies them through a config-driven **EAV (entity–attribute–value)** model, then pivots back to a gold metric mart. It **reuses the Slice 1 spine** (idempotency, schema-drift, catalog/lineage, dbt-style quality) — only the dataset profile and the check pack differ.
-
-```text
-many wide CSVs (different columns/units) -> mapping config (JSON) -> EAV long -> pivot/aggregate -> gold -> quality -> Mongo catalog/lineage
-```
-
-- **3 synthetic formats** (generated into `data/raw/eav/` from `sample_eav.py`): Korean headers, English headers, mixed units (°F / bar) — fully synthetic, no company data.
-- **Config-driven**: each `config/eav_mappings/*.json` maps a source's columns → standard fields (`units_produced, defect_count, temperature_c, pressure_kpa`) with optional deterministic unit conversions (`f_to_c`, `bar_to_kpa`). **A new file format is onboarded by adding one config — no pipeline code change** (covered by a test).
-- **EAV (silver)**: `entity_id, business_date, attribute, value, value_type, source_id, source_file_id`. `source_file_id` is the file-content hash = the file-level idempotency key.
-- **Gold**: pivot/aggregate per `(business_date, entity_id)` — sum for counts, average for sensor readings.
-- **Quality** (dbt-style): `mapping_coverage`, `unmapped_source_columns` (warn), `not_null_value`, `accepted_values_attribute`, `value_type_valid`, `numeric_range_within_bounds`, `eav_to_gold_conservation`, `freshness_business_date`, plus shared `schema_drift`. Here too, `freshness_business_date` means active-date validity/partition correctness, not age-based source freshness. Unparseable values are captured gracefully (value=`None` + a `value_type_valid` failure), not crashed on.
-
-### How the EAV experience is described honestly
-
-In prior **professional** work I **operated and improved** an EAV-based structure that handled many heterogeneous file formats. In **this personal project** I **implemented** a wide → EAV → gold flow from scratch on **fully synthetic** data to reinforce my data-modeling understanding. The **file_id idempotency** and sync-style reprocessing are my own re-design/implementation. No company code, data, names, or schemas are used here.
-
-> Interview line: "실무에서는 EAV 기반 구조를 운영·개선하며 다양한 파일 양식을 처리했고, 개인 프로젝트에서는 가상 데이터로 wide → EAV → gold 지표 흐름을 직접 구현해 데이터 모델링 이해를 보강했습니다."
-
-## Scope: core vs optional
-
-- **Core** (thesis = lakehouse data platform + modeling + quality + catalog/lineage):
-  - Medallion pipeline — Slice 1 (done + hardened)
-  - EAV mini — multi-format → mapping → EAV → gold (done)
-  - Quality checks, catalog/lineage — cross-cutting (done)
-  - Operator debugging walkthrough — gold metric -> run/source/quality/lineage evidence (done)
-  - Spark/Iceberg single-gold-table walking skeleton — partition overwrite + snapshot evidence (done)
-  - Lakehouse gold -> Iceberg publish DAG — successful JSON gold run -> local Iceberg current table (done)
-  - Kafka K1 bounded raw ingestion — immutable JSONL landing + offset/recovery/replay evidence (done)
-  - Kafka K1.5 landing -> batch bridge — deterministic provenance-preserving CSV -> existing quality/gold/Iceberg path (done)
-  - Spark machine-event batch (S7) — Spark re-expresses silver/gold from the K1.5 canonical CSV with verified Python parity, quality-gated `overwritePartitions()` publish, and shuffle-plan evidence (done)
-  - Edge/cloud recovery (S8) — a synthetic, local, bounded simulation: an immutable sealed edge spool buffered while no broker runs, replayed through the existing K1 landing, with the batch/gold path blocked until the sealed sequence range is fully recovered (done)
-  - Recovery-gated publish (S9) — composes the S8 recovery gate with the S7 Spark/Iceberg publish without reimplementing either: one sealed session reaches the local Iceberg gold table only after the shared readiness gate passes and the sealed event set exactly equals the batch input set (done)
-  - Full medallion Spark rewrite (backlog)
-- **Optional** (only pursued if a specific interview, e.g. Labrador-style, makes it relevant):
-  - AI Dataset QA slice
-  - RAG / vectorDB / LLM-preprocessing
-
-Optional slices would reuse the same spine; they are deliberately deferred so the core thesis stays sharp.
-
-## S7 Spark machine-event batch
-
-S7 takes the canonical CSV and `source_hash` produced by K1.5 and re-expresses one
-date's Python silver/gold transformations with Spark DataFrame operations. It is an engine
-swap for one bounded slice, not a new processing platform or a full medallion rewrite.
-
-```text
-K1.5 canonical CSV + source_hash
--> Spark silver/gold with Python parity
--> existing quality suite
--> Iceberg business_date partition overwrite only after quality passes
-```
-
-Reproduce it with `./scripts/verify_spark_machine_event_batch.sh`. The verified boundary is
-local batch execution against one Iceberg gold table, including same-source no-op, corrected-source
-replacement, other-date preservation, and shuffle-plan evidence. It does not prove cluster Spark,
-throughput improvement, Structured Streaming, or distributed Spark-native quality evaluation.
-
-## S9 Recovery-gated publish
-
-S9 joins two already-verified contracts without reimplementing either one: the S8 recovery gate
-decides whether a sealed edge session is fully recovered, and S7 owns every Spark and Iceberg
-operation. The only new logic is the shared gate and one equality check.
-
-```text
-sealed edge session
--> shared require_recovery_ready() gate (before any Spark import or session)
--> existing deterministic K1.5 adapter / source_hash
--> sealed event_id set == selected event_id set
--> existing Spark silver/gold + quality gate
--> existing Iceberg business_date overwrite + snapshot evidence
-```
-
-Two refusals matter, and they are different. Incomplete recovery is blocked because sealed events
-are still missing from the accepted set. An event-set mismatch is blocked even when recovery *is*
-complete: the adapter selects every accepted event for that date, so one extra same-date event
-means the batch about to be published is no longer the sealed session. The error names the
-direction with `extra_event_ids` / `missing_event_ids`.
-
-On a retry with the same source, S7 returns `skipped`: **no new snapshot and no partition
-overwrite**. That is not a whole-pipeline no-op — Spark still starts and quality still runs before
-the skip decision. S7 also mints a fresh `run_id` on that skipped attempt and does not expose the
-`run_id` that originally committed the snapshot, so the evidence records
-`spark_attempt_run_id` for the current attempt alongside
-`snapshot_relation: reused_from_prior_attempt` and a null `producer_attempt_run_id`, rather than
-letting a new id sit beside a reused snapshot as if it had produced it.
-
-Reproduce it with `PYTHON_BIN=python ./scripts/verify_recovered_telemetry_publish.sh`. The
-verified boundary is one session, machine, date, topic partition, and local Iceberg gold table,
-plus a thin Airflow `dags test` wrapper. It does not prove a streaming sink, cluster Spark,
-concurrent Iceberg writers, distributed atomicity after the gate, or production Airflow operation.
-
-## Design Decisions
-
-1. **`dataset` vs `dataset_version` are separate.**  
-   `dataset` is the catalog identity. `dataset_version` is one ingest run. The same dataset can be ingested repeatedly while old manifests remain reproducible.
-
-2. **Schema is stored in the catalog.**  
-   Users should know what columns exist before opening the raw file. That is the core value of a metadata catalog.
-
-3. **Hashes are the reproducibility primitive.**  
-   `source_hash` says whether the input file is the same. `schema_hash` catches schema drift when columns or inferred types change.
-
-The design borrows patterns from service-oriented projects such as honcho for API/config/Compose shape,
-and from OpenMetadata/DataHub/DVC/OpenLineage for catalog and manifest ideas. The initial v0 primitives
-remain the foundation; the bounded Phase 2, Kafka, Spark/Iceberg, and Airflow extensions listed above
-were added later with separate evidence and claim boundaries.
-
-## Run Locally
+### OPC UA source contract
 
 ```bash
-docker compose up -d
 python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-PYTHONPATH=src uvicorn manufacturing_data_platform.api:app --reload
+.venv/bin/python -m pip install -r requirements.txt -r requirements-opcua.txt
+PYTHON_BIN=.venv/bin/python ./scripts/verify_industrial_source_contract.sh
 ```
 
-> `src` layout이라 `PYTHONPATH=src`가 필요하다. (운영용으로 패키징하려면 `pip install -e .` + pyproject `[project]` 추가.)
+이 command는 공개 3-row fixture를 local OPC UA server에서 replay하고 normal·quality·
+interrupted collection을 검증한 뒤 임시 output을 제거합니다.
 
-In another shell:
+### Event-time trust와 local Spark parity
 
 ```bash
-curl -X POST http://127.0.0.1:8000/datasets/temp_sensor/ingest \
-  -H 'Content-Type: application/json' \
-  -d '{"path":"data/raw/temp_sensor_sample.csv","description":"synthetic sensor readings"}'
-
-curl http://127.0.0.1:8000/datasets
-curl http://127.0.0.1:8000/datasets/temp_sensor
+.venv/bin/python -m pip install -r requirements.txt -r requirements-event-time.txt
+./scripts/verify_event_time_trust.sh
 ```
 
-## Run Phase 2 CLI
+### Trust Report 재생성
 
-Start MongoDB first:
+전체 MetroPT CSV와 accepted local runtime evidence가 `.cache/`에 있는 authoring 환경에서:
 
 ```bash
-docker compose up -d
+python3 scripts/build_industrial_trust_report.py \
+  --baseline-commit 36e7344 \
+  --verified-on 2026-07-31
+python3 scripts/capture_industrial_trust_report.py
 ```
 
-Then run the lakehouse slice:
+Builder는 source checksum·row count, collection report/spool/seal/last-good,
+event-time report, trusted current/manifest/data를 교차 검증합니다. HTML은 committed
+evidence JSON과 동일한 document를 embed하고 그 값만 렌더링합니다.
 
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.run
-```
+## 공개 evidence
 
-Useful options:
+| 확인하려는 것 | Evidence |
+|---|---|
+| 세 operator 판정과 화면 | [Trust Report walkthrough](docs/portfolio/industrial-telemetry-trust/README.md) |
+| 실제 source·OPC UA replay·fault 구분 | [source provenance 화면](docs/portfolio/industrial-telemetry-trust/assets/02-source-provenance.png) |
+| duplicate·late·missing·trusted current | [event-time 화면](docs/portfolio/industrial-telemetry-trust/assets/03-event-time-trust.png) |
+| 화면이 읽는 authoritative 값 | [runtime-evidence.json](docs/portfolio/industrial-telemetry-trust/evidence/runtime-evidence.json) |
+| 실행·검증 이력 | [VERIFICATION_LOG.md](VERIFICATION_LOG.md) |
 
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.run \
-  --business-date 2026-06-29 \
-  --raw-path data/raw/manufacturing_events.csv \
-  --output-dir data/lakehouse
-```
+## 기존 v1 foundation
 
-For offline demos without MongoDB, use the JSON catalog backend:
-
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.run --catalog-backend json
-```
-
-## Inspect Operator Evidence
-
-After a JSON-backed lakehouse run, inspect the run/source/quality/lineage evidence for one `business_date`:
-
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.operator_report \
-  --output-dir data/lakehouse \
-  --business-date 2026-06-29
-```
-
-This is a read-only operator report. It summarizes the gold row grain, `run_id`, `source_hash`, `schema_hash`, quality check status, row counts, and the path-level lineage trace (`gold -> silver -> bronze -> source`). It does not claim column-level lineage or an OpenLineage backend.
-
-## Run EAV mini CLI
-
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.run_eav --catalog-backend json --output-dir data/lakehouse_eav
-```
-
-Synthetic inputs (`data/raw/eav/`) and mapping configs (`config/eav_mappings/`) are used automatically; missing synthetic inputs are generated from `sample_eav.py`. Re-running the same inputs for the same date is idempotent (`status="skipped"`). To add a new file format, drop one more `config/eav_mappings/<source>.json` (+ its CSV) — no code change.
-
-## Run Spark/Iceberg walking skeleton
-
-This is an optional local skeleton, not the main lightweight install:
-
-```bash
-pip install -r requirements-spark.txt
-
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.spark_iceberg_skeleton \
-  --warehouse /tmp/manufacturing-mini-iceberg-warehouse \
-  --output-dir /tmp/manufacturing-mini-iceberg-evidence \
-  --clean
-```
-
-It creates one local Iceberg table, `local.db.gold_daily_metrics`, partitioned by `business_date`. It writes initial rows, skips a same-`source_hash` rerun without creating a new snapshot, then overwrites the corrected `business_date` partition with `DataFrameWriterV2.overwritePartitions()`. Evidence is written as JSON under the output directory.
-
-Honest boundary: this proves a single-gold-table Spark/Iceberg partition-overwrite contract. It is not a full Spark medallion rewrite, production lakehouse, or rollback system.
-
-## Publish Lakehouse Gold to Iceberg
-
-The bridge from the real lakehouse CLI to Iceberg is a separate publish step:
-
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.run \
-  --business-date 2026-06-29 \
-  --raw-path data/raw/manufacturing_events.csv \
-  --output-dir /tmp/manufacturing-mini-lakehouse-to-iceberg/lakehouse \
-  --catalog-backend json
-
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.publish_gold_to_iceberg \
-  --lakehouse-output-dir /tmp/manufacturing-mini-lakehouse-to-iceberg/lakehouse \
-  --business-date 2026-06-29 \
-  --warehouse /tmp/manufacturing-mini-lakehouse-to-iceberg/warehouse \
-  --output-dir /tmp/manufacturing-mini-lakehouse-to-iceberg/evidence \
-  --clean
-```
-
-This reads the latest successful JSON catalog state for the target `business_date`, loads that run's gold CSV, and publishes it to `local.db.gold_daily_metrics` with Iceberg `overwritePartitions()`. Re-publishing the same `pipeline_run_id + source_hash` is skipped without creating a new snapshot.
-
-Honest boundary: this is a JSON-catalog-backed local publish slice. It does not implement Mongo-backed publish lookup, Spark-based quality checks, a full Spark medallion rewrite, production Airflow deployment, or cluster Spark.
-
-## Airflow Wrapper
-
-`dags/manufacturing_lakehouse_daily.py` defines `manufacturing_lakehouse_daily` with a single `run_pipeline_task`. It calls:
-
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.run \
-  --business-date <date> \
-  --raw-path <path> \
-  --output-dir <path> \
-  --catalog-backend <mongo|json>
-```
-
-The DAG can receive `business_date`, `raw_path`, `output_dir`, and `catalog_backend` through `dag_run.conf` for manual backfill-style runs. The command contract is built by `manufacturing_data_platform.orchestration.build_lakehouse_cli_command` and covered by `tests/test_orchestration.py`, so the wrapper stays testable without Airflow installed.
-
-Local Airflow runtime was verified with Airflow 3.3.0 in an isolated virtualenv:
-
-```bash
-python -m venv /tmp/manufacturing-mini-airflow-venv
-/tmp/manufacturing-mini-airflow-venv/bin/python -m pip install -r requirements-airflow.txt
-
-AIRFLOW_HOME=/tmp/manufacturing-mini-airflow-home \
-AIRFLOW__CORE__DAGS_FOLDER="$PWD/dags" \
-AIRFLOW__CORE__LOAD_EXAMPLES=False \
-PYTHONPATH=src \
-/tmp/manufacturing-mini-airflow-venv/bin/airflow dags test manufacturing_lakehouse_daily 2026-06-29 \
-  -c '{"business_date":"2026-06-29","raw_path":"data/raw/manufacturing_events.csv","output_dir":"/tmp/manufacturing-mini-airflow-runtime","catalog_backend":"json"}'
-```
-
-That proves the DAG can import and trigger the same CLI task locally. Running the same `dags test` again against the same JSON output state returns pipeline `status="skipped"`, so Airflow retry/backfill safety still comes from the pipeline `source_hash` idempotency gate. It does not prove a production scheduler/worker/webserver deployment. The next split, if needed, is `bronze_task -> silver_task -> gold_task -> quality_task -> catalog_task`, but the logic should stay in `manufacturing_data_platform.pipeline`, not inside the DAG body.
-
-## Airflow-triggered Spark/Iceberg Skeleton
-
-`dags/manufacturing_iceberg_skeleton.py` defines `manufacturing_iceberg_skeleton` with a single `run_spark_iceberg_skeleton_task`. It calls the Spark/Iceberg skeleton CLI:
-
-```bash
-PYTHONPATH=src python -m manufacturing_data_platform.pipeline.spark_iceberg_skeleton \
-  --warehouse <path> \
-  --output-dir <path> \
-  --clean
-```
-
-Local runtime verification:
-
-```bash
-AIRFLOW_HOME=/tmp/manufacturing-mini-airflow-home \
-AIRFLOW__CORE__DAGS_FOLDER="$PWD/dags" \
-AIRFLOW__CORE__LOAD_EXAMPLES=False \
-PYTHONPATH=src \
-/tmp/manufacturing-mini-airflow-venv/bin/airflow dags test manufacturing_iceberg_skeleton 2026-06-29 \
-  -c '{"warehouse":"/tmp/manufacturing-mini-airflow-iceberg-warehouse","output_dir":"/tmp/manufacturing-mini-airflow-iceberg-evidence"}'
-```
-
-This verifies local Airflow orchestration of the Spark/Iceberg walking skeleton: the task creates the local Iceberg table, records `run_id -> snapshot_id` evidence, overwrites the corrected `business_date` partition, and leaves the other partition unchanged. It still does not prove production Airflow scheduler/worker deployment, cluster Spark, or a full Spark medallion pipeline.
-
-`airflow dags test` runs a single DagRun locally. It verifies DAG import, task wiring, templated command rendering, and command execution, but it does not verify scheduler, queue, executor, worker, or webserver behavior.
-
-Local Airflow standalone was also verified for the Spark/Iceberg skeleton. The worker environment must include Airflow, the project runtime deps, and Spark deps in the same venv:
-
-```bash
-/tmp/manufacturing-mini-airflow-venv/bin/python -m pip install -r requirements-airflow.txt
-/tmp/manufacturing-mini-airflow-venv/bin/python -m pip install -r requirements.txt -r requirements-spark.txt
-
-export AIRFLOW_HOME=/tmp/manufacturing-mini-airflow-standalone-home
-export AIRFLOW__CORE__DAGS_FOLDER="$PWD/dags"
-export AIRFLOW__CORE__LOAD_EXAMPLES=False
-export PYTHONPATH=src
-export PATH="/tmp/manufacturing-mini-airflow-venv/bin:$PATH"
-
-airflow standalone
-```
-
-The reproducible runbook is:
-
-```bash
-scripts/verify_airflow_standalone.sh
-```
-
-In that local standalone run, the API server responded on `127.0.0.1:8080`, the scheduler parsed both project DAGs, and a manual `airflow dags trigger manufacturing_iceberg_skeleton` run finished with `dag=success` and `task=success` through LocalExecutor. This is still development-only Airflow standalone, not a production scheduler/worker/webserver deployment or cluster Spark runtime.
-
-## Lakehouse to Iceberg DAG
-
-`dags/manufacturing_lakehouse_to_iceberg_daily.py` defines `manufacturing_lakehouse_to_iceberg_daily` with two tasks:
+v2가 source와 event-time trust를 추가하기 전에는 synthetic machine event를 대상으로 다음
+복구 원리를 검증했습니다.
 
 ```text
-run_lakehouse_task -> publish_gold_to_iceberg_task
+sealed edge spool
+→ local Kafka landing
+→ complete + exact-set recovery gate
+→ Spark quality
+→ local Iceberg publish
 ```
 
-The first task runs the JSON-backed lakehouse CLI. The second task reads the latest successful JSON catalog state for the same `business_date` and publishes that gold CSV to the local Iceberg table. This keeps quality/catalog ownership in the existing pipeline and keeps Spark/Iceberg publish logic outside the DAG body.
+부분 복구는 Spark/Iceberg state를 만들기 전에 거부되고, 같은 source 재실행은 새 snapshot을
+만들지 않습니다. 상세 내용은 [v1 platform overview](docs/portfolio/platform-overview/README.ko.md)와
+[Kafka K1/K1.5](docs/portfolio/kafka-k1-k1-5/README.ko.md)에 남겨두었습니다.
 
-Local `airflow dags test` verification passed for this two-task DAG. It proves local DAG import, task ordering, command rendering, and command execution. It still does not prove a production scheduler/worker/webserver deployment or cluster Spark runtime.
+현재 v2 telemetry contract는 v1의 Kafka/Iceberg 경로에 아직 직접 연결하지 않았습니다.
+두 경로를 연결했다고 주장하지 않습니다.
 
-## Kafka K1 Bounded Raw Ingestion
+## 주장 경계
 
-Kafka K1 is implemented as a bounded local raw-ingestion proof. The shared runbook
-downloads the pinned Apache Kafka 4.3.1 binary, verifies its SHA-512, starts one
-local KRaft broker, and installs `confluent-kafka==2.15.0` in an isolated virtualenv.
+현재 증거로 말할 수 있는 것:
 
-Environment-only Test 0:
+- 실제 공개 산업 기록의 checksum을 검증하고 local OPC UA subscription으로 replay했다.
+- tag·단위·source/server/collection time·quality·mapping·source identity를 보존했다.
+- 정상·품질 이상·collector 중단의 expected/observed coverage와 operator action을 구분했다.
+- duplicate·out-of-order·too-late·missing·quality failure를 local bounded 정책으로 판정했다.
+- local Spark file micro-batch의 watermark/dedup/checkpoint identity parity를 확인했다.
+- content-addressed local trusted dataset과 current integrity refusal을 구현했다.
 
-```bash
-./scripts/verify_kafka_test0.sh
-```
+현재 증거로 말하지 않는 것:
 
-Full K1 verification:
+- physical PLC·sensor·실제 plant network 또는 production OPC UA 운영 경험
+- continuous Kafka→Spark→Iceberg telemetry streaming
+- production lateness SLA, HA, throughput, cluster Spark correctness
+- multi-partition Kafka rebalance, distributed transaction, end-to-end exactly-once
+- 자동 historical correction, 실제 control-plane action 또는 AI model 결과
 
-```bash
-./scripts/verify_kafka_k1.sh
-```
+이 저장소는 개인 포트폴리오이며 회사 코드·고객 데이터·내부 schema를 포함하지 않습니다.
 
-K1 publishes strict versioned JSON machine events keyed by `machine_id`. A bounded
-consumer writes immutable JSONL batches containing the payload and
-`topic/partition/offset` evidence, then commits the next offset only after fsync and
-atomic directory rename. A failure-injection run crashes after landing but before
-commit; the same consumer group receives the record again, reuses the persisted
-coordinate, and commits without increasing the accepted set. The runbook also
-verifies bounded offset replay and invalid-event quarantine.
+## 더 보기
 
-Runtime evidence is written under `/tmp/manufacturing-mini-kafka-k1-evidence` and
-the broker is stopped automatically. This does not verify a continuous streaming
-service, multi-partition routing/rebalance, multi-broker availability, end-to-end
-exactly-once, Spark Structured Streaming, or production Kafka operations.
-
-## Kafka K1.5 Landing To Batch Bridge
-
-K1.5 closes the bounded path from accepted Kafka landing to the existing batch
-quality/gold/Iceberg flow without adding Spark Structured Streaming:
-
-```text
-accepted JSONL + Kafka manifest
--> deterministic content-addressed CSV + provenance
--> existing JSON-backed bronze/silver/gold + quality
--> existing local Spark/Iceberg publish
-```
-
-Reproduce K1 and then the bridge:
-
-```bash
-./scripts/verify_kafka_k1.sh
-./scripts/verify_kafka_k1_5.sh
-```
-
-The adapter requires one explicit `business_date`, includes `event_id` and Kafka
-coordinates in the canonical source identity, and rejects empty, inconsistent, or
-multi-partition input before the lakehouse current state can advance. Re-running the
-same accepted set reuses the adapter version and returns the existing lakehouse run as
-`status="skipped"`.
-
-This is a bounded local bridge. It is not a continuous streaming pipeline, a direct
-Kafka-to-Iceberg sink, end-to-end exactly-once, column-level lineage, or production
-Kafka/Spark operation.
-
-## Test
-
-```bash
-pytest
-```
-
-Tests use `mongomock`, so they do not need a running MongoDB instance.
-
-## Phase 1 Done Checklist
-
-- [x] 샘플 CSV ingest path test-covered with `mongomock`
-- [x] `datasets`·`dataset_versions` document creation test-covered
-- [x] `source_hash`·`schema_hash`·`row_count`·`null_counts` stored in the manifest/catalog model
-- [x] `GET /datasets/{id}` test-covered
-- [x] README에 실행 명령 + 설계 결정 3개 설명
-- [ ] `docker compose up`으로 real Mongo runtime 실행
-- [ ] real Mongo runtime에서 샘플 ingest/API 확인
+- [설계 결정](DESIGN.ko.md)
+- [기존 상세 구현 이력](README.ko.md)
+- [v1 실행 이력과 v2 local evidence](VERIFICATION_LOG.md)
+- [benchmark와 한계](BENCHMARKS.ko.md)

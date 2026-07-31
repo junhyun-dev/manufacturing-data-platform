@@ -1,6 +1,8 @@
-# manufacturing-data-platform-mini 한국어판
+# manufacturing-data-platform-mini — v1 상세 구현 이력
 
-> English: [`README.md`](README.md)
+> 현재 한국어 진입점과 Industrial Telemetry Trust Report는 [`README.md`](README.md)에
+> 정리되어 있습니다. 이 문서는 synthetic Kafka/Spark/Iceberg 중심의 v1 상세 이력을
+> 보존합니다.
 
 [![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml)
 

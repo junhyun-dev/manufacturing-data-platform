@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Industrial Telemetry Trust Report</title>
+<style>
+:root {
+  color-scheme: light;
+  --night:#0b1720; --night-2:#122733; --paper:#f4f1ea; --card:#fffdf8;
+  --ink:#17242a; --muted:#68777c; --line:#d8d4ca; --teal:#087f73;
+  --teal-soft:#dff4ee; --red:#b5413d; --red-soft:#fde8e5;
+  --amber:#a86212; --amber-soft:#fff0d6; --blue:#286c8e; --blue-soft:#e4f1f6;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; background:var(--paper); color:var(--ink);
+  font-family:Pretendard,Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+body { min-width:320px; }
+.hero { background:linear-gradient(135deg,var(--night),var(--night-2)); color:white; }
+.wrap { width:min(1420px,100%); margin:0 auto; padding:28px 34px 36px; }
+.eyebrow { color:#6ee7d3; font-size:12px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; margin:0 0 10px; }
+h1 { font-size:clamp(28px,3vw,44px); letter-spacing:-1.2px; line-height:1.08; margin:0; }
+h2 { font-size:18px; margin:0 0 14px; letter-spacing:-.2px; }
+h3 { font-size:16px; margin:0 0 8px; }
+p { line-height:1.58; }
+.lead { color:#bed0d7; max-width:880px; margin:14px 0 22px; font-size:15px; }
+.meta { display:flex; gap:8px; flex-wrap:wrap; }
+.tag { border:1px solid #35515e; background:#12232d; border-radius:999px;
+  padding:6px 11px; font:12px ui-monospace,SFMono-Regular,Menlo,monospace; color:#dce8ec; }
+.main { width:min(1420px,100%); margin:0 auto; padding:24px 34px 50px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:20px; box-shadow:0 5px 18px rgba(18,31,36,.045); }
+.section { margin-bottom:20px; }
+.section-head { display:flex; justify-content:space-between; align-items:end; gap:16px;
+  margin:0 0 12px; }
+.section-head p { margin:0; color:var(--muted); font-size:13px; }
+.scenario-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.scenario { border-top:5px solid var(--teal); min-height:294px; }
+.scenario.blocked { border-top-color:var(--red); }
+.scenario.reprocess { border-top-color:var(--amber); }
+.status-line { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.pill { display:inline-flex; align-items:center; border-radius:999px; padding:4px 9px;
+  font-size:11px; font-weight:800; letter-spacing:.35px; white-space:nowrap; }
+.ok { color:var(--teal); background:var(--teal-soft); }
+.bad { color:var(--red); background:var(--red-soft); }
+.warn { color:var(--amber); background:var(--amber-soft); }
+.info { color:var(--blue); background:var(--blue-soft); }
+.action { font-size:21px; font-weight:850; letter-spacing:-.5px; margin:16px 0 4px; }
+.reason { color:var(--muted); font-size:13px; min-height:42px; margin:0 0 15px; }
+.metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.metric { background:#f4f2ec; padding:9px; border-radius:9px; }
+.metric b { display:block; font-size:18px; }
+.metric span { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
+.quality { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.quality span { font-size:11px; background:#f1eee7; padding:4px 7px; border-radius:6px; }
+.provenance { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.prov { background:#132630; color:white; border-radius:12px; padding:15px; min-height:120px; }
+.prov b { color:#6ee7d3; font-size:11px; letter-spacing:.8px; text-transform:uppercase; }
+.prov p { color:#c7d7dc; font-size:13px; margin:7px 0 0; }
+.two { display:grid; grid-template-columns:1.08fr .92fr; gap:14px; }
+table { width:100%; border-collapse:collapse; font-size:12.5px; }
+th,td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+th { color:var(--muted); text-transform:uppercase; font-size:10px; letter-spacing:.6px; }
+tr:last-child td { border-bottom:none; }
+code,.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; }
+.hash { display:block; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.trust { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.trust div { background:#f4f2ec; border-radius:10px; padding:12px; }
+.trust b { display:block; font-size:11px; color:var(--muted); margin-bottom:5px; }
+.trust code { word-break:break-all; }
+.boundary { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.boundary ul { padding-left:18px; margin:6px 0 0; font-size:13px; line-height:1.55; }
+.foot { color:var(--muted); font-size:11px; margin-top:14px; }
+@media (max-width:1000px) {
+  .scenario-grid,.provenance { grid-template-columns:1fr; }
+  .two,.boundary { grid-template-columns:1fr; }
+  .scenario { min-height:0; }
+}
+@media (max-width:620px) {
+  .wrap,.main { padding-left:16px; padding-right:16px; }
+  .metrics,.trust { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<script id="evidence" type="application/json">{
+  "claim_boundary": {
+    "not_verified": [
+      "a physical PLC, sensor, plant network, or production OPC UA server",
+      "automatic reconnect without loss, durable subscriptions, HA, or throughput",
+      "Kafka/Spark streaming, an Iceberg telemetry table, or an AI model",
+      "a production lateness SLA or the actual MetroPT sampling contract",
+      "Kafka partition, rebalance, distributed state-store, or cluster Spark correctness",
+      "an Iceberg streaming sink, automatic historical correction, or end-to-end exactly-once",
+      "Kafka source, Iceberg sink, cluster execution, or production checkpoint storage",
+      "automatic correction or end-to-end exactly-once across external systems"
+    ],
+    "not_verified_ko": [
+      "physical PLC\u00b7sensor\u00b7plant network\u00b7production OPC UA server \uc5f0\uacb0",
+      "\ubb34\uc190\uc2e4 \uc790\ub3d9 reconnect\u00b7durable subscription\u00b7HA\u00b7throughput",
+      "Kafka/Spark streaming\u00b7Iceberg telemetry table\u00b7AI model",
+      "production lateness SLA\uc640 \uc2e4\uc81c MetroPT sampling contract",
+      "Kafka partition/rebalance\u00b7distributed state-store\u00b7cluster Spark correctness",
+      "Iceberg streaming sink\u00b7\uc790\ub3d9 historical correction\u00b7end-to-end exactly-once",
+      "Kafka source\u00b7Iceberg sink\u00b7cluster execution\u00b7production checkpoint storage",
+      "\uc678\ubd80 \uc2dc\uc2a4\ud15c \uc804\uccb4\uc758 automatic correction \ub610\ub294 end-to-end exactly-once"
+    ],
+    "verified": [
+      "actual public MetroPT values were replayed through a local OPC UA subscription",
+      "tag, unit, time, quality, mapping, and source identity were preserved",
+      "exact bounded expected-versus-observed collection coverage was evaluated",
+      "bounded source-time and arrival-order classification over canonical telemetry",
+      "exact-set, quality, duplicate, conflict, and too-late publication decisions",
+      "content-addressed local trusted dataset versions with an atomic current pointer",
+      "local Spark file micro-batches used event-time watermark state",
+      "Spark accepted event identities matched the engine-independent contract",
+      "the selected scenario resumed from a local checkpoint when restart_count=1"
+    ],
+    "verified_ko": [
+      "\uc2e4\uc81c \uacf5\uac1c MetroPT \uad00\uce21\uac12\uc744 \ub85c\uceec OPC UA subscription\uc73c\ub85c replay\ud588\ub2e4.",
+      "tag\u00b7\ub2e8\uc704\u00b7\uc2dc\uac04\u00b7\ud488\uc9c8\u00b7mapping\u00b7source identity\ub97c \ubcf4\uc874\ud588\ub2e4.",
+      "bounded source \ubc94\uc704\uc758 expected/observed \uad00\uce21 \uc9d1\ud569\uc744 \uc815\ud655\ud788 \ube44\uad50\ud588\ub2e4.",
+      "canonical telemetry\uc758 source time\uacfc arrival order\ub97c bounded \uc815\ucc45\uc73c\ub85c \ubd84\ub958\ud588\ub2e4.",
+      "exact set\u00b7\ud488\uc9c8\u00b7\uc911\ubcf5\u00b7\ucda9\ub3cc\u00b7too-late\ub97c \uadfc\uac70\ub85c \ubc1c\ud589 \uc5ec\ubd80\ub97c \ud310\uc815\ud588\ub2e4.",
+      "content-addressed \ub85c\uceec trusted dataset version\uacfc atomic current pointer\ub97c \ub9cc\ub4e4\uc5c8\ub2e4.",
+      "\ub85c\uceec Spark file micro-batch\uc5d0\uc11c event-time watermark state\ub97c \uc0ac\uc6a9\ud588\ub2e4.",
+      "Spark\uac00 \uc218\ub77d\ud55c event identity\uac00 engine-independent \uacc4\uc57d\uacfc \uc77c\uce58\ud588\ub2e4.",
+      "restart_count=1 \uc2dc\ub098\ub9ac\uc624\uac00 \ub85c\uceec checkpoint\uc5d0\uc11c \uc7ac\uac1c\ub410\ub2e4."
+    ]
+  },
+  "collection_last_good": {
+    "preserved_when_blocked_or_incomplete": true,
+    "report_sha256": "ca07c678ec1c3ada4523e71aa063959c45af1b255d49266b201e207ee2b9172c",
+    "scenario": "normal"
+  },
+  "collection_scenarios": [
+    {
+      "collection_report_sha256": "ca07c678ec1c3ada4523e71aa063959c45af1b255d49266b201e207ee2b9172c",
+      "collection_status": "complete",
+      "conflict_count": 0,
+      "decision_reason": "9\uac1c \uad00\uce21\uc774 \ubaa8\ub450 \uc874\uc7ac\ud558\uace0 \uc804\ubd80 Good\uc774\uba70 event-time \uc785\ub825\ub3c4 \ubc1c\ud589 \uac00\ub2a5\ud558\ub2e4.",
+      "duplicate_count": 0,
+      "expected_count": 9,
+      "missing_count": 0,
+      "missing_event_ids": [],
+      "observed_count": 9,
+      "operator_action": "PUBLISH",
+      "quality": {
+        "bad": 0,
+        "good": 9,
+        "uncertain": 0
+      },
+      "replay_session_id": "fixture-normal",
+      "scenario": "normal",
+      "unknown_mapping_count": 0,
+      "waiting_notification_count": 3
+    },
+    {
+      "collection_report_sha256": "a4454d4c29cf0f044e641a520ff2c7be453f1e5ed6bf8fd478d34250165af1bd",
+      "collection_status": "blocked_quality",
+      "conflict_count": 0,
+      "decision_reason": "\uad00\uce21 \uc9d1\ud569\uc740 \uc644\uc804\ud558\uc9c0\ub9cc fault injection\uc73c\ub85c Uncertain 1\uac1c\uc640 Bad 1\uac1c\uac00 \ud3ec\ud568\ub410\ub2e4.",
+      "duplicate_count": 0,
+      "expected_count": 9,
+      "missing_count": 0,
+      "missing_event_ids": [],
+      "observed_count": 9,
+      "operator_action": "BLOCKED",
+      "quality": {
+        "bad": 1,
+        "good": 7,
+        "uncertain": 1
+      },
+      "replay_session_id": "fixture-quality",
+      "scenario": "quality",
+      "unknown_mapping_count": 0,
+      "waiting_notification_count": 3
+    },
+    {
+      "collection_report_sha256": "ddfd277ee2871645a2fb931c477306ea6b5f0af591d0d289ab4b98d02dc98210",
+      "collection_status": "incomplete",
+      "conflict_count": 0,
+      "decision_reason": "Collector \uc911\ub2e8\uc73c\ub85c sealed identity 6\uac1c\uac00 \ub204\ub77d\ub3fc \uc774\uc804 last-good\uc744 \uc720\uc9c0\ud574\uc57c \ud55c\ub2e4.",
+      "duplicate_count": 0,
+      "expected_count": 9,
+      "missing_count": 6,
+      "missing_event_ids": [
+        "6105d51b2c1cd2e155f285e0798f8fba2916d12bb0b8b0172651e30ef9978d92",
+        "698757e70c1cdcb7fd7634ff385e997b8015f29901774d5390fc970665166536",
+        "85217aadbc958a82640f74be4440e1af95494231b42c42241c71839456c14ba9",
+        "872a579e7d8c3b5282d9d04612ce0b17a2430dfe734edbd23935c3b95d5fd8fc",
+        "97f61be10a9a72c8abe86dad793dc32a09156e8d4e089c79467dbae83d44e677",
+        "ea08542c1686d04432ce23e1e24f62c440deb4808956b827b06aae6d9dfbc1df"
+      ],
+      "observed_count": 3,
+      "operator_action": "REPROCESS REQUIRED",
+      "quality": {
+        "bad": 0,
+        "good": 3,
+        "uncertain": 0
+      },
+      "replay_session_id": "fixture-interrupted",
+      "scenario": "interrupted",
+      "unknown_mapping_count": 0,
+      "waiting_notification_count": 3
+    }
+  ],
+  "equipment": {
+    "equipment_id": "simulated.metropt3.apu-1",
+    "mapping_version": "metropt3-opcua-v1",
+    "replay_mode": "historical_record_replay",
+    "tags": [
+      {
+        "collected_at": "2026-07-31T02:35:55.128885Z",
+        "opcua_node_id": "ns=2;s=MetroPT3.APU.TP2",
+        "server_timestamp": "2026-07-31T02:35:55.113912Z",
+        "source_timestamp": "2020-02-01T00:00:00Z",
+        "status": "Good",
+        "tag_id": "TP2",
+        "unit": "bar",
+        "value": -0.0120000000000004
+      },
+      {
+        "collected_at": "2026-07-31T02:35:55.148607Z",
+        "opcua_node_id": "ns=2;s=MetroPT3.APU.OilTemperature",
+        "server_timestamp": "2026-07-31T02:35:55.114150Z",
+        "source_timestamp": "2020-02-01T00:00:00Z",
+        "status": "Good",
+        "tag_id": "Oil_temperature",
+        "unit": "\u00b0C",
+        "value": 53.60000000000001
+      },
+      {
+        "collected_at": "2026-07-31T02:35:55.158396Z",
+        "opcua_node_id": "ns=2;s=MetroPT3.APU.MotorCurrent",
+        "server_timestamp": "2026-07-31T02:35:55.114307Z",
+        "source_timestamp": "2020-02-01T00:00:00Z",
+        "status": "Good",
+        "tag_id": "Motor_current",
+        "unit": "A",
+        "value": 0.04
+      }
+    ],
+    "transport": "local OPC UA subscription"
+  },
+  "event_time_scenarios": [
+    {
+      "accepted_count": 9,
+      "conflict_count": 0,
+      "current_advanced": true,
+      "dataset_version": "40631b43288556777629527f1bcbdedc6ecccba87bf60bfbd5af4be335483b88",
+      "duplicate_count": 0,
+      "input_count": 9,
+      "late_within_policy_count": 0,
+      "missing_count": 0,
+      "operator_action": "PUBLISH",
+      "out_of_order_count": 0,
+      "scenario": "in_order",
+      "spark": {
+        "accepted_count": 9,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "publishable",
+      "too_late_count": 0
+    },
+    {
+      "accepted_count": 9,
+      "conflict_count": 0,
+      "current_advanced": true,
+      "dataset_version": "40631b43288556777629527f1bcbdedc6ecccba87bf60bfbd5af4be335483b88",
+      "duplicate_count": 1,
+      "input_count": 10,
+      "late_within_policy_count": 3,
+      "missing_count": 0,
+      "operator_action": "PUBLISH",
+      "out_of_order_count": 3,
+      "scenario": "duplicate_out_of_order",
+      "spark": {
+        "accepted_count": 9,
+        "checkpoint_restart_count": 1,
+        "version": "3.5.8"
+      },
+      "status": "publishable",
+      "too_late_count": 0
+    },
+    {
+      "accepted_count": 6,
+      "conflict_count": 0,
+      "current_advanced": false,
+      "dataset_version": null,
+      "duplicate_count": 0,
+      "input_count": 9,
+      "late_within_policy_count": 0,
+      "missing_count": 3,
+      "operator_action": "REPROCESS",
+      "out_of_order_count": 3,
+      "scenario": "too_late",
+      "spark": {
+        "accepted_count": 6,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "reprocess_required",
+      "too_late_count": 3
+    },
+    {
+      "accepted_count": 8,
+      "conflict_count": 0,
+      "current_advanced": false,
+      "dataset_version": null,
+      "duplicate_count": 0,
+      "input_count": 8,
+      "late_within_policy_count": 0,
+      "missing_count": 1,
+      "operator_action": "INCOMPLETE",
+      "out_of_order_count": 0,
+      "scenario": "missing",
+      "spark": {
+        "accepted_count": 8,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "incomplete",
+      "too_late_count": 0
+    },
+    {
+      "accepted_count": 9,
+      "conflict_count": 0,
+      "current_advanced": false,
+      "dataset_version": null,
+      "duplicate_count": 0,
+      "input_count": 9,
+      "late_within_policy_count": 0,
+      "missing_count": 0,
+      "operator_action": "BLOCK",
+      "out_of_order_count": 0,
+      "scenario": "quality",
+      "spark": {
+        "accepted_count": 9,
+        "checkpoint_restart_count": 0,
+        "version": "3.5.8"
+      },
+      "status": "blocked_quality",
+      "too_late_count": 0
+    }
+  ],
+  "evidence_version": 1,
+  "generated_by": "scripts/build_industrial_trust_report.py",
+  "input_evidence": {
+    "collection_last_good": "3a2deb28f716bd27c68c2336b2720dc8a7e5785cee81de0e2cdc70a07ac2d626",
+    "event_time_verification": "99644c9fbdded176db01d3fcde297b96328ebd8bdde9b01f4e44543044976337",
+    "source_collection_reports": {
+      "interrupted": "ddfd277ee2871645a2fb931c477306ea6b5f0af591d0d289ab4b98d02dc98210",
+      "normal": "ca07c678ec1c3ada4523e71aa063959c45af1b255d49266b201e207ee2b9172c",
+      "quality": "a4454d4c29cf0f044e641a520ff2c7be453f1e5ed6bf8fd478d34250165af1bd"
+    },
+    "trusted_current": "ddb7da09b757e50a4c100e30750b6409a2c4c35ce77ca454e28db3938682b7e8",
+    "trusted_data": "e0d10b948f7ac80f7e6246e4b9d3b005f2e311a864457005c13ed69abc269eff",
+    "trusted_manifest": "9b09a5a719938581cfeb2b6e2e577c91a78c590977f5251a2ed3272294fb5c74"
+  },
+  "policy_version": "trust-report-policy-v1",
+  "provenance": {
+    "actual_record": "\uac12\uc740 checksum\uc744 \ub2e4\uc2dc \uac80\uc99d\ud55c \uacf5\uac1c MetroPT-3 historical CSV\uc5d0\uc11c \uc654\ub2e4.",
+    "fault_injection": "\ud488\uc9c8 \uc774\uc0c1 \uc2dc\ub098\ub9ac\uc624\uc5d0\ub9cc Uncertain 1\uac1c\uc640 Bad 1\uac1c StatusCode\ub97c \uc8fc\uc785\ud588\ub2e4.",
+    "fault_observations": [
+      {
+        "fault_injected": true,
+        "severity": "bad",
+        "source_timestamp": "2020-02-01T00:00:19Z",
+        "status": "BadNoData",
+        "tag_id": "Motor_current",
+        "value": null
+      },
+      {
+        "fault_injected": true,
+        "severity": "uncertain",
+        "source_timestamp": "2020-02-01T00:00:10Z",
+        "status": "UncertainSubstituteValue",
+        "tag_id": "TP2",
+        "value": -0.0139999999999993
+      }
+    ],
+    "replay": "\ub85c\uceec OPC UA \uc11c\ubc84\uac00 historical row\ub97c replay\ud588\ub2e4. live plant \uc5f0\uacb0\uc740 \uc544\ub2c8\ub2e4."
+  },
+  "report_contract": "industrial_trust_report_v1",
+  "source": {
+    "dataset_doi": "10.24432/C5VW3R",
+    "dataset_id": "uci-791-metropt3",
+    "historical_time_assumption": "timezone-unknown-wall-clock-encoded-as-utc-for-replay-only",
+    "live_source": false,
+    "selected_physical_rows": [
+      1,
+      2,
+      3
+    ],
+    "selected_tags": [
+      "TP2",
+      "Oil_temperature",
+      "Motor_current"
+    ],
+    "source_file_rows": 1516948,
+    "source_file_sha256": "db30ccb4ea402e3c8bf2c99db06e288d4f2a772f6928f9dbe26a920d69793e24",
+    "source_kind": "actual_historical_public_record"
+  },
+  "trusted_dataset": {
+    "content_sha256": "e0d10b948f7ac80f7e6246e4b9d3b005f2e311a864457005c13ed69abc269eff",
+    "current_verified": true,
+    "dataset_version": "40631b43288556777629527f1bcbdedc6ecccba87bf60bfbd5af4be335483b88",
+    "event_count": 9,
+    "manifest_sha256": "9b09a5a719938581cfeb2b6e2e577c91a78c590977f5251a2ed3272294fb5c74",
+    "mapping_versions": [
+      "metropt3-opcua-v1"
+    ],
+    "normal_and_disorder_converged": true,
+    "policy_version": "bounded-event-time-v1"
+  },
+  "verification_baseline_commit": "36e7344",
+  "verified_on": "2026-07-31"
+}</script>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Manufacturing Industrial Data Platform</p>
+    <h1>Industrial Telemetry<br>Trust Report</h1>
+    <p class="lead">실제 산업 기록을 로컬 OPC UA로 재생한 뒤, 의미·품질·완전성·event-time
+      evidence를 검토해 trusted dataset을 발행할지 결정하는 읽기 전용 운영 보고서입니다.</p>
+    <div class="meta" id="hero-meta"></div>
+  </div>
+</header>
+<main class="main" id="root"></main>
+<script>
+const E = JSON.parse(document.getElementById('evidence').textContent);
+const esc = value => String(value).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const short = value => esc(String(value).slice(0,12) + '…');
+const pillClass = action => action === 'PUBLISH' ? 'ok' : action === 'BLOCKED' ? 'bad' : 'warn';
+const labels = {normal:'정상 수집',quality:'품질 이상',interrupted:'Collector 중단',
+  in_order:'정상 순서',duplicate_out_of_order:'중복·역순',too_late:'Too late',
+  missing:'누락',quality_event:'품질 이상'};
+
+document.getElementById('hero-meta').innerHTML = `
+  <span class="tag">${esc(E.source.dataset_id)}</span>
+  <span class="tag">${esc(E.equipment.equipment_id)}</span>
+  <span class="tag">${esc(E.equipment.mapping_version)}</span>
+  <span class="tag">evidence v${esc(E.evidence_version)}</span>
+  <span class="tag">verified ${esc(E.verified_on)}</span>`;
+
+const scenarioCards = E.collection_scenarios.map(s => {
+  const css = s.operator_action === 'BLOCKED' ? 'blocked' :
+    s.operator_action === 'REPROCESS REQUIRED' ? 'reprocess' : '';
+  return `<article class="card scenario ${css}">
+    <div class="status-line"><h3>${esc(labels[s.scenario])}</h3>
+      <span class="pill ${pillClass(s.operator_action)}">${esc(s.collection_status)}</span></div>
+    <div class="action">${esc(s.operator_action)}</div>
+    <p class="reason">${esc(s.decision_reason)}</p>
+    <div class="metrics">
+      <div class="metric"><b>${s.expected_count}</b><span>Expected</span></div>
+      <div class="metric"><b>${s.observed_count}</b><span>Observed</span></div>
+      <div class="metric"><b>${s.missing_count}</b><span>Missing</span></div>
+    </div>
+    <div class="quality">
+      <span>Good ${s.quality.good}</span><span>Uncertain ${s.quality.uncertain}</span>
+      <span>Bad ${s.quality.bad}</span><span>Unknown mapping ${s.unknown_mapping_count}</span>
+    </div>
+    <p class="foot">session <code>${esc(s.replay_session_id)}</code><br>
+      report <code>${short(s.collection_report_sha256)}</code></p>
+  </article>`;
+}).join('');
+
+const tagRows = E.equipment.tags.map(t => `<tr><td><b>${esc(t.tag_id)}</b><br>
+  <code>${esc(t.opcua_node_id)}</code></td><td>${esc(t.value)} ${esc(t.unit)}</td>
+  <td><span class="pill ok">${esc(t.status)}</span></td>
+  <td><code>${esc(t.source_timestamp)}</code><br><span class="foot">server ${esc(t.server_timestamp)}
+  <br>collected ${esc(t.collected_at)}</span></td></tr>`).join('');
+
+const eventRows = E.event_time_scenarios.map(s => `<tr>
+  <td><b>${esc(labels[s.scenario] || s.scenario)}</b></td>
+  <td><span class="pill ${pillClass(s.operator_action === 'BLOCK' ? 'BLOCKED' :
+    s.operator_action === 'REPROCESS' || s.operator_action === 'INCOMPLETE' ?
+    'REPROCESS REQUIRED' : 'PUBLISH')}">${esc(s.status)}</span></td>
+  <td>${s.input_count} / ${s.accepted_count}</td><td>${s.duplicate_count}</td>
+  <td>${s.out_of_order_count}</td><td>${s.too_late_count}</td><td>${s.missing_count}</td>
+  <td>${s.current_advanced ? '<span class="pill ok">advanced</span>' :
+    '<span class="pill info">preserved</span>'}</td></tr>`).join('');
+
+document.getElementById('root').innerHTML = `
+  <section class="section" id="screen-summary">
+    <div class="section-head"><div><h2>Industrial Telemetry Trust Report · 운영 판정</h2>
+      <p>동일 source checksum·rows·tags, 서로 다른 수집 결과와 다음 행동</p></div>
+      <span class="pill info">READ ONLY · LOCAL EVIDENCE</span></div>
+    <div class="scenario-grid">${scenarioCards}</div>
+  </section>
+
+  <section class="section" id="screen-source">
+    <div class="provenance">
+      <div class="prov"><b>01 · Actual record</b><p>${esc(E.provenance.actual_record)}</p></div>
+      <div class="prov"><b>02 · Replay</b><p>${esc(E.provenance.replay)}</p></div>
+      <div class="prov"><b>03 · Fault injection</b><p>${esc(E.provenance.fault_injection)}</p></div>
+    </div>
+    <div class="two" style="margin-top:14px">
+      <div class="card"><h2>원천 계약과 관측값</h2>
+        <table><thead><tr><th>Tag / NodeId</th><th>Value / Unit</th><th>Quality</th>
+        <th>Source · Server · Collection time</th></tr></thead><tbody>${tagRows}</tbody></table></div>
+      <div class="card"><h2>원천 식별</h2>
+        <table><tbody>
+          <tr><td>Dataset</td><td><b>${esc(E.source.dataset_id)}</b><br>DOI ${esc(E.source.dataset_doi)}</td></tr>
+          <tr><td>Full artifact</td><td>${E.source.source_file_rows.toLocaleString()} rows<br>
+            <code class="hash">${esc(E.source.source_file_sha256)}</code></td></tr>
+          <tr><td>Bounded range</td><td>rows ${esc(E.source.selected_physical_rows.join(', '))}<br>
+            tags ${esc(E.source.selected_tags.join(', '))}</td></tr>
+          <tr><td>Time assumption</td><td><code>${esc(E.source.historical_time_assumption)}</code></td></tr>
+          <tr><td>Live source</td><td><span class="pill warn">NO · historical replay</span></td></tr>
+        </tbody></table>
+        <h2 style="margin-top:18px">주입된 품질 이상 관측값</h2>
+        <table><tbody>${E.provenance.fault_observations.map(f => `<tr><td>${esc(f.tag_id)}</td>
+          <td>${esc(f.source_timestamp)}</td><td><span class="pill ${f.severity === 'bad' ? 'bad':'warn'}">
+          ${esc(f.status)}</span></td><td>${f.value === null ? 'null' : esc(f.value)}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="screen-event-time">
+    <div class="card"><div class="section-head"><div><h2>이벤트 시간 신뢰와 현재 버전</h2>
+      <p>Engine-independent decision과 local Spark 3.5.8 accepted identity parity</p></div></div>
+      <table><thead><tr><th>Scenario</th><th>Decision</th><th>Input / Accepted</th>
+        <th>Duplicate</th><th>Out of order</th><th>Too late</th><th>Missing</th>
+        <th>Current</th></tr></thead><tbody>${eventRows}</tbody></table>
+      <div class="trust" style="margin-top:16px">
+        <div><b>Dataset version</b><code>${short(E.trusted_dataset.dataset_version)}</code></div>
+        <div><b>Policy</b><code>${esc(E.trusted_dataset.policy_version)}</code></div>
+        <div><b>Trusted events</b><code>${E.trusted_dataset.event_count}</code></div>
+        <div><b>Last-good</b><span class="pill ok">verified & preserved</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px"><h2>주장 경계</h2>
+      <div class="boundary"><div><h3>이 evidence가 증명하는 것</h3>
+        <ul>${E.claim_boundary.verified_ko.map(v => `<li>${esc(v)}</li>`).join('')}</ul></div>
+        <div><h3>아직 주장하지 않는 것</h3>
+        <ul>${E.claim_boundary.not_verified_ko.map(v => `<li>${esc(v)}</li>`).join('')}</ul></div></div>
+      <p class="foot">모든 수치와 identity는 embedded <code>industrial_trust_report_v1</code>
+        JSON에서 렌더링됩니다. 화면의 행동 표시는 외부 시스템을 변경하지 않는 권고입니다.</p>
+    </div>
+  </section>`;
+</script>
+</body>
+</html>

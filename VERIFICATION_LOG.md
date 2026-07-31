@@ -2191,3 +2191,105 @@ The badge proves only the base Python unit/contract suite. Kafka, Spark/Iceberg,
 runtime evidence remains local-runbook evidence and is not attributed to public CI.
 
 Status: `accepted-closed`. The manufacturing platform v1 portfolio release is approved.
+
+## 2026-07-31 — Industrial telemetry v2와 Trust Report 독립 검토 완료
+
+v2는 public v1의 synthetic `machine_event_v1` 경로를 교체하지 않고, 실제 산업 기록에서
+시작하는 별도 `industrial_telemetry_v1` 계약과 operator-facing evidence를 추가했다.
+모든 결과는 로컬·bounded historical replay이며 실제 공장 또는 production OT 운영 증거가
+아니다.
+
+### S-MFG-10 — OPC UA source contract
+
+UCI MetroPT-3 전체 CSV의 identity를 실제 authoring 환경에서 확인했다.
+
+```text
+source rows       1,516,948
+source SHA-256    db30ccb4ea402e3c8bf2c99db06e288d4f2a772f6928f9dbe26a920d69793e24
+selected scope    physical rows 1,2,3 × TP2, Oil_temperature, Motor_current
+expected set      9 observations
+```
+
+실제 historical value를 로컬 OPC UA server에서 tag로 replay하고 subscription collector가
+value·unit·source/server/collection time·StatusCode·mapping·source identity를 보존했다.
+
+```text
+normal       complete         expected 9 / observed 9 / Good 9
+quality      blocked_quality  expected 9 / observed 9 / Good 7 / Uncertain 1 / Bad 1
+interrupted  incomplete       expected 9 / observed 3 / missing 6
+```
+
+최종 독립 리뷰는 `ACCEPT`였고 targeted wrapper는 `27 passed`였다. 저장소에는 CC BY 4.0
+출처를 기록한 3-row fixture만 포함하며 전체 MetroPT CSV는 포함하지 않는다.
+
+### S-MFG-11 — event-time trust와 versioned trusted dataset
+
+같은 canonical telemetry에 source time과 별도의 arrival order를 적용해 다음 operator
+판정을 확인했다.
+
+```text
+in order                  publishable         accepted 9
+duplicate + out of order  publishable         accepted 9 / duplicate 1 / late-within-policy 3
+too late                  reprocess_required  accepted 6 / too-late 3 / missing 3
+missing                   incomplete          accepted 8 / missing 1
+quality                   blocked_quality     accepted 9 / Uncertain 1 / Bad 1
+```
+
+정상과 허용 범위 내 disorder는 같은 content-addressed dataset version
+`40631b43288556777629527f1bcbdedc6ecccba87bf60bfbd5af4be335483b88`로 수렴했다.
+`current_trusted.json`을 전진시키기 전에 current→manifest→data digest chain을 검증하고,
+손상·누락·경로 이탈·symlink current는 교체하지 않고 integrity failure를 기록한다.
+
+로컬 Spark 3.5.8 file micro-batch에서 watermark·deduplication·checkpoint restart 후 accepted
+event identity가 engine-independent 결과와 일치했다. 최종 R3 독립 리뷰는 `ACCEPT`였고
+targeted wrapper는 `45 passed`였다. 이는 Kafka source, Iceberg sink, cluster execution 또는
+production checkpoint storage 증거가 아니다.
+
+### S-MFG-14 — Industrial Telemetry Trust Report
+
+accepted S-MFG-10/11 runtime tree를 strict read-only projection으로 검증해
+`industrial_trust_report_v1` JSON과 정적 HTML을 생성했다. 같은 source 범위에서 다음 세
+결정을 한 화면에 비교한다.
+
+```text
+normal       PUBLISH
+quality      BLOCKED
+interrupted  REPROCESS REQUIRED
+```
+
+R1의 quantitative reason drift finding을 source-derived reason과 exact representative
+cardinality guard로 수정했다. R2 독립 리뷰 결과는 `ACCEPT`였으며 다음을 재검증했다.
+
+```text
+tests/test_industrial_trust_report.py  12 passed
+runtime-evidence.json SHA-256          dddd91a9eb03f40b97f0f315e437417a38e7eeef7fc02557f883e8404eb12d8d
+report.html SHA-256                    3da697d8667127c27cab9dbbd5e80a554b76a3dc6083def405474f136c45383d
+reviewer temp build                    committed JSON/HTML과 byte-for-byte identical
+process harness                        PASS
+```
+
+세 PNG screenshot은 operator decision, source provenance, event-time trust를 각각 보여주며
+모두 R2에서 identity가 유지됐다. 공개 README와 report 계약 회귀 검증은
+`44 passed`였다.
+
+공개 승격 준비 중 전체 suite와 GitHub Actions 동등 base 환경을 별도로 확인했다. base
+환경에서는 `asyncua`·`pyspark`·`airflow`·`confluent_kafka`가 모두 없었고, OPC UA에서
+시작하는 optional module은 collection error가 아니라 명시적으로 skip됐다.
+
+```text
+current Python environment             179 passed, 8 skipped
+fresh Python 3.12 + requirements.txt   168 passed, 19 skipped
+public README + report contracts        44 passed
+```
+
+### 현재 claim boundary
+
+- 확인됨: 실제 공개 historical value의 checksum, 로컬 OPC UA subscription replay,
+  telemetry 의미·시간·품질·source identity 보존, exact bounded coverage, duplicate·late·
+  missing·quality 판정, 로컬 versioned trusted dataset, 로컬 Spark file micro-batch parity.
+- 확인되지 않음: physical PLC/sensor/plant network, production OPC UA, 무손실 reconnect,
+  continuous Kafka→Spark→Iceberg telemetry streaming, production SLA/HA/throughput, cluster
+  correctness, end-to-end exactly-once, 자동 correction, AI model.
+
+기술 독립 검토와 사용자 화면 승인은 2026-07-31 완료됐다. staged 공개 파일은 allowlist
+36개와 정확히 일치했다. commit/push와 실제 public CI 결과는 이 기록 시점의 다음 gate다.
