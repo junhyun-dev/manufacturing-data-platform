@@ -1,4 +1,4 @@
-# DESIGN — manufacturing-data-platform-mini
+# DESIGN — manufacturing-data-platform
 
 > "제대로 참고해서 만든" 설계. **결정 + 왜**를 남긴다(= 면접에서 보여줄 핵심).
 > 참고(사례집): **honcho**(서비스 골격), **OpenMetadata/DataHub**(카탈로그 데이터 모델), **DVC·OpenLineage**(버전·lineage).

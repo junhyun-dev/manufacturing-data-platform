@@ -2,7 +2,7 @@
 
 Korean version: [`PROJECT_PROGRESS_MAP.ko.md`](PROJECT_PROGRESS_MAP.ko.md)
 
-This document is the one-screen map for `manufacturing-data-platform-mini`.
+This document is the one-screen map for `manufacturing-data-platform`.
 Use it before opening the deeper design notes.
 
 For the derivation from scenario to questions, contracts, features, and evidence, see [`learn/system-design/01-system-traceability-map.ko.md`](learn/system-design/01-system-traceability-map.ko.md).

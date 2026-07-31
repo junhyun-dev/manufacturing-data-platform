@@ -2,7 +2,7 @@
 
 ADR Status: Implemented
 상태: accepted local walking-skeleton decision
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 > **Scope status:** local single-gold-table Spark/Iceberg walking skeleton은 구현됐다.
 > full Spark medallion rewrite, production lakehouse operation, concurrent writer handling, retention/rollback은 아직 Backlog다.

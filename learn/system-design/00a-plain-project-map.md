@@ -1,4 +1,4 @@
-# 00a. Plain project map — manufacturing-data-platform-mini를 먼저 쉽게 보기
+# 00a. Plain project map — manufacturing-data-platform를 먼저 쉽게 보기
 
 상태: 입문용 지도
 목적: 특정 기술보다 먼저, 이 프로젝트가 무엇을 하려는지 입력/상태/질문으로 이해한다.

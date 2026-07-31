@@ -1,7 +1,7 @@
 # 02. Spark/Iceberg State Shift
 
 상태: state-transition design bridge
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 > **Scope status:** 이 문서는 Spark/Iceberg로 state를 어떻게 재표현할지 설명하는 design bridge다.
 > local single-gold-table walking skeleton은 구현됐고, 최신 runtime/test 결과는 [`../../../../VERIFICATION_LOG.md`](../../../../VERIFICATION_LOG.md)가 source of truth다.

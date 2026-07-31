@@ -1,6 +1,6 @@
 # 시나리오 -> 상태 변화 지도
 
-이 문서는 코드 읽기 루프를 `manufacturing-data-platform-mini`에 적용한 학습용 지도다.
+이 문서는 코드 읽기 루프를 `manufacturing-data-platform`에 적용한 학습용 지도다.
 
 ```text
 시나리오 -> 상태 변화 -> 필요한 정보 -> 테이블/컬럼/파일 -> 함수/API
@@ -20,7 +20,7 @@
 
 ## 한 줄 시스템
 
-`manufacturing-data-platform-mini`는 작은 데이터 플랫폼 slice다.
+`manufacturing-data-platform`는 작은 데이터 플랫폼 slice다.
 
 ```text
 source files

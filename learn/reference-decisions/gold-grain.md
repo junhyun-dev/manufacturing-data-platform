@@ -2,7 +2,7 @@
 
 ADR Status: Implemented
 상태: implemented contract summary
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 이 노트는 gold mart의 한 row가 무엇을 의미하는지 고정한다. 면접이나 블로그에서 "gold를 만들었다"라고 말할 때는 반드시 grain이 같이 설명되어야 한다.
 

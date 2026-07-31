@@ -1,7 +1,7 @@
 # 01. Spark/Iceberg Question Map
 
 상태: audited question input / local walking skeleton implemented
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 > 목적: Slice2에서 "무슨 질문들이 나올 수 있고, 각각 어디서/어떻게 풀리는가"를 먼저 넓게 펼친다.
 > 방식: `plastic-labs-honcho/learn/15-backend-question-map.md`와 같은 question-map. decision을 확정하기 전에 질문 지도를 먼저 그린다.

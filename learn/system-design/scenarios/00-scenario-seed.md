@@ -1,7 +1,7 @@
 # 00. Scenario seed — 시스템 시나리오
 
 상태: baseline batch scenario / implementation-backed
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 이 문서는 `schema drift`, `idempotency`, `quality`, `catalog`, `lineage` 같은 개별 기능으로 들어가기 전에, 질문을 만들기 위한 **scenario seed**를 정리한다.
 
@@ -9,7 +9,7 @@
 
 ## 1. 한 줄 시스템
 
-`manufacturing-data-platform-mini`는 synthetic 제조 스타일 이벤트 CSV를 받아서, 재현 가능하고 검증 가능한 데이터셋과 mart로 바꾸는 작은 데이터 플랫폼이다.
+`manufacturing-data-platform`는 synthetic 제조 스타일 이벤트 CSV를 받아서, 재현 가능하고 검증 가능한 데이터셋과 mart로 바꾸는 작은 데이터 플랫폼이다.
 
 ```text
 source CSV

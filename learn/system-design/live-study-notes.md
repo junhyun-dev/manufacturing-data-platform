@@ -1132,7 +1132,7 @@ walking skeleton 후:
 맞다. 지금 어려운 이유는 이해력이 부족해서가 아니라, 한 번에 두 층을 보고 있기 때문이다.
 
 ```text
-1층: manufacturing-data-platform-mini 자체가 무엇을 하는가?
+1층: manufacturing-data-platform 자체가 무엇을 하는가?
 2층: 그걸 Spark/Iceberg로 어떻게 다시 표현하는가?
 ```
 
@@ -1275,7 +1275,7 @@ lineage evidence  -> input -> output 원인 추적
 ## 4. 지금 잡아야 할 한 문장
 
 ```text
-manufacturing-data-platform-mini는 synthetic manufacturing CSV를 bronze/silver/gold dataset으로 만들고,
+manufacturing-data-platform는 synthetic manufacturing CSV를 bronze/silver/gold dataset으로 만들고,
 source_hash, schema_hash, quality result, run record, lineage evidence를 남겨
 data user와 operator가 gold 숫자를 믿고 추적할 수 있게 하는 작은 데이터 플랫폼이다.
 ```

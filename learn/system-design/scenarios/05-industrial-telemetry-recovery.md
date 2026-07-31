@@ -7,7 +7,7 @@
 > slice map: [`../slices/08-edge-cloud-recovery.ko.md`](../slices/08-edge-cloud-recovery.ko.md) ·
 > 결정: [`../../reference-decisions/edge-buffer-and-recovery-progress.md`](../../reference-decisions/edge-buffer-and-recovery-progress.md)
 > 이는 **synthetic·local·bounded simulation**이며 실제 edge 하드웨어/프로토콜 evidence가 아니다.
-> 근거: [`../../reference-evidence/audit-inputs/2026-07-21-industrial-platform-direction/claude-audit.md`](../../reference-evidence/audit-inputs/2026-07-21-industrial-platform-direction/claude-audit.md)
+> 실행·검증 근거: [`VERIFICATION_LOG.md`](../../../VERIFICATION_LOG.md)
 
 ## 1. 왜 이 시나리오인가
 

@@ -1,6 +1,6 @@
 # System Design Notes
 
-이 폴더는 `manufacturing-data-platform-mini`를 기능별로 보기 전에, 시스템을 **서비스 목적 -> 전체 추적 지도 -> 시나리오 -> 질문 지도 -> 계약/결정 -> slice -> 테스트/구현** 순서로 이해하기 위한 학습 노트다.
+이 폴더는 `manufacturing-data-platform`를 기능별로 보기 전에, 시스템을 **서비스 목적 -> 전체 추적 지도 -> 시나리오 -> 질문 지도 -> 계약/결정 -> slice -> 테스트/구현** 순서로 이해하기 위한 학습 노트다.
 
 기준 프로세스: 이 README의 Thinking Order와 `slices/TEMPLATE.ko.md`에 공개 repo용으로 정리한다.
 

@@ -1,7 +1,7 @@
 # 03. Iceberg/Spark Mini Primer — business_date 재처리 시나리오에 필요한 만큼만
 
 상태: learning bridge / walking-skeleton primer
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 > **Scope status:** 이 문서는 walking skeleton으로 가기 위한 primer다.
 > local single-gold-table Spark/Iceberg walking skeleton은 구현됐고, 최신 runtime/test 결과는 [`../../../../VERIFICATION_LOG.md`](../../../../VERIFICATION_LOG.md)가 source of truth다.

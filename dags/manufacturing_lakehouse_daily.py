@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 default_args = {
-    "owner": "manufacturing-data-platform-mini",
+    "owner": "manufacturing-data-platform",
     "depends_on_past": False,
     "retries": 1,
     "retry_delay": timedelta(minutes=5),

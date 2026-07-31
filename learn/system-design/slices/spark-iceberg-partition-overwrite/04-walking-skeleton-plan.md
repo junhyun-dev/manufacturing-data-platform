@@ -1,7 +1,7 @@
 # 04. Spark/Iceberg Walking Skeleton Plan
 
 상태: implemented local walking skeleton / claim-boundary reference
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 > **STATUS: implemented as a local single-gold-table walking skeleton.** 이 문서는 구현 전에 만든 question map + test contract이며, 현재 구현은 `src/manufacturing_data_platform/pipeline/spark_iceberg_skeleton.py`와 `tests/test_spark_iceberg_skeleton.py`에 있다. 범위는 `gold_daily_metrics` Iceberg table 하나다. full medallion Spark rewrite나 production lakehouse는 아니다.
 

@@ -2,7 +2,7 @@
 
 ADR Status: Implemented
 상태: accepted implementation note
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 관련 문서/코드:
 

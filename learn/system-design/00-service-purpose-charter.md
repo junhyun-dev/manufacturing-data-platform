@@ -1,13 +1,13 @@
 # 00. Service Purpose Charter
 
 상태: project thesis / scenario anchor
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
-이 문서는 `manufacturing-data-platform-mini`가 왜 존재하는지, 어떤 사용자의 어떤 질문에 답하려는지, 그리고 어떤 기능이 그 질문에서 파생되는지 고정한다.
+이 문서는 `manufacturing-data-platform`가 왜 존재하는지, 어떤 사용자의 어떤 질문에 답하려는지, 그리고 어떤 기능이 그 질문에서 파생되는지 고정한다.
 
 ## 1. One-Sentence Service
 
-`manufacturing-data-platform-mini`는 raw manufacturing-style/tabular files를 분석/ML 사용자가 믿고 쓸 수 있는 cataloged, versioned, quality-checked dataset/mart로 바꾸고, 운영자가 나중에 설명할 수 있는 증거를 남기는 작은 데이터 플랫폼이다.
+`manufacturing-data-platform`는 raw manufacturing-style/tabular files를 분석/ML 사용자가 믿고 쓸 수 있는 cataloged, versioned, quality-checked dataset/mart로 바꾸고, 운영자가 나중에 설명할 수 있는 증거를 남기는 작은 데이터 플랫폼이다.
 
 이 repo 이름과 현재 구현 evidence는 manufacturing-style/tabular synthetic data로 맞췄다. ROS2/MCAP/session/sensor 같은 machine/session source slice는 아직 backlog다.
 

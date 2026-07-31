@@ -1,6 +1,6 @@
 # 제조 설비 데이터는 언제 믿을 수 있는가?
 
-[![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform-mini/actions/workflows/ci.yml)
+[![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml)
 
 실제 산업 기록을 센서처럼 수집하고, 값의 의미·시간·품질·완전성을 검증한 뒤
 **trusted dataset으로 발행할지, 차단할지, 재처리할지 결정하는** 로컬·bounded 데이터

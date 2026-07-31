@@ -3,7 +3,7 @@
 역할: 이 문서는 question map 이후에 보는 evidence 문서다. `01`의 scenario와 `02`의 질문들이 실제 source row, schema, identity, grain 위에서 성립하는지 확인한다.
 
 상태: baseline batch source contract / implementation-backed
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 이 문서는 시스템의 첫 입력을 정리한다.  
 `event를 받는다`라고만 말하면 모호하므로, 이 프로젝트에서는 정확히 어떤 형태의 event/source를 받는지 먼저 고정한다.

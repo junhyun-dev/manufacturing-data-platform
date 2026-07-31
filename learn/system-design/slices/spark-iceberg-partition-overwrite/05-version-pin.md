@@ -1,7 +1,7 @@
 # 05. Spark/Iceberg Version Pin
 
 상태: implementation gate / verified locally
-프로젝트: `manufacturing-data-platform-mini`
+프로젝트: `manufacturing-data-platform`
 
 > **STATUS: verified locally.** 이 문서는 Spark/Iceberg walking skeleton 구현 전에 버전, jar, catalog 설정을 고정하기 위한 gate다. 이 pin으로 `tests/test_spark_iceberg_skeleton.py`와 CLI skeleton이 통과했다. 구현 범위는 local single-gold-table walking skeleton이다.
 

@@ -2,7 +2,7 @@
 
 원문: [`PROJECT_PROGRESS_MAP.md`](PROJECT_PROGRESS_MAP.md)
 
-이 문서는 `manufacturing-data-platform-mini`를 한 화면에서 파악하기 위한 진행 지도다.
+이 문서는 `manufacturing-data-platform`를 한 화면에서 파악하기 위한 진행 지도다.
 깊은 설계 문서를 열기 전에 먼저 이 문서를 본다.
 
 시나리오에서 기능이 도출된 과정을 보려면 [`learn/system-design/01-system-traceability-map.ko.md`](learn/system-design/01-system-traceability-map.ko.md)를 본다.
