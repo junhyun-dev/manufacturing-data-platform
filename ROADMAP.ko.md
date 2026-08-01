@@ -138,7 +138,7 @@ optional slice들은 동일한 `ingest → quality → catalog/lineage` spine을
 
 ## Phase 3 — 산업 시나리오 (scenario-led)
 
-Phase 3은 기술 목록이 아니라 **운영자 시나리오와 실패 압력**으로 정리한다. 구현된 사실은 위 Phase 2 절에 그대로 두고, 여기서는 증명된 것 / 제안된 것 / 의도적으로 먼 것만 나눈다.
+Phase 3은 기술 목록이 아니라 **운영자 시나리오와 실패 압력**으로 정리한다. 이 절은 accepted된 Industrial Telemetry v2 결과와 조건부·확장 후보를 구분한다.
 
 ### 구현된 foundation (위에서 이미 증명됨)
 
@@ -146,24 +146,26 @@ Phase 3은 기술 목록이 아니라 **운영자 시나리오와 실패 압력*
 - [x] **Spark machine-event batch(S7)** — Python parity와 quality-gated Iceberg publish. `### Spark machine-event batch — S7` 참조.
 - [x] **edge/cloud 단절 복구(S8)** — immutable sealed edge spool, 기존 local Kafka/K1 landing으로 replay, 봉인 구간이 완전히 복구되기 전에는 downstream batch 차단. synthetic·local·bounded·단일 machine/session/partition 시뮬레이션. slice: [`learn/system-design/slices/08-edge-cloud-recovery.ko.md`](learn/system-design/slices/08-edge-cloud-recovery.ko.md).
 - [x] **복구 완결 gate를 통과한 Spark/Iceberg 발행(S9)** — S8 복구 gate와 S7 발행 계약을 어느 쪽도 재구현하지 않고 조합. 공유 readiness gate 통과 + 봉인 event 집합 == batch 입력 집합일 때만 Iceberg gold table에 발행하고, 부분 복구 상태는 Spark/Iceberg state를 전혀 남기지 않으며, 같은 source 재실행은 새 snapshot·partition overwrite를 만들지 않는다. synthetic·local·bounded, session/machine/date/partition 각 1개, local Airflow `dags test` wrapper까지 검증. slice: [`learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md`](learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md).
+- [x] **Industrial source contract(S-MFG-10)** — MetroPT-3 전체 source identity를 확인하고 공개 3-row fixture를 local OPC UA subscription으로 replay해 equipment/tag/unit, 세 timestamp, quality status, mapping version, actual-record/replay/fault provenance를 보존했다.
+- [x] **bounded event-time trust(S-MFG-11)** — duplicate, out-of-order, too-late, missing, quality failure를 판정하고 허용된 disorder가 같은 content-addressed trusted dataset version으로 수렴함을 확인했다. local Spark file micro-batch identity parity까지 검증했으며 continuous Kafka→Spark streaming 증거는 아니다.
+- [x] **Industrial Telemetry Trust Report(S-MFG-14)** — 같은 source의 정상·품질 이상·collector 중단을 strict JSON, 정적 HTML, browser screenshot으로 공개하고 `PUBLISH`, `BLOCKED`, `REPROCESS REQUIRED` 행동을 비교했다.
 
-### 제안된 다음 시나리오 (미구현)
+### 다음 후보 시나리오 (비활성)
 
-운영자 시나리오에서 도출하고 공식 산업 플랫폼 문서와 대조했다(`BENCHMARKS.ko.md` 산업 lane 참조). 각 항목은 bounded slice로 설계·검증되기 전까지 `Proposed`다.
+Industrial Telemetry v2는 maintenance 상태다. 목표 공고나 실제 consumer/source가 아래 압력을 만들 때만 별도 Direction Check로 활성화한다.
 
-- [ ] **sensor/tag/단위/schema 교체** — EAV mapping config와 schema-drift check 재사용.
-- [ ] **의심스러운 품질 지표를 source/telemetry까지 역추적** — operator evidence report 확장.
-- [ ] **late/out-of-order telemetry와 sequence gap** — 실제 late-data/window 압력이 명명될 때만.
-- [ ] **asset/시계열/문서 contextualization** — 이 프로젝트 규모로 축소한 cross-source identity 해소.
+- [ ] **재현 가능한 AI consumer(S-MFG-12, EXTENSION)** — accepted trusted snapshot의 temporal split, leakage 검증, dataset/model version, evaluation lineage.
+- [ ] **physical sensor/gateway source(S-MFG-13, CONDITIONAL)** — 승인된 owned device를 같은 read-only telemetry contract로 수집.
+- [ ] **CNC multi-sensor / MTConnect source(S-MFG-15, CONDITIONAL)** — actual source나 공고 요구가 정당화할 때만 trust boundary를 일반화.
+- [ ] **source correction과 replacement lineage(S-MFG-16, EXTENSION)** — 이전 snapshot을 지우지 않고 명시적 correction을 새 trusted version으로 발행.
 
 ### Backlog / Unknown (먼 범위 — 당겨오지 말 것)
 
 - [ ] 모사 **ROS2 bag / MCAP-ish** ingest.
-- [ ] 실제 PLC/센서/로봇 source, OPC UA / MQTT / ROS 2 / DDS 연동.
 - [ ] product 수준의 edge gateway 또는 단절 durable buffer.
-- [ ] continuous/event-time streaming, watermark, Flink 또는 Spark Structured Streaming.
+- [ ] continuous Kafka→Spark/Iceberg telemetry와 production watermark·lag·checkpoint 운영.
 - [ ] asset hierarchy / Unified Namespace / digital twin.
-- [ ] anomaly 모델, 예지보전, closed-loop 제어.
+- [ ] closed-loop control, PLC write, 기능 안전, production OT security.
 - [ ] production / HA / cluster 운영.
 
 ---

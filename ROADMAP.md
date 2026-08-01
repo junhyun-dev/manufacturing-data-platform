@@ -162,7 +162,7 @@ The optional slices reuse the same `ingest → quality → catalog/lineage` spin
 
 ## Phase 3 — industrial scenarios (scenario-led)
 
-Phase 3 is organized by **operator scenario and failure pressure**, not by a technology list. Implemented facts stay in the Phase 2 sections above; this section only separates what is proven, what is proposed, and what is deliberately distant.
+Phase 3 is organized by **operator scenario and failure pressure**, not by a technology list. This section reflects the accepted Industrial Telemetry v2 release and separates it from conditional or extension work.
 
 ### Implemented foundation (already proven above)
 
@@ -170,24 +170,26 @@ Phase 3 is organized by **operator scenario and failure pressure**, not by a tec
 - [x] **Spark machine-event batch (S7)** with Python parity and quality-gated Iceberg publish — see `### Spark machine-event batch — S7`.
 - [x] **Edge/cloud disconnection and recovery (S8)** — immutable sealed edge spool, replay through the existing local Kafka/K1 landing, downstream batch blocked until the sealed sequence range is fully recovered. Synthetic, local, bounded, single machine/session/partition simulation. Slice: [`learn/system-design/slices/08-edge-cloud-recovery.ko.md`](learn/system-design/slices/08-edge-cloud-recovery.ko.md).
 - [x] **Recovery-gated Spark/Iceberg publish (S9)** — composes the S8 recovery gate and the S7 publish contract without reimplementing either. A sealed session reaches the Iceberg gold table only after a shared readiness gate passes and the sealed event set exactly equals the batch input set; a partially recovered session leaves no Spark or Iceberg state, and a same-source retry creates no new snapshot and no partition overwrite. Synthetic, local, bounded, one session/machine/date/partition, verified through a local Airflow `dags test` wrapper. Slice: [`learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md`](learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md).
+- [x] **Industrial source contract (S-MFG-10)** — verified the full MetroPT-3 source identity, replayed a public 3-row fixture through a local OPC UA subscription, and preserved equipment/tag/unit, three timestamps, quality status, mapping version, and actual-record/replay/fault provenance.
+- [x] **Bounded event-time trust (S-MFG-11)** — classified duplicate, out-of-order, too-late, missing, and quality-failure inputs; converged allowed disorder to the same content-addressed trusted dataset version; and verified local Spark file micro-batch identity parity. This is not continuous Kafka-to-Spark streaming.
+- [x] **Industrial Telemetry Trust Report (S-MFG-14)** — published the same-source normal, quality-failure, and collector-interruption comparison as strict JSON, static HTML, and browser screenshots with `PUBLISH`, `BLOCKED`, and `REPROCESS REQUIRED` operator actions.
 
-### Proposed next scenarios (not implemented)
+### Candidate next scenarios (not active)
 
-Derived from operator scenarios and checked against official industrial-platform documentation (see `BENCHMARKS.md` §6). Each stays `Proposed` until a bounded slice is designed and verified.
+Industrial Telemetry v2 is in maintenance. A candidate is activated only when a target job or a real consumer/source creates the named pressure.
 
-- [ ] **Sensor/tag/unit/schema replacement** — reuses the EAV mapping config and schema-drift check.
-- [ ] **Suspicious quality metric traced back to source/telemetry** — extends the operator evidence report.
-- [ ] **Late/out-of-order telemetry and sequence gap** — only if a real late-data/window pressure is named.
-- [ ] **Asset/time-series/document contextualization** — cross-source identity resolution, reduced to this project's scale.
+- [ ] **Reproducible AI consumer (S-MFG-12, EXTENSION)** — temporal split, leakage checks, dataset/model version, and evaluation lineage over an accepted trusted snapshot.
+- [ ] **Physical sensor/gateway source (S-MFG-13, CONDITIONAL)** — collect an approved owned device through the same read-only telemetry contract.
+- [ ] **CNC multi-sensor / MTConnect source (S-MFG-15, CONDITIONAL)** — generalize the trust boundary only when an actual source or job requirement justifies it.
+- [ ] **Source correction and replacement lineage (S-MFG-16, EXTENSION)** — publish an explicit correction as a new trusted version without erasing the previous snapshot.
 
 ### Backlog / Unknown (distant — do not pull forward)
 
 - [ ] Simulated **ROS2 bag / MCAP-ish** ingest.
-- [ ] Real PLC/sensor/robot source; OPC UA / MQTT / ROS 2 / DDS integration.
 - [ ] Edge gateway or disconnected durable buffer as a product-grade component.
-- [ ] Continuous/event-time streaming, watermarks, Flink or Spark Structured Streaming.
+- [ ] Continuous Kafka-to-Spark/Iceberg telemetry, production watermarks, lag, and checkpoint operations.
 - [ ] Asset hierarchy / Unified Namespace / digital twin.
-- [ ] Anomaly model, predictive maintenance, closed-loop control.
+- [ ] Closed-loop control, PLC write, functional safety, or production OT security.
 - [ ] Production / HA / cluster operation.
 
 ---
