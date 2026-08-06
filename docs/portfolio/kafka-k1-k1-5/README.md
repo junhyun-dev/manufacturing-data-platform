@@ -62,14 +62,16 @@ The screens are rendered from the committed public-safe JSON through [`report.ht
 ./scripts/verify_kafka_k1_5.sh
 ```
 
-The downstream local Iceberg publish requires `requirements-spark.txt`. Exact commands and the latest results are in [`VERIFICATION_LOG.md`](../../../VERIFICATION_LOG.md).
+The downstream local Iceberg publish requires `requirements-spark.txt`. This walkthrough is
+[v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md), not the current product flow. The current
+verification boundary is documented in [`docs/VERIFICATION.md`](../../VERIFICATION.md).
 
 ## Evidence Links
 
 - K1 implementation: [`kafka_ingestion/landing.py`](../../../src/manufacturing_data_platform/kafka_ingestion/landing.py), [`runtime.py`](../../../src/manufacturing_data_platform/kafka_ingestion/runtime.py)
 - K1.5 implementation: [`batch_adapter.py`](../../../src/manufacturing_data_platform/kafka_ingestion/batch_adapter.py)
 - Tests: [`test_kafka_ingestion.py`](../../../tests/test_kafka_ingestion.py), [`test_kafka_batch_adapter.py`](../../../tests/test_kafka_batch_adapter.py)
-- Design decisions: [`kafka-offset-and-landing-commit.md`](../../../learn/reference-decisions/kafka-offset-and-landing-commit.md), [`kafka-landing-to-batch-adapter.md`](../../../learn/reference-decisions/kafka-landing-to-batch-adapter.md)
+- Current classification: [v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md)
 
 ## Claim Boundary
 

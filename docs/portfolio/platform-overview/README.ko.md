@@ -137,8 +137,8 @@ PYTHON_BIN=python ./scripts/verify_recovered_telemetry_publish.sh
 ![quality-gated 발행과 아무것도 바꾸지 않는 재실행](assets/03-publish-retry-evidence.png)
 
 이 화면들은 committed JSON을 렌더링하는 [`report.html`](report.html)의 브라우저 캡처다. 손으로 적은
-숫자가 아니다. 각 runbook의 실행 이력은
-[`../../../VERIFICATION_LOG.md`](../../../VERIFICATION_LOG.md)에 있다.
+숫자가 아니다. 이 walkthrough는 현재 제품이 아니라
+[v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md)로 보존한다.
 
 ### 자동 검증과 문서화된 로컬 검증의 경계
 
@@ -206,10 +206,8 @@ AI는 질문 발굴과 후보 구현을 가속했다. 수용에는 명시적 계
 
 ## 상세 링크
 
-- 결정: [`../../../learn/reference-decisions/recovery-gated-publish-boundary.md`](../../../learn/reference-decisions/recovery-gated-publish-boundary.md)
-- Slice map: [`../../../learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md`](../../../learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md)
-- 전체 추적 지도: [`../../../learn/system-design/01-system-traceability-map.ko.md`](../../../learn/system-design/01-system-traceability-map.ko.md)
+- 현재 분류: [v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md)
 - 코드: [`../../../src/manufacturing_data_platform/pipeline/recovered_telemetry_publish.py`](../../../src/manufacturing_data_platform/pipeline/recovered_telemetry_publish.py)
 - 테스트: [`../../../tests/test_recovered_telemetry_publish.py`](../../../tests/test_recovered_telemetry_publish.py)
 - Runbook: [`../../../scripts/verify_recovered_telemetry_publish.sh`](../../../scripts/verify_recovered_telemetry_publish.sh)
-- 검증 이력: [`../../../VERIFICATION_LOG.md`](../../../VERIFICATION_LOG.md)
+- 검증 경계: [`docs/VERIFICATION.md`](../../VERIFICATION.md)

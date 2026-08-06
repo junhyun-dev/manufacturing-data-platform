@@ -4,7 +4,7 @@ name: Base unit and contract tests
 # unit/contract suite. It does NOT install pyspark, Airflow, confluent-kafka, an Iceberg jar,
 # Docker, or a Kafka broker, and it therefore proves nothing about those runtimes. The optional
 # Spark/Airflow/Kafka tests skip in this job by design; that runtime evidence comes from the
-# documented local runbooks under `scripts/` and is recorded in `VERIFICATION_LOG.md`.
+# documented local runbooks under `scripts/` and is summarized in `docs/VERIFICATION.md`.
 
 on:
   pull_request:

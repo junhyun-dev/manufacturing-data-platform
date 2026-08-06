@@ -6,6 +6,9 @@
 **trusted dataset으로 발행할지, 차단할지, 재처리할지 결정하는** 로컬·bounded 데이터
 플랫폼 프로젝트입니다.
 
+주 사용자는 telemetry 수집 결과를 downstream 분석·ML에 공개할 책임이 있는 제조 데이터
+플랫폼 운영자입니다. 분석가와 ML 엔지니어는 운영자가 공개한 trusted dataset의 소비자입니다.
+
 > 대표 결과: [Industrial Telemetry Trust Report](docs/portfolio/industrial-telemetry-trust/README.md) ·
 > [정적 HTML](docs/portfolio/industrial-telemetry-trust/report.html) ·
 > [runtime evidence JSON](docs/portfolio/industrial-telemetry-trust/evidence/runtime-evidence.json)
@@ -165,12 +168,12 @@ evidence JSON과 동일한 document를 embed하고 그 값만 렌더링합니다
 | 실제 source·OPC UA replay·fault 구분 | [source provenance 화면](docs/portfolio/industrial-telemetry-trust/assets/02-source-provenance.png) |
 | duplicate·late·missing·trusted current | [event-time 화면](docs/portfolio/industrial-telemetry-trust/assets/03-event-time-trust.png) |
 | 화면이 읽는 authoritative 값 | [runtime-evidence.json](docs/portfolio/industrial-telemetry-trust/evidence/runtime-evidence.json) |
-| 실행·검증 이력 | [VERIFICATION_LOG.md](VERIFICATION_LOG.md) |
+| 실행·검증 범위 | [Verification](docs/VERIFICATION.md) |
 
-## 기존 v1 foundation
+## Historical Evidence — 기존 v1
 
-v2가 source와 event-time trust를 추가하기 전에는 synthetic machine event를 대상으로 다음
-복구 원리를 검증했습니다.
+현재 제품의 Golden Flow는 위 industrial telemetry trust 경로입니다. 그 이전에는 synthetic
+machine event를 대상으로 다음 복구 원리를 검증했습니다.
 
 ```text
 sealed edge spool
@@ -181,11 +184,9 @@ sealed edge spool
 ```
 
 부분 복구는 Spark/Iceberg state를 만들기 전에 거부되고, 같은 source 재실행은 새 snapshot을
-만들지 않습니다. 상세 내용은 [v1 platform overview](docs/portfolio/platform-overview/README.ko.md)와
-[Kafka K1/K1.5](docs/portfolio/kafka-k1-k1-5/README.ko.md)에 남겨두었습니다.
-
-현재 v2 telemetry contract는 v1의 Kafka/Iceberg 경로에 아직 직접 연결하지 않았습니다.
-두 경로를 연결했다고 주장하지 않습니다.
+만들지 않습니다. 이 경로는 현재 제품에 연결된 Extension이 아니라 검증된
+[Historical Evidence](docs/HISTORICAL-EVIDENCE.md)입니다. 새로운 continuous pipeline 요구가
+생기면 현재 telemetry contract에서 다시 설계하며, 두 경로가 연결돼 있다고 주장하지 않습니다.
 
 ## 주장 경계
 
@@ -210,7 +211,6 @@ sealed edge spool
 
 ## 더 보기
 
-- [설계 결정](DESIGN.ko.md)
-- [기존 상세 구현 이력](README.ko.md)
-- [v1 실행 이력과 v2 local evidence](VERIFICATION_LOG.md)
-- [benchmark와 한계](BENCHMARKS.ko.md)
+- [현재 Architecture와 Golden Flow](docs/ARCHITECTURE.md)
+- [검증 환경·명령·evidence 경계](docs/VERIFICATION.md)
+- [기존 v1 Historical Evidence](docs/HISTORICAL-EVIDENCE.md)

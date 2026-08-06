@@ -60,14 +60,16 @@ flowchart LR
 ./scripts/verify_kafka_k1_5.sh
 ```
 
-downstream local Iceberg publish에는 `requirements-spark.txt`가 필요하다. 정확한 명령과 최신 결과는 [`VERIFICATION_LOG.md`](../../../VERIFICATION_LOG.md)에 있다.
+downstream local Iceberg publish에는 `requirements-spark.txt`가 필요하다. 이 walkthrough는 현재
+제품이 아니라 [v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md)이며, 현재 검증 경계는
+[`docs/VERIFICATION.md`](../../VERIFICATION.md)를 따른다.
 
 ## Evidence 링크
 
 - K1 구현: [`kafka_ingestion/landing.py`](../../../src/manufacturing_data_platform/kafka_ingestion/landing.py), [`runtime.py`](../../../src/manufacturing_data_platform/kafka_ingestion/runtime.py)
 - K1.5 구현: [`batch_adapter.py`](../../../src/manufacturing_data_platform/kafka_ingestion/batch_adapter.py)
 - 테스트: [`test_kafka_ingestion.py`](../../../tests/test_kafka_ingestion.py), [`test_kafka_batch_adapter.py`](../../../tests/test_kafka_batch_adapter.py)
-- 설계 결정: [`kafka-offset-and-landing-commit.md`](../../../learn/reference-decisions/kafka-offset-and-landing-commit.md), [`kafka-landing-to-batch-adapter.md`](../../../learn/reference-decisions/kafka-landing-to-batch-adapter.md)
+- 현재 분류: [v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md)
 
 ## Claim Boundary
 

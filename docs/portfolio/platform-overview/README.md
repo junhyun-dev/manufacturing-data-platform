@@ -140,8 +140,8 @@ Observed on `d8ec816` (full values in
 ![Quality-gated publish and a retry that changes nothing](assets/03-publish-retry-evidence.png)
 
 The screens are browser captures of [`report.html`](report.html), which renders the committed
-JSON — they are not hand-authored numbers. Execution history for every runbook lives in
-[`../../../VERIFICATION_LOG.md`](../../../VERIFICATION_LOG.md).
+JSON — they are not hand-authored numbers. This walkthrough is retained as
+[v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md), not as the current product flow.
 
 ### What is automated versus documented
 
@@ -215,10 +215,8 @@ gates were for.
 
 ## Detail links
 
-- Decision: [`../../../learn/reference-decisions/recovery-gated-publish-boundary.md`](../../../learn/reference-decisions/recovery-gated-publish-boundary.md)
-- Slice map: [`../../../learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md`](../../../learn/system-design/slices/09-recovery-gated-spark-iceberg.ko.md)
-- Whole-platform trace: [`../../../learn/system-design/01-system-traceability-map.ko.md`](../../../learn/system-design/01-system-traceability-map.ko.md)
+- Current classification: [v1 Historical Evidence](../../HISTORICAL-EVIDENCE.md)
 - Code: [`../../../src/manufacturing_data_platform/pipeline/recovered_telemetry_publish.py`](../../../src/manufacturing_data_platform/pipeline/recovered_telemetry_publish.py)
 - Tests: [`../../../tests/test_recovered_telemetry_publish.py`](../../../tests/test_recovered_telemetry_publish.py)
 - Runbook: [`../../../scripts/verify_recovered_telemetry_publish.sh`](../../../scripts/verify_recovered_telemetry_publish.sh)
-- Verification history: [`../../../VERIFICATION_LOG.md`](../../../VERIFICATION_LOG.md)
+- Verification boundary: [`docs/VERIFICATION.md`](../../VERIFICATION.md)

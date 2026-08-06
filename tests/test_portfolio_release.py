@@ -3,8 +3,8 @@
 Scope, stated plainly: this validates the *committed evidence package* — that the JSON parses, says
 what the reader-facing pages say, and that the pages link to files that exist. It does **not**
 execute Kafka, Spark, Iceberg, or Airflow, and passing it is not evidence that any runtime ran.
-That evidence comes from `scripts/verify_recovered_telemetry_publish.sh` and is recorded in
-`VERIFICATION_LOG.md`.
+That evidence comes from the scoped runtime runbooks and is summarized in
+`docs/VERIFICATION.md`.
 
 Standard library only, so this runs in the base CI job alongside the rest of the suite.
 """
@@ -269,10 +269,11 @@ def test_root_readme_names_commands_evidence_and_claim_boundary():
         "PYTHONPATH=src python -m pytest -q",
         "scripts/verify_industrial_source_contract.sh",
         "scripts/verify_event_time_trust.sh",
-        "VERIFICATION_LOG.md",
+        "docs/ARCHITECTURE.md",
+        "docs/VERIFICATION.md",
+        "docs/HISTORICAL-EVIDENCE.md",
         "## 주장 경계",
         "badge는 이 base suite만 증명",
-        "docs/portfolio/platform-overview/README.ko.md",
     )
     for value in required:
         assert value in text
