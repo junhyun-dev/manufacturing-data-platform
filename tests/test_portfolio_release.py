@@ -37,6 +37,13 @@ WALKTHROUGHS = (OVERVIEW / "README.md", OVERVIEW / "README.ko.md")
 # allows a little slack for Mermaid syntax, so this is a ceiling, not an exact position.
 FIRST_SCREEN_LIMIT = 75
 
+# The entry-point contract is tighter than the first screen: a first-time reader must be able to
+# place the project — user, problem, decision, result link, simulation boundary — in 30 lines.
+FIRST_30_LIMIT = 30
+
+TRUST_DIR = REPO_ROOT / "docs" / "portfolio" / "industrial-telemetry-trust"
+TRUST_WALKTHROUGH = TRUST_DIR / "README.md"
+
 
 def _load_builder():
     """Import the evidence builder from scripts/, which is not an importable package."""
@@ -251,6 +258,52 @@ def test_root_readme_first_screen_carries_the_current_release_contract():
     assert not missing, f"README.md first screen is missing: {missing}"
 
 
+def test_root_readme_first_30_lines_answer_the_five_reader_questions():
+    lines = ROOT_README.read_text(encoding="utf-8").splitlines()
+    entry_point = "\n".join(lines[:FIRST_30_LIMIT])
+
+    required = {
+        "user": "제조 데이터 플랫폼",
+        "missing observations": "누락",
+        "quality fault": "품질 이상",
+        "late arrival": "지연",
+        "collector interruption": "수집기(collector) 중단",
+        "publish decision": "PUBLISH",
+        "blocked decision": "BLOCKED",
+        "reprocess decision": "REPROCESS REQUIRED",
+        "trust walkthrough": "docs/portfolio/industrial-telemetry-trust/README.md",
+        "actual record": "actual record",
+        "replay boundary": "local OPC UA",
+        "fault injection": "fault injection",
+        "not verified boundary": "production OPC UA",
+    }
+    missing = [name for name, needle in required.items() if needle not in entry_point]
+    assert not missing, f"README.md first {FIRST_30_LIMIT} lines are missing: {missing}"
+
+
+def test_root_readme_places_the_simulation_boundary_before_the_headline_result():
+    """A reader who stops at the result table must already have seen what is not verified."""
+    text = ROOT_README.read_text(encoding="utf-8")
+    assert text.index("production OPC UA") < text.index("## 한눈에 보는 결과")
+
+
+def test_root_readme_links_directly_into_the_review_trace_section():
+    """The entry point promises one link to the review trace, so the anchor must resolve."""
+    match = re.search(
+        r"\(docs/portfolio/industrial-telemetry-trust/README\.md#([^)\s]+)\)",
+        ROOT_README.read_text(encoding="utf-8"),
+    )
+    assert match, "README.md does not link into a section of the trust walkthrough"
+    slugs = {
+        line.lstrip("#").strip().replace(" ", "-").lower()
+        for line in TRUST_WALKTHROUGH.read_text(encoding="utf-8").splitlines()
+        if line.startswith("#")
+    }
+    assert match.group(1) in slugs, (
+        f"anchor {match.group(1)!r} matches no walkthrough heading: {sorted(slugs)}"
+    )
+
+
 def test_root_readme_states_actual_record_replay_and_live_boundary():
     text = ROOT_README.read_text(encoding="utf-8")
     lowered = text.lower()
@@ -272,7 +325,7 @@ def test_root_readme_names_commands_evidence_and_claim_boundary():
         "docs/ARCHITECTURE.md",
         "docs/VERIFICATION.md",
         "docs/HISTORICAL-EVIDENCE.md",
-        "## 주장 경계",
+        "## 검증 범위와 한계",
         "badge는 이 base suite만 증명",
     )
     for value in required:
@@ -318,6 +371,9 @@ def test_walkthroughs_share_the_observed_values_with_the_evidence(evidence):
 # Publication safety
 # --------------------------------------------------------------------------- #
 RELEASE_FILES = (ROOT_README,) + WALKTHROUGHS + (
+    TRUST_WALKTHROUGH,
+    TRUST_DIR / "report.html",
+    TRUST_DIR / "evidence" / "runtime-evidence.json",
     REPORT_PATH,
     EVIDENCE_PATH,
     REPO_ROOT / ".github" / "workflows" / "ci.yml",
@@ -348,7 +404,9 @@ def test_reader_facing_files_contain_no_obvious_secret(path: Path):
         assert not re.search(pattern, text, re.IGNORECASE), f"{path.name} matches {pattern}"
 
 
-@pytest.mark.parametrize("path", (ROOT_README,) + WALKTHROUGHS, ids=lambda p: p.name)
+@pytest.mark.parametrize(
+    "path", (ROOT_README, TRUST_WALKTHROUGH) + WALKTHROUGHS, ids=lambda p: str(p.parent.name)
+)
 def test_relative_links_in_release_pages_resolve(path: Path):
     text = path.read_text(encoding="utf-8")
     broken = []

@@ -2,22 +2,36 @@
 
 [![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml)
 
-실제 산업 기록을 센서처럼 수집하고, 값의 의미·시간·품질·완전성을 검증한 뒤
-**trusted dataset으로 발행할지, 차단할지, 재처리할지 결정하는** 로컬·bounded 데이터
-플랫폼 프로젝트입니다.
+주 사용자는 설비 관측 데이터(telemetry)를 후속 분석·ML에 공개할 책임이 있는 제조 데이터 플랫폼
+운영자입니다. 관측 누락, 품질 이상, 도착 지연, 수집기(collector) 중단이 섞이면 같은 원본 데이터 범위라도
+그 결과를 그대로 발행해도 되는지 판단하기 어렵습니다.
 
-주 사용자는 telemetry 수집 결과를 downstream 분석·ML에 공개할 책임이 있는 제조 데이터
-플랫폼 운영자입니다. 분석가와 ML 엔지니어는 운영자가 공개한 trusted dataset의 소비자입니다.
+이 프로젝트는 공개된 실제 설비 관측 기록을 로컬 OPC UA로 재생·수집해 값의 의미·시간·품질·완전성을 검증한 뒤
+**`PUBLISH`(발행) · `BLOCKED`(차단) · `REPROCESS REQUIRED`(재처리)** 중 하나를 결정하는
+로컬 환경에서 범위를 한정해 검증하는 데이터 플랫폼입니다. 분석가와 ML 엔지니어는 운영자가 공개한 trusted dataset의
+소비자입니다.
+
+```text
+actual record      공개 MetroPT-3 historical value
+replay simulation  local OPC UA server가 historical row를 DataValue로 재생
+fault injection    quality 시나리오의 Uncertain/Bad StatusCode와 collector 중단
+not verified       실제 공장 네트워크·physical plant·production OPC UA 운영
+```
+
+즉 센서값을 임의로 만든 데모는 아니지만, 실제 공장 네트워크나 현재 동작 중인 설비에
+연결한 것도 아닙니다.
 
 > 대표 결과: [Industrial Telemetry Trust Report](docs/portfolio/industrial-telemetry-trust/README.md) ·
 > [정적 HTML](docs/portfolio/industrial-telemetry-trust/report.html) ·
 > [runtime evidence JSON](docs/portfolio/industrial-telemetry-trust/evidence/runtime-evidence.json)
+>
+> 이 결과를 검증한 방식: [계약과 독립 검토](docs/portfolio/industrial-telemetry-trust/README.md#계약과-독립-검토)
 
 ![정상·품질 이상·collector 중단 판정 비교](docs/portfolio/industrial-telemetry-trust/assets/01-operator-decisions.png)
 
 ## 한눈에 보는 결과
 
-같은 MetroPT-3 source 범위를 세 가지 방식으로 수집해 서로 다른 다음 행동을 냅니다.
+같은 MetroPT-3 원본 데이터 범위를 정상·품질 이상·수집기 중단 상황으로 재현해 서로 다른 다음 행동을 확인합니다.
 
 | 상황 | 관측 결과 | 판정 | 다음 행동 |
 |---|---|---|---|
@@ -58,24 +72,6 @@ flowchart LR
 따라서 한 collection의 기대 관측 집합은 `3 rows × 3 tags = 9 observations`입니다.
 저장소에는 CC BY 4.0 출처를 명시한 [3-row fixture](tests/fixtures/metropt3/README.md)만
 포함하며, 전체 CSV는 커밋하지 않습니다.
-
-## 실제와 simulation의 경계
-
-이 프로젝트에서 세 가지를 분리합니다.
-
-```text
-actual record
-  공개 MetroPT-3 historical value
-
-replay simulation
-  local OPC UA server가 historical row를 DataValue로 재생
-
-fault injection
-  quality 시나리오의 Uncertain/Bad StatusCode와 collector 중단
-```
-
-즉 센서값을 임의로 만든 데모는 아니지만, 실제 공장 네트워크나 현재 동작 중인 설비에
-연결한 것도 아닙니다.
 
 ## 수집 단계에서 보존하는 것
 
@@ -188,18 +184,18 @@ sealed edge spool
 [Historical Evidence](docs/HISTORICAL-EVIDENCE.md)입니다. 새로운 continuous pipeline 요구가
 생기면 현재 telemetry contract에서 다시 설계하며, 두 경로가 연결돼 있다고 주장하지 않습니다.
 
-## 주장 경계
+## 검증 범위와 한계
 
-현재 증거로 말할 수 있는 것:
+이 프로젝트에서 확인한 것:
 
 - 실제 공개 산업 기록의 checksum을 검증하고 local OPC UA subscription으로 replay했다.
 - tag·단위·source/server/collection time·quality·mapping·source identity를 보존했다.
 - 정상·품질 이상·collector 중단의 expected/observed coverage와 operator action을 구분했다.
 - duplicate·out-of-order·too-late·missing·quality failure를 local bounded 정책으로 판정했다.
 - local Spark file micro-batch의 watermark/dedup/checkpoint identity parity를 확인했다.
-- content-addressed local trusted dataset과 current integrity refusal을 구현했다.
+- content-addressed 로컬 trusted dataset과, 손상된 current를 교체하지 않는 무결성 보호를 구현했다.
 
-현재 증거로 말하지 않는 것:
+아직 검증하지 않은 것:
 
 - physical PLC·sensor·실제 plant network 또는 production OPC UA 운영 경험
 - continuous Kafka→Spark→Iceberg telemetry streaming
@@ -212,5 +208,5 @@ sealed edge spool
 ## 더 보기
 
 - [현재 Architecture와 Golden Flow](docs/ARCHITECTURE.md)
-- [검증 환경·명령·evidence 경계](docs/VERIFICATION.md)
+- [검증 환경·명령·검증 범위와 한계](docs/VERIFICATION.md)
 - [기존 v1 Historical Evidence](docs/HISTORICAL-EVIDENCE.md)

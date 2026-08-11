@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import re
 import struct
@@ -27,6 +28,24 @@ SCREENSHOTS = (
     "02-source-provenance.png",
     "03-event-time-trust.png",
 )
+
+# Byte identity of the runtime artifacts as independently re-derived and accepted. Documentation
+# work must describe these artifacts, never regenerate or hand-edit them.
+ACCEPTED_ARTIFACT_SHA256 = {
+    "evidence/runtime-evidence.json": (
+        "dddd91a9eb03f40b97f0f315e437417a38e7eeef7fc02557f883e8404eb12d8d"
+    ),
+    "report.html": "3da697d8667127c27cab9dbbd5e80a554b76a3dc6083def405474f136c45383d",
+    "assets/01-operator-decisions.png": (
+        "6935ed6a240ecbed709ee6f229dd6bd2cd49414e4fa43f8b4f4d119e74a42b1a"
+    ),
+    "assets/02-source-provenance.png": (
+        "88b9afab632d98dc78c49231661f21aa782eaff7026cb1ffaa6931b9bce7bde6"
+    ),
+    "assets/03-event-time-trust.png": (
+        "e4c86c01385bfb14d92d03f32ef82456563f4e5ff894d928c50ff248452d0a16"
+    ),
+}
 
 
 @pytest.fixture(scope="module")
@@ -302,3 +321,35 @@ def test_reader_walkthrough_contains_problem_flow_evidence_and_limits():
         assert heading in text
     for action in ("PUBLISH", "BLOCKED", "REPROCESS REQUIRED"):
         assert action in text
+
+
+def test_published_runtime_artifacts_keep_their_accepted_byte_identity():
+    observed = {
+        name: hashlib.sha256((REPORT_DIR / name).read_bytes()).hexdigest()
+        for name in ACCEPTED_ARTIFACT_SHA256
+    }
+    assert observed == ACCEPTED_ARTIFACT_SHA256
+
+
+def test_walkthrough_traces_contract_candidate_finding_repair_and_acceptance():
+    """A finding without its repair and re-acceptance is a stale trace, not evidence."""
+    text = (REPORT_DIR / "README.md").read_text(encoding="utf-8")
+    assert "## 계약과 독립 검토" in text
+    section = text.split("## 계약과 독립 검토", 1)[1]
+
+    for element in ("계약", "candidate", "독립 검토", "REVISE", "ACCEPT"):
+        assert element in section, element
+    assert section.index("REVISE") < section.index("ACCEPT")
+    # The repair must state that it changed no published value.
+    assert "byte 단위로 동일" in section
+
+
+def test_walkthrough_keeps_the_ai_claim_and_private_process_boundary():
+    text = (REPORT_DIR / "README.md").read_text(encoding="utf-8")
+
+    for leak in ("/home/", "S-MFG-", "IMPLEMENTATION_PACKAGE", "FINAL_REVIEW", "project-control"):
+        assert leak not in text, leak
+    for overclaim in ("AI가 구현을 완성", "AI가 검증", "Claude가 구현"):
+        assert overclaim not in text, overclaim
+    # Reviewer identity is not established by public evidence, so it stays unnamed.
+    assert "independent review" in text
