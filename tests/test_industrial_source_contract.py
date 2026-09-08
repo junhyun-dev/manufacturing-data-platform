@@ -57,6 +57,24 @@ FIXTURE = (
 FIXTURE_SHA256 = "9863d4cdb7fe84bc74458a90e306fb384d9741be389329ddc434a3eacde5e21a"
 
 
+def test_spool_failure_surfaces_its_cause_without_publishing(tmp_path, monkeypatch):
+    def fail_write(self, event):
+        raise OSError("injected spool write failure")
+
+    monkeypatch.setattr(TelemetrySpool, "append", fail_write)
+    with pytest.raises(
+        IndustrialSourceRuntimeError,
+        match="collector callback failed: OSError: injected spool write failure",
+    ):
+        verify_three_scenarios(
+            source_csv=FIXTURE,
+            expected_sha256=FIXTURE_SHA256,
+            output_root=tmp_path,
+        )
+    assert not (tmp_path / "last_good.json").exists()
+    assert not list(tmp_path.glob("spool/*/collection_seal.json"))
+
+
 @pytest.fixture
 def selection():
     return load_metropt_rows(FIXTURE, expected_sha256=FIXTURE_SHA256)

@@ -7,7 +7,8 @@
 
 이 문서는 현재 제품의 Golden Flow와 component 책임만 설명한다. 과거 synthetic
 catalog/lakehouse/Kafka/Spark 경로는 [Historical Evidence](HISTORICAL-EVIDENCE.md)이며 현재
-runtime 흐름으로 연결됐다고 주장하지 않는다.
+runtime 흐름으로 연결됐다고 주장하지 않는다. identity·시간·판정의 정확한 의미와
+재수집·단일 writer 한계는 [Contract](CONTRACT.md)가 소유한다.
 
 ## Golden Flow
 
@@ -75,18 +76,9 @@ source record
 ## 가장 짧은 진입점
 
 ```bash
-# base·contract tests
-python -m pip install -r requirements.txt
-PYTHONPATH=src python -m pytest -q
-
-# local OPC UA replay와 normal/quality/interrupted 비교
-python -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt -r requirements-opcua.txt
-PYTHON_BIN=.venv/bin/python ./scripts/verify_industrial_source_contract.sh
-
-# event-time trust와 local Spark parity
-.venv/bin/python -m pip install -r requirements-event-time.txt
-./scripts/verify_event_time_trust.sh
+make setup
+make test
+make verify
 ```
 
 실행 환경과 claim 경계는 [Verification](VERIFICATION.md)을 따른다.

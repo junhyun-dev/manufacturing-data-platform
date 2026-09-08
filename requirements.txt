@@ -1,4 +1,5 @@
-# Phase 1 deps (kept minimal — see ROADMAP for what's deliberately deferred)
+# Base dependencies, including the retained catalog/lakehouse tests.
+# requirements-dev.lock pins these plus the current OPC UA runtime.
 fastapi
 uvicorn
 pymongo

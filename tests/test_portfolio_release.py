@@ -326,7 +326,7 @@ def test_root_readme_names_commands_evidence_and_claim_boundary():
         "docs/VERIFICATION.md",
         "docs/HISTORICAL-EVIDENCE.md",
         "## 검증 범위와 한계",
-        "badge는 이 base suite만 증명",
+        "badge는 해당 commit의 CI 실행 범위만 증명",
     )
     for value in required:
         assert value in text

@@ -1,8 +1,8 @@
 # 제조 설비 데이터는 언제 믿을 수 있는가?
 
-[![Base unit and contract tests](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml)
+[![Unit, contract and local telemetry tests](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml)
 
-주 사용자는 설비 관측 데이터(telemetry)를 후속 분석·ML에 공개할 책임이 있는 제조 데이터 플랫폼
+상정한 주 사용자는 설비 관측 데이터(telemetry)를 후속 분석·ML에 공개할 책임이 있는 제조 데이터 플랫폼
 운영자입니다. 관측 누락, 품질 이상, 도착 지연, 수집기(collector) 중단이 섞이면 같은 원본 데이터 범위라도
 그 결과를 그대로 발행해도 되는지 판단하기 어렵습니다.
 
@@ -29,6 +29,10 @@ not verified       실제 공장 네트워크·physical plant·production OPC UA
 
 ![정상·품질 이상·collector 중단 판정 비교](docs/portfolio/industrial-telemetry-trust/assets/01-operator-decisions.png)
 
+개발을 이어갈 때는 [현재 작업과 다음 gate](PROJECT_STATUS.md)에서 시작합니다.
+판정 의미는 [Contract](docs/CONTRACT.md), 보완 순서와 완료 조건은 [Backlog](docs/BACKLOG.md)가 소유합니다.
+빠른 로컬 재현은 아래 `make setup`, `make test`, `make verify` 세 명령입니다.
+
 ## 한눈에 보는 결과
 
 같은 MetroPT-3 원본 데이터 범위를 정상·품질 이상·수집기 중단 상황으로 재현해 서로 다른 다음 행동을 확인합니다.
@@ -39,8 +43,10 @@ not verified       실제 공장 네트워크·physical plant·production OPC UA
 | 품질 이상 | expected 9 / observed 9 / Uncertain 1 / Bad 1 | `blocked_quality` | `BLOCKED` |
 | collector 중단 | expected 9 / observed 3 / missing 6 | `incomplete` | `REPROCESS REQUIRED` |
 
-중복·역순 입력은 허용 범위 안에서 정상 입력과 같은 dataset version으로 수렴합니다.
+같은 수집 결과의 중복·역순 입력은 허용 범위 안에서 정상 입력과 같은 dataset version으로 수렴합니다.
 too-late·missing·quality failure는 기존 trusted current를 전진시키지 않습니다.
+새로 수집하면 server/collection time이 달라져 새 version이 생길 수 있습니다. 재처리 실행과
+원본 재수집의 멱등성은 [후속 계약 검토](docs/BACKLOG.md#mfg-02--recovery-and-replay-identity) 대상입니다.
 
 ```mermaid
 flowchart LR
@@ -61,8 +67,9 @@ flowchart LR
 ## 어떤 데이터를 사용하는가
 
 [UCI MetroPT-3](https://archive.ics.uci.edu/dataset/791/metropt%203%20dataset)는 지하철
-공기압축기에서 수집된 압력·온도·전류·밸브 계열 기록입니다. 전체 배포 CSV의
-1,516,948개 행과 SHA-256을 검증하고, 재현 가능한 데모에서는 첫 3개 physical row의
+공기압축기에서 수집된 압력·온도·전류·밸브 계열 기록입니다. 보존된 공개 보고서는 전체 배포 CSV의
+1,516,948개 행과 SHA-256을 확인한 실행을 근거로 합니다. 이는 전체 행의 파이프라인 처리 실적이 아닙니다.
+기본 로컬 재현에서는 저장소에 포함된 첫 3개 physical row의
 다음 tag를 선택합니다.
 
 - `TP2`: 압력, `bar`
@@ -113,21 +120,39 @@ Kafka source나 Iceberg streaming sink를 검증한 것이 아닙니다.
 
 ## 실행
 
+### 새 환경에서 현재 경로 재현
+
+Python 3.10과 uv, Bash, Make가 있는 Linux 환경을 기준으로 합니다.
+
+```bash
+make setup
+make test
+make verify
+```
+
+`make setup`은 `requirements-dev.lock`의 base + OPC UA 의존성을 `.venv`에 설치합니다.
+`make verify`는 실제 loopback OPC UA replay로 collection 3개·event-time 5개 시나리오를 실행하고,
+`.cache/telemetry-runs/run-*`에 결과와 `runtime_identity.json`, `readback.json`을 남깁니다.
+기존 결과를 덮어쓰지 않으며 원격 서비스·Docker·전체 CSV가 필요하지 않습니다.
+출력된 `current → manifest → data`를 다시 읽어 digest까지 검증한 뒤 성공합니다.
+설치·optional runtime·실패 시 확인 위치는 [Verification](docs/VERIFICATION.md)을 따릅니다.
+
 ### Base CI와 같은 테스트
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -c requirements-dev.lock
 PYTHONPATH=src python -m pytest -q
 ```
 
-GitHub Actions badge는 이 base suite만 증명합니다. OPC UA, Spark, Kafka, Iceberg,
-Airflow runtime은 optional dependency와 별도 로컬 runbook으로 검증합니다.
+GitHub Actions badge는 해당 commit의 CI 실행 범위만 증명합니다. Workflow의 base job은
+optional runtime을 제외하고, telemetry job은 OPC UA contract와 fixture read-back을 실행합니다.
+Spark, Kafka, Iceberg, Airflow는 별도 환경에서 검증합니다. 아직 push하지 않은 변경의
+원격 CI 상태는 [현재 작업](PROJECT_STATUS.md)에서 구분합니다.
 
 ### OPC UA source contract
 
 ```bash
-python -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt -r requirements-opcua.txt
+make setup
 PYTHON_BIN=.venv/bin/python ./scripts/verify_industrial_source_contract.sh
 ```
 
@@ -137,13 +162,17 @@ interrupted collection을 검증한 뒤 임시 output을 제거합니다.
 ### Event-time trust와 local Spark parity
 
 ```bash
-.venv/bin/python -m pip install -r requirements.txt -r requirements-event-time.txt
-./scripts/verify_event_time_trust.sh
+uv venv --python 3.10 .cache/venvs/spark
+uv pip install --python .cache/venvs/spark/bin/python \
+  -r requirements-dev.lock -r requirements-event-time.txt
+PYTHON_BIN=.cache/venvs/spark/bin/python ./scripts/verify_event_time_trust.sh
 ```
 
 ### Trust Report 재생성
 
-전체 MetroPT CSV와 accepted local runtime evidence가 `.cache/`에 있는 authoring 환경에서:
+아래는 **보존된 공개 보고서의 authoring 경로**입니다. 기본 `make verify`와 별개이며,
+전체 MetroPT CSV와 Spark를 포함한 해당 실행 근거가 `.cache/`에 있어야 합니다.
+그 파일이 없는 새 checkout에서는 [재현성 보완 항목](docs/BACKLOG.md#mfg-03--public-report-reproduction-without-the-authors-cache)을 따릅니다.
 
 ```bash
 python3 scripts/build_industrial_trust_report.py \
@@ -208,5 +237,7 @@ sealed edge spool
 ## 더 보기
 
 - [현재 Architecture와 Golden Flow](docs/ARCHITECTURE.md)
+- [판정·identity·time 계약](docs/CONTRACT.md)
+- [보완할 결과와 완료 조건](docs/BACKLOG.md)
 - [검증 환경·명령·검증 범위와 한계](docs/VERIFICATION.md)
 - [기존 v1 Historical Evidence](docs/HISTORICAL-EVIDENCE.md)

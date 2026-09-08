@@ -16,11 +16,16 @@ def main() -> int:
     parser.add_argument("--source-csv", required=True)
     parser.add_argument("--expected-sha256", required=True)
     parser.add_argument("--output-root", required=True)
+    parser.add_argument(
+        "--without-spark", action="store_true",
+        help="Verify Python trust evidence only; do not claim Spark parity.",
+    )
     args = parser.parse_args()
     summary = verify_retained_event_time_evidence(
         source_csv=args.source_csv,
         expected_sha256=args.expected_sha256,
         output_root=args.output_root,
+        require_spark_parity=not args.without_spark,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
