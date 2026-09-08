@@ -122,7 +122,7 @@ Uncertain으로 바꿔도 숫자는 `53.625°C` 그대로다. expected set·uniq
 
 ## MFG-01 — One analyst result from a trusted version
 
-**첫 파일 서비스 구현 / 로컬 검증.** 2026-09-08 작성자가 공개 가능한 실사용 서비스 후보를 만들도록 위임했다.
+**첫 파일 서비스 구현·로컬 검증 완료 / 외부 수용은 별도.** 2026-09-08 작성자가 공개 가능한 실사용 서비스 후보를 만들도록 위임했다.
 기존 MetroPT/OPC UA 계약에 일반 업로드의 출처를 끼워 넣지 않고, [File Review Contract](FILE_REVIEW_CONTRACT.md)를
 별도로 수용했다. 실제 사용자 접근·반복 사용은 아직 미확인이다.
 
@@ -240,7 +240,7 @@ README와 테스트만으로 반복 사용이나 운영 책임을 증명하지 �
 ## 이력서와 면접에서의 사용
 
 지금은 기존 **로컬 산업 데이터 품질·발행 검증**에 더해 **CSV 검토·분석·수정·근거 전달 웹 서비스 후보**를
-구현한 근거를 만들고 있다. 최종 통과 결과·현재 branch·외부 반영 여부는 PROJECT_STATUS로 확인한다. source/time/unit/quality를
+구현·검증한 근거가 있다. 최종 통과 결과·현재 branch·외부 반영 여부는 PROJECT_STATUS로 확인한다. source/time/unit/quality를
 보존하고, 불완전하거나 신뢰할 수 없는 입력의 발행을 막고, 이전 trusted dataset을 보호한 근거가 있다.
 production 데이터 플랫폼, 사업 성과, 분석가의 실사용, 처리 규모는 아직 별도 근거가 필요하다.
 

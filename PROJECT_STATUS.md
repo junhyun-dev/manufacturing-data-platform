@@ -5,15 +5,16 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | VERIFY — 첫 Telemetry Review 파일 서비스 구현, 로컬 API·브라우저 검증 완료. 새 체크아웃 검증 중 |
+| 단계 | LOCAL RELEASE CANDIDATE — 첫 Telemetry Review 구현·로컬 검증·새 체크아웃 재현 완료 |
 | 사용자 결정 | 2026-09-08 공개 가능한 실사용 서비스 후보를 로컬에서 구현하도록 위임. 실제 수요·대표 프로젝트 선정은 별도 |
 | Integration target | `main`; 원격 기준 `0a3dfb81a8d6341b6e456e0aec72303018da93aa` |
 | 구현 시작점 | `6a7c71e` — 기존 로컬 환경·source 조사·제품 방향 정비 위에서 시작 |
+| 검증한 서비스 revision | `f2ddf8e1ef5c8ee12263e4d70452d4c9129ba7b2`; 이후 변경은 상태·검증 문서 |
 | 작업 branch | `feat/telemetry-file-review` |
 | 현재 결과 | 자기 CSV → 파일 검증 → 구간 분석 → 근거 ZIP → 수정 파일·재검사. 공개 샘플 전달 누락·보관 원본 복구 |
 | Candidate 확인 | `git log -1 --oneline`, `git status --short --branch`; 실행 receipt에는 Git HEAD와 source 파일 hash 기록 |
 | 외부 상태 | NOT RELEASED. push·PR·merge·배포·새 원격 CI 미실행 |
-| 다음 한 행동 | 새 체크아웃의 setup·test·실제 HTTP 검증을 끝내고 MFG-09의 독립 사용 gate로 넘긴다 |
+| 다음 한 행동 | MFG-09에서 실제 CSV 검토자 한 명의 비민감 파일·업무 질문으로 독립 사용 시나리오를 준비한다 |
 
 ## 실행과 이어가기
 
@@ -47,7 +48,8 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 
 | 검사 | 관측 결과 |
 |---|---|
-| 전체 Python 3.10.12 suite | 244 passed / 17 skipped. 이후 정밀 timestamp 거부 회귀 1개 추가 및 영향 범위 재검증 |
+| 전체 Python 3.10.12 suite | 244 passed / 17 skipped. 이후 정밀 timestamp 거부 회귀 1개 추가; 영향 범위 77 passed |
+| 새 clean clone / Python 3.12.3 | `make setup → make test → make verify-service` PASS. 245 passed / 17 skipped, 실제 HTTP·정적 화면·ZIP·재시작 확인. 작성자 cache 불필요 |
 | 파일 서비스 API·저장 반례 | 정상/거부/수정, 동일 원본 재시도, timezone duplicate·quality·unit, 조회 구간, export 전체 행, CSRF·공간 분리, 용량 rollback, 동시 재검사, 만료·삭제, 변조 거부 |
 | 실제 HTTP와 서버 재시작 | PASS. Oil_temperature 7,144개 평균 55.74811730123181; 원본을 독립 계산한 값과 일치. ZIP digest·같은 복구 version·재시작 후 이력 확인 |
 | 실제 Chromium 140 / Playwright 1.55 | 업로드·거부 후 이전 결과 ZIP·수정·빈 구간·샘플·누락·복구·새로고침·다른 브라우저 확인. 1440/390 px 가로 넘침 없음, page error 0 |
@@ -57,7 +59,9 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 
 실행 근거는 `.cache/file-review-tests.log`, `.cache/file-review-final-focused.log`,
 `.cache/file-review-verification/<run>/receipt.json`, `.cache/file-review-browser/receipt.json`,
-`.cache/file-review-legacy-replay.log`에 있다. 원본/결과 변조·저장 실패·quota·동시 재시도는 자동 테스트가 실행한다.
+`.cache/file-review-legacy-replay.log`에 있다. 새 체크아웃의 명령·revision·clean 여부는
+`.cache/file-review-cold-check/receipt.json`, 실제 HTTP 수치와 source 파일 hash는 같은 디렉터리의
+`http-receipt.json`, 전체 출력은 `run.log`에 보존했다. 검증 전용 임시 clone은 근거 보존과 clean 확인 뒤 제거했다. 원본/결과 변조·저장 실패·quota·동시 재시도는 자동 테스트가 실행한다.
 브라우저 실행기는 자신이 생성한 파일만 삭제한다. 기존 공개 보고서 JSON/HTML/PNG는 보존했다.
 
 기존 정비 기준 `fbda33d`의 새 clone 검증(210 pass / 17 skipped, OPC UA read-back)은 이전 환경 정비의 근거다.

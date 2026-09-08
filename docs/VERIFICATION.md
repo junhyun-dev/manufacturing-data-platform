@@ -3,6 +3,9 @@
 현재 변경의 exact baseline·결과·다음 gate는 [PROJECT_STATUS](../PROJECT_STATUS.md)가 소유한다.
 이 문서는 새 checkout의 실행 방법과 각 검증으로 말할 수 있는 범위를 설명한다.
 
+현재 CSV 웹 서비스는 [사용·검증 guide](FILE_REVIEW_GUIDE.md)의 `make serve`·`make verify-service`로
+실행한다. 이 문서의 OPC UA·Spark·historical report 검증은 별도의 기존 실험이며 웹 실행의 선행조건이 아니다.
+
 ## 기본 환경
 
 Linux, Python 3.10, uv, Bash, Make를 사용한다. OPC UA는 loopback 주소에서만 재생한다.
