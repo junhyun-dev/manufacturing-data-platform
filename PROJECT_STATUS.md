@@ -9,6 +9,7 @@
 | 결정자 | 프로젝트 작성자. 대표 프로젝트 선정과 외부 반영은 사용자 판단 |
 | Integration target | `main` |
 | 기존 기준점 | `0a3dfb81a8d6341b6e456e0aec72303018da93aa`; 시작 시 clean checkout |
+| 새 checkout 검증 revision | `fbda33d13477c9bd5c8ad8354ec3d085e8e89283`; 아래 검증 뒤 상태 설명만 보완 |
 | 작업 branch | `chore/reproducible-telemetry-handoff` |
 | 이번 변경 | [MFG-00](docs/BACKLOG.md#mfg-00--reproducible-local-entry), 로컬 결과 준비 완료 |
 | Candidate 확인 | `git log -1 --oneline`·`git status --short --branch`; 검증 당시 code/test hash는 각 run의 receipt |
@@ -30,6 +31,7 @@ read-back, 현재 계약과 작업 입구를 만들었다. OPC UA CI job을 추�
 | 격리된 base 환경, Python 3.10.12 / 3.12.3 | 각각 181 passed / 19 skipped; OPC UA 모듈 2개도 skip |
 | 저장 실패 주입 | 원래 spool 오류를 노출하고 last-good·seal을 만들지 않는 회귀 테스트 통과 |
 | 실제 OPC UA replay | 정상·품질 이상·중단 collection과 event-time 5개 판정, 디스크 current/manifest/data read-back 성공 |
+| 캐시 없는 새 local clone | `make setup → make test → make verify` 성공; 210 passed / 17 skipped, clean revision의 replay·read-back. 임시 clone은 제거 |
 | 추가 반례 | trusted JSONL을 변조한 복사본은 `CURRENT_DATA_DIGEST`로 거부. 원본은 계속 검증 가능. Spark evidence 없이 기본 read-back을 하면 거부 |
 | 원본 재수집 비교 | 두 실행의 event ID 9개는 같고 server/collection time과 dataset version은 다름. 원본 수준 멱등성을 주장하지 않음 |
 | 구조 확인 | CI YAML, shell syntax, diff whitespace, project 문서 링크와 private 경로 의존성 확인 |
@@ -39,7 +41,9 @@ read-back, 현재 계약과 작업 입구를 만들었다. OPC UA CI job을 추�
 실패 output에는 TP2 한 건만 있었고 seal은 없었다. 이후 6회 연속 collection 검증과 최종 전체 suite는
 통과했지만 근본 원인은 미확정이다. 진단 개선을 그 간헐 실패의 해결로 읽지 않는다. MFG-07이 이 공백을 소유한다.
 
-로컬 실행 로그는 `.cache/adoption-tests.log`와 `.cache/adoption-replay.log`다. 보존된 정상 실행은
+로컬 실행 로그는 `.cache/adoption-tests.log`와 `.cache/adoption-replay.log`다. 새 checkout 검증 요약은
+`.cache/adoption-cold-check.json`, 로그는 `.cache/adoption-cold-check.log`에 있다. 요약 안의 임시
+checkout 경로는 검증 당시 위치이며 정리 후 존재하지 않는다. 보존된 정상 실행은
 `.cache/telemetry-runs/`에서 각 `runtime_identity.json`·`readback.json`으로 식별한다. 실패 관측은
 `.cache/telemetry-failure-observation/`에 있다. 이 생성물은 Git에 넣지 않으며 새 checkout은
 [Verification](docs/VERIFICATION.md)의 명령으로 자체 근거를 만든다. 보존된 public JSON/HTML/PNG는 변경하지 않았다.
