@@ -35,7 +35,7 @@
       <section id="welcome" class="welcome" aria-labelledby="welcome-title">
         <p class="eyebrow">FROM FILE TO CHECKED RESULT</p>
         <h1 id="welcome-title">분석하기 전에,<br>데이터부터 확인하세요.</h1>
-        <p class="welcome-description">설비 CSV를 넣고 필요한 구간을 살펴보세요.<br>파일 검증 결과와 분석에 사용한 버전을 함께 남깁니다.</p>
+        <p id="welcome-description" class="welcome-description">설비 CSV를 넣고 필요한 구간을 살펴보세요.<br>파일 검증 결과와 분석에 사용한 버전을 함께 남깁니다.</p>
         <div id="dropzone" class="dropzone">
           <div class="file-symbol" aria-hidden="true"><span>CSV</span></div>
           <h2>CSV 파일을 여기에 놓으세요</h2>
@@ -45,7 +45,7 @@
         </div>
         <div class="sample-callout"><div><strong>준비된 파일이 없나요?</strong><p>지하철 공기압축기의 공개 기록으로 먼저 확인해 보세요.</p></div><button id="welcome-sample" type="button" class="button secondary">샘플로 시작 <span aria-hidden="true">→</span></button></div>
         <ol class="steps"><li><span>01</span><h3>파일 확인</h3><p>중복, 시간, 단위와 제공된 품질 정보를 검사합니다.</p></li><li><span>02</span><h3>구간 분석</h3><p>설비와 측정 항목을 골라 실제 값과 표본 통계를 봅니다.</p></li><li><span>03</span><h3>근거와 함께 저장</h3><p>선택한 관측값과 출처·버전 기록을 함께 내려받습니다.</p></li></ol>
-        <details class="input-guide"><summary>내 CSV는 어떤 형식이어야 하나요?</summary><p>한 행에 하나의 관측값을 넣으세요. 필수 열은 아래 다섯 개이며, 선택 열 <code>quality</code>에는 <code>good</code>, <code>uncertain</code>, <code>bad</code>, <code>unspecified</code>를 사용할 수 있습니다.</p><pre>timestamp,equipment,tag,value,unit
+        <details id="input-guide" class="input-guide"><summary>내 CSV는 어떤 형식이어야 하나요?</summary><p>한 행에 하나의 관측값을 넣으세요. 필수 열은 아래 다섯 개이며, 선택 열 <code>quality</code>에는 <code>good</code>, <code>uncertain</code>, <code>bad</code>, <code>unspecified</code>를 사용할 수 있습니다.</p><pre>timestamp,equipment,tag,value,unit
 2026-01-01T09:00:00,APU-1,Oil_temperature,53.6,°C
 2026-01-01T09:00:10,APU-1,Oil_temperature,53.7,°C</pre><p>시간대가 있는 시각과 없는 시각을 한 파일에서 섞지 마세요. 같은 설비·항목·시각의 중복 행이나 한 항목 안의 단위 변경은 허용하지 않습니다. 품질을 생략하면 ‘미제공’으로 표시됩니다.</p><a href="/api/template.csv" class="text-link" download>예제 양식 내려받기 ↓</a></details>
       </section>

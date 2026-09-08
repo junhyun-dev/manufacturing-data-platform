@@ -1,0 +1,3 @@
+# Runtime-only dependency inputs. Compile requirements-service.lock after changes.
+fastapi
+uvicorn

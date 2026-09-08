@@ -6,13 +6,25 @@
 **파일 업로드 → 문제 확인 → 설비·측정 항목·시간 구간 조회 → 검토 근거와 함께 내려받기**를 제공합니다.
 잘못된 수정 파일을 올리면 최신 검사 실패를 알리고 이전 정상 결과를 유지합니다.
 
+현재는 실제 HTTP·Chromium·새 checkout·비루트 읽기 전용 컨테이너 재시작까지 확인한 **로컬 릴리스 후보**입니다.
+외부 배포·실사용·production 성과는 검증하지 않았습니다. [파일 계약](docs/FILE_REVIEW_CONTRACT.md)과
+[사용법·검증](docs/FILE_REVIEW_GUIDE.md)에서 입력 의미와 실행 범위를 확인할 수 있습니다.
+
 ```bash
 make setup
 make serve
 # http://127.0.0.1:8000
 ```
 
-Python 3.10+와 uv가 필요합니다. MongoDB·클라우드 계정 없이 실행되며, 브라우저에서 자기 CSV를 올리거나
+Docker로 같은 서비스를 실행할 수도 있습니다. 기본 `full` 모드는 자기 CSV를 받고, `sample` 모드는
+임의 업로드를 서버에서 차단하는 공개 체험 경계입니다.
+
+```bash
+docker compose --env-file .env.example up --build
+# http://127.0.0.1:8000
+```
+
+소스 실행에는 Python 3.10+와 uv가 필요합니다. MongoDB·클라우드 계정 없이 실행되며, 브라우저에서 자기 CSV를 올리거나
 **공개 샘플 열기**를 누르면 시작합니다. 샘플에는 실제 MetroPT-3 기록 하루치 21,432개 관측이 들어 있습니다.
 
 - 설비·태그·시간의 중복, 숫자, 단위, 시간대와 제공된 품질을 검사합니다. 품질 미제공은 Good으로 바꾸지 않습니다.
@@ -20,11 +32,9 @@ Python 3.10+와 uv가 필요합니다. MongoDB·클라우드 계정 없이 실�
 - ZIP에는 선택한 전체 CSV와 원본 hash·결과 버전·조회 조건·품질 한계를 기록한 manifest가 들어갑니다.
 - 수정 파일 교체와 재검사 이력을 남깁니다. 샘플에서 전달 누락 → 보관 원본 복구 → 같은 결과 버전도 체험할 수 있습니다.
 
-현재는 **로컬 서비스 후보**입니다. 외부 배포·실사용·production 성과는 검증하지 않았습니다.
 파일은 실행 서버의 임시 작업 공간에 저장됩니다. 8 MiB/50,000행, 작업 공간당 파일 10개이며 직접 삭제할 수 있습니다.
 비활성 공간은 24시간 뒤 다음 세션 생성 또는 서버 시작 때 정리됩니다.
 
-[사용법과 실행·검증](docs/FILE_REVIEW_GUIDE.md) · [파일 계약](docs/FILE_REVIEW_CONTRACT.md) ·
 [현재 작업](PROJECT_STATUS.md) · [보완 backlog](docs/BACKLOG.md) · [구조](docs/ARCHITECTURE.md)
 
 ![공개 샘플에서 구간 분석과 데이터 근거를 확인하는 실제 로컬 화면](docs/assets/file-review-sample.png)

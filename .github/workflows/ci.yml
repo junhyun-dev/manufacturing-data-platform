@@ -1,8 +1,8 @@
 name: Unit, contract and local telemetry tests
 
-# The base job keeps optional runtimes absent. The telemetry job installs OPC UA,
-# exercises current contracts, and reads back a fresh local fixture replay.
-# Neither job proves Spark/Kafka/Iceberg/Airflow or production operation.
+# The base job keeps optional runtimes absent. The container job reads back the
+# bounded sample service. The telemetry job separately installs OPC UA and replays
+# its fixture. These jobs do not prove public hosting or production operation.
 
 on:
   pull_request:
@@ -76,3 +76,21 @@ jobs:
           tests/test_event_time_trust.py tests/test_industrial_trust_report.py
       - name: Replay fixture and verify retained trusted data
         run: PYTHON_BIN=python bash scripts/verify_telemetry.sh
+
+  release-container:
+    name: Sample-only container and persistent restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Build and read back the release container
+        run: make verify-container PYTHON_BIN=python3
+      - name: Retain release verification receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-container-receipt
+          path: .cache/release-container/*/
+          if-no-files-found: error
+          retention-days: 14

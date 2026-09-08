@@ -16,6 +16,36 @@ make serve
 다시 실행하면 유효한 브라우저 작업 공간의 파일과 검사 이력이 복원된다. 설치 후 샘플 사용에는
 네트워크나 원본 208 MiB archive가 필요 없다. 웹 실행에 MongoDB, Spark, OPC UA는 사용하지 않는다.
 
+## 컨테이너 실행과 모드
+
+Docker Compose의 기본 서비스도 같은 웹 제품이다. `full`은 loopback에서 자기 CSV 업로드·교체까지
+제공한다.
+
+```bash
+docker compose up --build
+
+curl http://127.0.0.1:8000/healthz
+```
+
+외부 독자가 비민감 샘플만 체험할 후보는 `sample`로 실행한다. 이 모드에서는 화면만 숨기는 데 그치지 않고
+새 CSV와 교체 CSV를 HTTP 403 `UPLOADS_DISABLED`로 거부한다. 샘플 분석·전달 누락 체험·복구·삭제는 유지된다.
+명시적인 env file은 WSL의 Windows Docker CLI를 포함해 shell 환경 전달 방식이 다른 곳에서도 같은 설정을 만든다.
+
+```bash
+docker compose --env-file .env.example up --build
+```
+
+`.env.example`을 `.env`로 복사해 named artifact의 `MFG_REVIEW_RELEASE`와 full Git SHA
+`MFG_REVIEW_REVISION`을 넣을 수 있다. 둘은 image label과 실행 환경에 함께 들어가며 `/healthz`에서 read-back한다.
+
+컨테이너는 UID/GID `10001:10001`, 읽기 전용 root filesystem과 제한된 `/tmp`로 실행된다. SQLite는
+`telemetry_review_data` volume에 저장되므로 `docker compose down` 뒤에도 남는다. 저장된 작업 공간을 실제로
+버릴 때만 `docker compose down --volumes`를 사용한다. DB의 schema version이 현재 코드보다 새로우면 기동을
+거부한다. volume 재시작은 검증했지만 online backup·이전 version downgrade는 제공하지 않는다.
+
+기존 MongoDB 실험이 필요할 때만 `docker compose --profile historical up mongo`를 사용한다. 이 MongoDB는
+Telemetry Review의 저장소가 아니다.
+
 ## 첫 사용 흐름
 
 1. **공개 샘플 열기** 또는 **CSV 업로드**를 누른다. 양식을 내려받아 자기 파일을 맞출 수 있다.
@@ -58,6 +88,8 @@ make serve
 ```bash
 make test
 make verify-service
+make verify-container
+make audit-service
 make verify
 ```
 
@@ -65,6 +97,11 @@ make verify
 loopback 서버에서 실제 HTTP 업로드, 실패한 교체, 수정, 샘플 SQL 정답, 누락·복구, ZIP read-back,
 서버 재시작을 확인한다. `.cache/file-review-verification/<run>/receipt.json`은 Git identity와 실행
 source hash, 실제 수치·검사 결과를 기록한다. `make verify`는 별개의 기존 OPC UA 수집 실험이다.
+`make verify-container`는 고유한 임시 image/container/volume을 만들고 sample-only 업로드 거부, release identity,
+비루트·읽기 전용 실행, 샘플 SQL 수치와 같은 volume 재시작을 확인한 뒤 자신이 만든 자원만 정리한다.
+영수증은 `.cache/release-container/<run>/receipt.json`에 남는다.
+`make audit-service`는 고정된 Python runtime package를 현재 advisory database와 대조한다. 이 결과는 실행 시점의
+Python package 범위이며 base OS image scan이나 미래 취약점 부재를 보장하지 않는다.
 
 실제 브라우저 검사는 Playwright와 Chromium이 있는 Python으로 실행한다. 서비스 실행 환경에는 필요 없다.
 
@@ -72,6 +109,8 @@ source hash, 실제 수치·검사 결과를 기록한다. `make verify`는 별�
 # 별도 터미널: make serve
 # Playwright가 이미 설치된 Python을 사용할 때:
 python3 scripts/verify_file_review_browser.py
+# sample 모드 서버를 확인할 때:
+python3 scripts/verify_file_review_browser.py --mode sample
 # 없으면 별도 검증 환경을 만들 수 있다:
 uv venv .cache/browser-venv
 uv pip install --python .cache/browser-venv/bin/python playwright
@@ -90,9 +129,12 @@ uv pip install --python .cache/browser-venv/bin/python playwright
 
 대상 호스트·TLS 종료 방식·저장 볼륨·삭제 일정·업로드 허용 범위·운영 책임을 정한 실제 배포 설정을 먼저 만들고 검증한다.
 환경 변수 `MFG_REVIEW_HOSTS`는 허용할 호스트 이름, `MFG_REVIEW_SECURE_COOKIE=1`은 HTTPS 쿠키를 제어한다.
+Compose의 loopback bind와 host port는 `MFG_REVIEW_BIND`, `MFG_REVIEW_PORT`로 바꿀 수 있다.
 프록시를 쓴다면 신뢰하는 프록시와 원본 Host/scheme 전달을 함께 확인해야 한다. 이 두 환경 변수만으로 공개 운영 준비가
 끝나는 것은 아니다. 익명 업로드의 요청 제한·세션 생성량·디스크/WAL·동시 요청 메모리·정리 동작을 해당 호스트에서 측정한다.
-그 결과를 검토하고 작성자가 승인한 뒤 push·원격 CI·배포를 진행한다.
+공개 샘플 모드는 임의 파일 노출 위험을 줄이지만 익명 workspace·샘플 생성 요청 자체의 남용을 막지는 않는다.
+edge 요청 제한, runtime log/alert와 폐기 가능한 volume 정책을 후보 host에서 확인한다. 그 결과를 검토하고
+작성자가 승인한 뒤 push·원격 CI·배포를 진행한다.
 
 첫 독립 사용자는 자신의 CSV로 설명 없이 업로드→문제 수정→구간 조회→ZIP 근거 확인을 해본다.
 기존 SQL/스프레드시트 작업보다 도움이 된 지점과 막힌 지점을 기록하고, 반복 사용 여부로 다음 기능을 고른다.

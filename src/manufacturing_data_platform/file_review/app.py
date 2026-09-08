@@ -13,6 +13,8 @@ from starlette.concurrency import run_in_threadpool
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
 
+from manufacturing_data_platform import __version__
+
 from .model import CONTRACT, MAX_ROWS, UPLOAD_BYTES, ReviewError, digest
 from .query import export_zip, query
 from .store import EXPIRY_SECONDS, MAX_DATASETS, Store
@@ -26,8 +28,13 @@ TEMPLATE = ("timestamp,equipment,tag,value,unit,quality\n"
             "2026-09-01T09:00:20,Pump-1,temperature,24.6,°C,\n")
 
 
-def create_app(storage_path=None):
+def create_app(storage_path=None, mode=None, release=None, revision=None):
     path = storage_path or os.environ.get("MFG_REVIEW_DB", ".cache/file-review/review.sqlite3")
+    mode = mode or os.environ.get("MFG_REVIEW_MODE", "full")
+    if mode not in {"full", "sample"}:
+        raise ValueError("MFG_REVIEW_MODE must be 'full' or 'sample'")
+    release = release or os.environ.get("MFG_REVIEW_RELEASE", f"{__version__}-dev")
+    revision = revision or os.environ.get("MFG_REVIEW_REVISION", "unknown")
 
     @asynccontextmanager
     async def lifespan(application):
@@ -74,6 +81,10 @@ def create_app(storage_path=None):
     def workspace(request, mutate=False):
         return store(request).authorize(request.cookies.get(COOKIE), request.headers.get("X-Review-CSRF"), mutate)
 
+    def require_uploads():
+        if mode != "full":
+            raise ReviewError("UPLOADS_DISABLED", "공개 체험에서는 준비된 샘플만 사용할 수 있습니다.", 403)
+
     async def upload(request):
         size, chunks = 0, []
         async for chunk in request.stream():
@@ -87,12 +98,17 @@ def create_app(storage_path=None):
     def health(request: Request):
         with store(request).connection() as db:
             db.execute("SELECT 1 FROM workspaces LIMIT 1").fetchone()
-        return {"status": "ok", "contract": CONTRACT}
+        return {"status": "ok", "contract": CONTRACT, "release": release,
+                "revision": revision, "mode": mode}
 
     @app.get("/api/session")
     def session(request: Request):
         token, csrf = store(request).session(request.cookies.get(COOKIE))
-        response = JSONResponse({"csrf_token": csrf, "limits": {"upload_bytes": UPLOAD_BYTES, "rows": MAX_ROWS, "datasets": MAX_DATASETS}, "expires_hours": 24})
+        response = JSONResponse({"csrf_token": csrf,
+                                 "capabilities": {"uploads": mode == "full", "sample": True, "accounts": False},
+                                 "release": release,
+                                 "limits": {"upload_bytes": UPLOAD_BYTES, "rows": MAX_ROWS, "datasets": MAX_DATASETS},
+                                 "expires_hours": 24})
         response.set_cookie(COOKIE, token, max_age=EXPIRY_SECONDS, httponly=True, samesite="strict",
                             secure=os.environ.get("MFG_REVIEW_SECURE_COOKIE") == "1")
         return response
@@ -107,6 +123,7 @@ def create_app(storage_path=None):
 
     @app.post("/api/datasets")
     async def create_dataset(request: Request, name: str = "observations.csv"):
+        require_uploads()
         owner = await run_in_threadpool(workspace, request, True)
         raw = await upload(request)
         result = await run_in_threadpool(store(request).submit, owner, raw=raw, name=name)
@@ -127,6 +144,7 @@ def create_app(storage_path=None):
 
     @app.post("/api/datasets/{dataset}/replace")
     async def replace(dataset: str, request: Request, name: str = "observations.csv"):
+        require_uploads()
         owner = await run_in_threadpool(workspace, request, True)
         # Reject a foreign dataset before accepting its upload body.
         await run_in_threadpool(store(request).check_owner, owner, dataset)

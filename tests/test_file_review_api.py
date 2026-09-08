@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import sqlite3
 from datetime import datetime, timedelta
 from hashlib import sha256
 from pathlib import Path
@@ -33,6 +34,7 @@ def _session(client: TestClient) -> dict[str, str]:
     assert body["limits"]["upload_bytes"] == 8 * 1024 * 1024
     assert body["limits"]["rows"] == 50_000
     assert body["limits"]["datasets"] == 10
+    assert body["capabilities"] == {"uploads": True, "sample": True, "accounts": False}
     assert body["csrf_token"] and client.cookies
     return {"X-Review-CSRF": body["csrf_token"]}
 
@@ -404,3 +406,39 @@ def test_workspace_dataset_limit_is_enforced_without_hiding_existing_results(bro
     _error(response, {409, 413, 429})
     listed = client.get("/api/datasets").json()["datasets"]
     assert {dataset["id"] for dataset in listed} == ids
+
+
+def test_sample_only_mode_advertises_and_enforces_public_capability(tmp_path):
+    with TestClient(create_app(tmp_path / "review.sqlite3", mode="sample",
+                               release="0.1.0-rc.1", revision="abc123")) as client:
+        session = client.get("/api/session")
+        headers = {"X-Review-CSRF": session.json()["csrf_token"]}
+        assert session.json()["capabilities"] == {
+            "uploads": False, "sample": True, "accounts": False
+        }
+        health = client.get("/healthz").json()
+        assert health == {"status": "ok", "contract": "telemetry_file_review_v1",
+                          "release": "0.1.0-rc.1", "revision": "abc123", "mode": "sample"}
+        assert _error(client.post("/api/datasets", content=CSV, headers=headers), {403})["code"] == "UPLOADS_DISABLED"
+        sample = client.post("/api/datasets/sample", headers=headers)
+        assert sample.status_code == 200
+        dataset = sample.json()["dataset"]
+        assert _error(client.post(f"/api/datasets/{dataset['id']}/replace", content=CSV,
+                                  headers=headers), {403})["code"] == "UPLOADS_DISABLED"
+        assert client.get(f"/api/datasets/{dataset['id']}/query").status_code == 200
+
+
+def test_unknown_service_mode_and_future_database_schema_fail_closed(tmp_path):
+    with pytest.raises(ValueError, match="MFG_REVIEW_MODE"):
+        create_app(tmp_path / "unused.sqlite3", mode="unknown")
+    current = tmp_path / "current.sqlite3"
+    with TestClient(create_app(current)) as client:
+        assert client.get("/healthz").status_code == 200
+    with sqlite3.connect(current) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
+    database = tmp_path / "future.sqlite3"
+    with sqlite3.connect(database) as connection:
+        connection.execute("PRAGMA user_version=999")
+    with pytest.raises(RuntimeError, match="newer than supported"):
+        with TestClient(create_app(database)):
+            pass

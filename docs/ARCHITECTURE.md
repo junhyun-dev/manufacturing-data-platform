@@ -25,6 +25,21 @@ owns this file workflow. The original source bytes and normalized version are ch
 publication failure rolls back the attempt/version/current transaction. A refused file cannot replace
 the previous result. Source gaps and missing source sensor quality remain visible.
 
+### Runtime boundary
+
+```mermaid
+flowchart LR
+  browser["Anonymous browser workspace"] --> app["One FastAPI process\nfull or sample mode"]
+  app --> db["One SQLite volume\nsources · versions · attempts · current"]
+  probe["/healthz"] --> app
+  app --> identity["contract · release · revision · mode"]
+```
+
+The default Compose entry point now starts this service; the retained MongoDB laboratory is available only through the
+`historical` profile. The container runs as a fixed non-root user with a read-only root filesystem and one writable data
+volume. `sample` mode refuses arbitrary uploads at the API boundary. It remains a single-process candidate: a reverse
+proxy, TLS, rate limits, monitoring and multi-replica coordination are not part of this repository's verified runtime.
+
 ## Retained OPC UA laboratory
 
 ## 한 문장

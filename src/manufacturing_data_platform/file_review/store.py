@@ -13,6 +13,7 @@ MAX_DATASETS = 10
 WORKSPACE_BYTES = 32 * 1024 * 1024
 GLOBAL_BYTES = 256 * 1024 * 1024
 EXPIRY_SECONDS = 24 * 3600
+SCHEMA_VERSION = 1
 
 
 class Store:
@@ -21,6 +22,11 @@ class Store:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
             db.execute("PRAGMA journal_mode=WAL")
+            schema_version = db.execute("PRAGMA user_version").fetchone()[0]
+            if schema_version > SCHEMA_VERSION:
+                raise RuntimeError(
+                    f"review database schema {schema_version} is newer than supported {SCHEMA_VERSION}"
+                )
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS workspaces (
                     id TEXT PRIMARY KEY, csrf TEXT NOT NULL, last_seen REAL NOT NULL);
@@ -40,6 +46,8 @@ class Store:
                     report TEXT NOT NULL);
                 CREATE INDEX IF NOT EXISTS attempt_dataset ON attempts(dataset_id,id);
             """)
+            if schema_version == 0:
+                db.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         with self.transaction(write=True) as db:
             self.cleanup(db)
 

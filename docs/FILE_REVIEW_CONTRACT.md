@@ -55,6 +55,21 @@ that existing contract retains its MetroPT/OPC UA provenance, status, and replay
   retry; a corrected file must be provided. Last-good data remains unchanged on refusal or transaction failure.
 - Resource bounds: 10 datasets per workspace, 32 MiB raw/normalized retained bytes per workspace, 256 MiB globally,
   100 retained attempts per dataset. Expiry/deletion removes associated sources and versions as one transaction.
+- SQLite sets `PRAGMA user_version=1`. Startup refuses a database with a higher schema version instead of opening it
+  with older code. Same-version volume restart is supported; online backup and downgrade recovery are not claimed.
+
+## Runtime modes and artifact identity
+
+- `MFG_REVIEW_MODE=full` is the default loopback workflow and permits upload and replacement. `sample` is the bounded
+  public-preview candidate: upload and replacement are refused server-side with HTTP 403 `UPLOADS_DISABLED`, and the
+  client removes those controls. Invalid mode values refuse startup.
+- Sample mode still creates anonymous workspaces and retained sample datasets. It does not supply request-rate limiting,
+  public TLS, monitoring, or an abuse boundary; those belong to an approved host configuration before deployment.
+- `MFG_REVIEW_RELEASE` and `MFG_REVIEW_REVISION` identify the running artifact through `/healthz`; they are operator/build
+  inputs and do not by themselves prove that a Git tag or release exists.
+- The release container uses a digest-pinned Python base, dependencies pinned by `requirements-service.lock`, a
+  non-root `10001:10001` user, read-only root filesystem, bounded `/tmp`, and a writable SQLite volume. The verified
+  deployment unit remains one process plus one database; horizontal replicas are unsupported.
 
 ## HTTP interface for the first client
 
@@ -63,7 +78,7 @@ Every dataset route checks workspace ownership. Errors use `{"error":{"code":"..
 
 | Route | Result |
 |---|---|
-| `GET /api/session` | `{csrf_token, limits: {upload_bytes, rows, datasets}, expires_hours: 24}`; sets workspace cookie |
+| `GET /api/session` | `{csrf_token, capabilities: {uploads, sample, accounts}, release, limits, expires_hours: 24}`; sets workspace cookie |
 | `GET /api/datasets` | `{datasets: [dataset, ...]}` |
 | `POST /api/datasets?name=...` | Raw CSV body; `{dataset}`. Validation refusal is a recorded dataset result, not a HTTP transport failure |
 | `POST /api/datasets/sample` | `{dataset}` from the pinned bundled public sample |
@@ -75,7 +90,7 @@ Every dataset route checks workspace ownership. Errors use `{"error":{"code":"..
 | `GET /api/datasets/{id}/query?equipment=...&tag=...&start=...&end=...&version=...` | Query result below; omitted range selects all; omitted version pins current at read time |
 | `GET /api/datasets/{id}/export?...same filters...&version=...` | ZIP with selected `observations.csv` and `manifest.json`; version is required |
 | `GET /api/template.csv` | Small valid user-file template |
-| `GET /healthz` | Liveness/readiness with contract version, no private file paths |
+| `GET /healthz` | `{status, contract, release, revision, mode}` after a SQLite read; no private file paths |
 
 Dataset shape (null current means no usable published result):
 
@@ -126,7 +141,7 @@ records that transformation, source hash, version, query, quality limitations, C
 
 ## Completion and public-release boundary
 
-Verify normal upload, rejected replacement preserving an earlier result, corrected replacement, sample delivery failure
+Verify normal upload, sample-mode upload refusal, rejected replacement preserving an earlier result, corrected replacement, sample delivery failure
 and stable recovery, empty/timezone/unit/duplicate cases, corrupt retained source/version, independent browser isolation,
 CSRF/size bounds, restart persistence, actual browser use and export read-back. A fresh checkout must launch with one command
 after setup and use the bundled sample without the author's cache. Inspect mobile and desktop screens.

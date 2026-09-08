@@ -213,13 +213,21 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
 
 ## MFG-09 — Independent use, release and feedback
 
-**다음 제품 gate / 실제 독립 사용·공개 운영은 미실행.** 첫 파일 서비스는 로컬 구현·검증 단계까지 진행한다.
-README와 테스트만으로 반복 사용이나 운영 책임을 증명하지 않는다.
+**활성 release gate / 실제 독립 사용·공개 운영은 미실행.** 첫 파일 서비스와 bounded sample-only
+컨테이너를 로컬에서 구현·검증했다. README와 테스트만으로 반복 사용이나 운영 책임을 증명하지 않는다.
 
-- 바로 다음 한 행동: 파일 검토를 실제로 하는 사람 한 명의 비민감 CSV와 업무 질문으로 10분 사용 시나리오를
+- 바로 다음 한 행동: local release-prep diff와 라이선스를 검토한 뒤 승인된 branch를 push하고 `main` 대상 PR에서
+  원격 unit/HTTP/OPC UA/container CI를 read-back한다. merge·tag·GitHub Release는 그 결과를 다시 확인한 뒤 별도 승인한다.
+- 로컬 수용 근거: sample 모드는 임의 upload/replace를 API 403으로 거부한다. digest-pinned Python 3.12 이미지가
+  UID 10001·read-only root로 실행됐고, release/revision read-back, 7,144개 Oil_temperature 조회,
+  같은 volume 재시작 후 동일 dataset version을 확인했다. Chromium desktop/mobile에서도 upload UI 제거,
+  누락·복구·browser isolation과 page error 0을 확인했다.
+- 원격 릴리스 뒤 첫 사용: 파일 검토를 실제로 하는 사람 한 명의 비민감 CSV와 업무 질문으로 10분 사용 시나리오를
   구체화한다. 접근할 사용자가 없으면 후보 호스트의 공개 체험 배포안을 준비하되 제품 채택으로 기록하지 않는다.
-- 공개 전 구체화: TLS/허용 Host/secure cookie/영속 볼륨, 익명 요청·세션 생성 제한, 실제 동시 요청 메모리와
+- 공개 host 전 구체화: TLS/허용 Host/secure cookie/영속 또는 폐기 volume, edge 요청·세션 생성 제한, runtime log/alert, 실제 동시 요청 메모리와
   DB/WAL 용량, 정리 일정과 운영 책임. [실행 guide](FILE_REVIEW_GUIDE.md)의 현재 한도를 근거로 설정·검증한 뒤 승인받는다.
+- 공급망 gate: 2026-09-08 `requirements-service.lock`의 Python advisory audit는 알려진 취약점 0건이었다.
+  base OS image scan은 로컬 Docker Scout 인증이 없어 미실행이므로 선택한 registry/host의 scanner로 다시 확인한다.
 - 알려진 UX 공백: CSV 열 매핑과 큰 파일/장기 보관/공유 계정은 없다. 실제 첫 파일이 요구하는 한 가지를 고른다.
   Chrome으로 로컬 확인했으며 Safari·Firefox·모바일 실기기와 보조기술 검증은 후속이다.
 

@@ -1,7 +1,7 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
-const state = { csrf: null, datasets: [], active: null, query: null, busy: false, queryGeneration: 0, limits: { upload_bytes: 8 * 1024 * 1024, rows: 50000, datasets: 10 } };
+const state = { csrf: null, datasets: [], active: null, query: null, busy: false, queryGeneration: 0, capabilities: { uploads: true, sample: true, accounts: false }, limits: { upload_bytes: 8 * 1024 * 1024, rows: 50000, datasets: 10 } };
 const statusNames = { ready: "파일 검증 완료", incomplete: "전달 미완료", blocked: "파일 수정 필요" };
 const qualityNames = { good: "Good 제공", unspecified: "미제공", uncertain: "Uncertain 제공", bad: "Bad 제공" };
 const kindNames = { import: "파일 검사", sample: "샘플 검사", replace: "수정 파일 검사", retry: "보관 원본 재검사", "delivery-check": "전달 누락 체험", delivery_check: "전달 누락 체험", recovery: "보관 원본 복구" };
@@ -437,8 +437,15 @@ async function initialize() {
   await action("작업 공간을 불러오는 중…", async () => {
     const session = await request("/api/session");
     state.csrf = session.csrf_token;
+    state.capabilities = { ...state.capabilities, ...session.capabilities };
     state.limits = { ...state.limits, ...session.limits };
-    $("format-hint").textContent = `UTF-8 · 최대 ${number(state.limits.upload_bytes / 1024 / 1024)} MiB · ${number(state.limits.rows)}행`;
+    if (!state.capabilities.uploads) {
+      for (const id of ["upload-button", "welcome-upload", "replace-button", "dropzone", "input-guide"]) $(id).hidden = true;
+      for (const link of document.querySelectorAll(".template-link")) link.hidden = true;
+      $("welcome-description").textContent = "공개 설비 기록으로 데이터 검토와 복구 흐름을 체험하세요. 분석에 사용한 원본과 결과 버전을 함께 확인할 수 있습니다.";
+    } else {
+      $("format-hint").textContent = `UTF-8 · 최대 ${number(state.limits.upload_bytes / 1024 / 1024)} MiB · ${number(state.limits.rows)}행`;
+    }
     const payload = await request("/api/datasets");
     state.datasets = payload.datasets;
     await selectDataset(state.datasets[0]?.id || null, true);

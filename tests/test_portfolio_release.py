@@ -251,7 +251,7 @@ def test_root_readme_preserves_access_to_the_published_lab_evidence():
 def test_root_readme_entry_exposes_the_usable_service_and_local_boundary():
     entry = "\n".join(ROOT_README.read_text(encoding="utf-8").splitlines()[:FIRST_30_LIMIT])
     for target in ("Telemetry Review", "CSV", "make setup", "make serve",
-                   "127.0.0.1:8000", "로컬 서비스 후보", "docs/FILE_REVIEW_CONTRACT.md"):
+                   "127.0.0.1:8000", "로컬 릴리스 후보", "docs/FILE_REVIEW_CONTRACT.md"):
         assert target in entry
 
 
