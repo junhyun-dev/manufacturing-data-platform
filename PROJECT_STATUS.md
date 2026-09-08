@@ -5,7 +5,7 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | PR OPEN — [#1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1)의 current-head remote CI read-back과 merge gate |
+| 단계 | PR OPEN — [#1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1)의 current-head remote CI 4/4 PASS; merge 결정 gate |
 | 사용자 결정 | 2026-09-08 Apache-2.0 경계, branch push, PR 공개와 원격 CI 확인을 승인. merge·tag·Release·배포는 아직 승인하지 않음 |
 | Integration target | `main`; 원격 기준 `0a3dfb81a8d6341b6e456e0aec72303018da93aa` |
 | 구현 시작점 | `6a7c71e` — 기존 로컬 환경·source 조사·제품 방향 정비 위에서 시작 |
@@ -13,8 +13,8 @@
 | 작업 branch | `feat/telemetry-file-review` |
 | 현재 결과 | `full`: 자기 CSV 검토·분석·근거 ZIP·교체. `sample`: 임의 업로드 거부·공개 기록 분석·전달 실패/복구 |
 | Candidate 확인 | `.cache/release-container/20260908T042840284903Z/receipt.json`; clean `1f1a8c1`의 HTTP/container/OCI identity read-back PASS |
-| 외부 상태 | branch push 및 PR #1 OPEN. 구현 head `1f1a8c1`의 원격 run `34187169061` 시작. NOT MERGED / NOT RELEASED / NOT DEPLOYED |
-| 다음 한 행동 | PR #1의 최종 head에서 네 remote check를 green으로 read-back한 뒤 merge 여부를 사용자에게 확인한다 |
+| 외부 상태 | branch push 및 PR #1 OPEN. `b6afe81`의 [run 34187228285](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34187228285) 4/4 PASS. NOT MERGED / NOT RELEASED / NOT DEPLOYED |
+| 다음 한 행동 | 사용자 확인 후 PR #1을 `main`에 merge한다 |
 
 ## 실행과 이어가기
 
@@ -67,7 +67,7 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 | dependency advisory | `requirements-service.lock` 13개 package를 `pip-audit 2.10.1`로 조회해 알려진 취약점 0건. base OS scan은 Docker Scout 인증 부재로 미실행 |
 | 독립 내부 코드 검토 | 기초 service slice에서 손상 파일이 목록을 막는 문제, 빈 export version, 비 ASCII CSRF 500을 발견·수정. 이번 release runtime 변경의 별도 독립 검토는 미실행 |
 | 기존 OPC UA 실제 replay | PASS. 5개 판정 및 current → manifest → data digest chain 확인. `run-SQG1T2la` |
-| 외부 CI / 실제 사용자 / 배포 / 장기 운영 | PR #1의 구현 head 원격 CI 네 check가 실행 중이며 최종 head read-back은 아직이다. 실제 사용자·배포·장기 운영은 미실행 |
+| 외부 CI / 실제 사용자 / 배포 / 장기 운영 | PR #1 `b6afe81`에서 Python 3.10·3.12, OPC UA read-back, sample container 네 check PASS. 실제 사용자·배포·장기 운영은 미실행 |
 
 이번 clean-checkout 묶음은 `.cache/release-cold-check/8c8868d/receipt.json`이 HTTP와 container receipt를 연결한다.
 기존 실행 근거는 `.cache/file-review-tests.log`, `.cache/file-review-final-focused.log`,
