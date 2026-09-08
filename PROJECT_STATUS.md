@@ -5,16 +5,16 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | PR OPEN — [#1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1)의 current-head remote CI 4/4 PASS; merge 결정 gate |
-| 사용자 결정 | 2026-09-08 Apache-2.0 경계, branch push, PR 공개와 원격 CI 확인을 승인. merge·tag·Release·배포는 아직 승인하지 않음 |
-| Integration target | `main`; 원격 기준 `0a3dfb81a8d6341b6e456e0aec72303018da93aa` |
+| 단계 | MERGED TO MAIN — bounded `v0.1.0` candidate와 main CI 4/4 PASS; Release 결정 gate |
+| 사용자 결정 | 2026-09-08 Apache-2.0 경계, branch push, PR 공개·원격 CI와 squash merge를 승인. tag·GitHub Release·배포는 아직 승인하지 않음 |
+| Integration target | `main`; 제품 merge commit `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 구현 시작점 | `6a7c71e` — 기존 로컬 환경·source 조사·제품 방향 정비 위에서 시작 |
-| 검증한 서비스 revision | `1f1a8c1cf486480508b41ac3f7f966abf97d36df` — service + sample-only release runtime + Apache-2.0 image label |
-| 작업 branch | `feat/telemetry-file-review` |
+| 검증한 서비스 revision | `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` — merged service + sample-only release runtime + Apache-2.0 image label |
+| 현재 branch | `main`; `feat/telemetry-file-review`는 PR #1에 보존 |
 | 현재 결과 | `full`: 자기 CSV 검토·분석·근거 ZIP·교체. `sample`: 임의 업로드 거부·공개 기록 분석·전달 실패/복구 |
-| Candidate 확인 | `.cache/release-container/20260908T042840284903Z/receipt.json`; clean `1f1a8c1`의 HTTP/container/OCI identity read-back PASS |
-| 외부 상태 | branch push 및 PR #1 OPEN. `b6afe81`의 [run 34187228285](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34187228285) 4/4 PASS. NOT MERGED / NOT RELEASED / NOT DEPLOYED |
-| 다음 한 행동 | 사용자 확인 후 PR #1을 `main`에 merge한다 |
+| Candidate 확인 | clean `1f1a8c1` local container receipt + merged `2e8e58c` [main run 34187959052](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34187959052) 4/4 PASS |
+| 외부 상태 | [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED; public `main@2e8e58c` CI PASS. NOT TAGGED / NOT RELEASED / NOT DEPLOYED |
+| 다음 한 행동 | 준비된 `v0.1.0` release notes와 tag 대상을 확인받고 GitHub Release 여부를 결정한다 |
 
 ## 실행과 이어가기
 
@@ -67,7 +67,7 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 | dependency advisory | `requirements-service.lock` 13개 package를 `pip-audit 2.10.1`로 조회해 알려진 취약점 0건. base OS scan은 Docker Scout 인증 부재로 미실행 |
 | 독립 내부 코드 검토 | 기초 service slice에서 손상 파일이 목록을 막는 문제, 빈 export version, 비 ASCII CSRF 500을 발견·수정. 이번 release runtime 변경의 별도 독립 검토는 미실행 |
 | 기존 OPC UA 실제 replay | PASS. 5개 판정 및 current → manifest → data digest chain 확인. `run-SQG1T2la` |
-| 외부 CI / 실제 사용자 / 배포 / 장기 운영 | PR #1 `b6afe81`에서 Python 3.10·3.12, OPC UA read-back, sample container 네 check PASS. 실제 사용자·배포·장기 운영은 미실행 |
+| 외부 CI / 실제 사용자 / 배포 / 장기 운영 | merged `main@2e8e58c`의 [run 34187959052](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34187959052)에서 Python 3.10·3.12, OPC UA read-back, sample container 네 check PASS. 실제 사용자·배포·장기 운영은 미실행 |
 
 이번 clean-checkout 묶음은 `.cache/release-cold-check/8c8868d/receipt.json`이 HTTP와 container receipt를 연결한다.
 기존 실행 근거는 `.cache/file-review-tests.log`, `.cache/file-review-final-focused.log`,
@@ -84,8 +84,8 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 
 ## 다음 제품 gate와 Portfolio 경계
 
-[MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback): 열린 PR #1의 최종 head에서 원격 CI를 확인하고
-merge·tag·GitHub Release를 각각 별도 gate로 닫는다. 이후 실제 CSV 검토자 한 명이 자신의 비민감 파일로 설명 없이
+[MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback): PR #1 merge와 main CI까지 확인했다.
+다음은 tag·GitHub Release를 별도 gate로 닫는다. 이후 실제 CSV 검토자 한 명이 자신의 비민감 파일로 설명 없이
 업로드·오류 수정·구간 조회·근거 전달을 수행하는 짧은 검증을 준비한다.
 열 매핑, 공유, 큰 파일 같은 기능은 그 사용에서 드러난 한 문제에 맞춰 고른다. 기존 SQL/스프레드시트보다
 유용한 지점과 도움 요청을 기록한다. 접근 가능한 사람이 없으면 공개 체험 배포안을 구체화하되 사용자 채택으로 기록하지 않는다.
@@ -96,4 +96,4 @@ merge·tag·GitHub Release를 각각 별도 gate로 닫는다. 이후 실제 CSV
 
 현재 새로 설명할 수 있는 것은 CSV 검토·분석·교체·보관 입력 복구·근거 전달 서비스를 구현하고 로컬에서 검증한 범위다.
 실제 공장 도입, 분석가의 반복 사용, 처리량·비용 절감·production 성과, OPC UA 원본 재수집의 멱등성은 주장하지 않는다.
-이력서·사이트의 공개 문구는 이 검증과 실제 원격 반영 여부를 확인한 후 Portfolio 흐름에서 별도로 갱신한다.
+이력서 문구는 PR·main CI 반영 상태까지 Portfolio 흐름에서 갱신했다. 사이트 공개·사용자 채택은 별도 근거가 생긴 뒤 판단한다.
