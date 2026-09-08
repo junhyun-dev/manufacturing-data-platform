@@ -4,7 +4,8 @@
 
 1. Read [README](README.md) for the operator outcome and replay boundary.
 2. Read [PROJECT_STATUS](PROJECT_STATUS.md) for the current change, evidence and next gate.
-3. Read [Contract](docs/CONTRACT.md), then the selected item in [Backlog](docs/BACKLOG.md).
+3. For the web service read [File Review Contract](docs/FILE_REVIEW_CONTRACT.md); for OPC UA read
+   [Contract](docs/CONTRACT.md). Then read the selected item in [Backlog](docs/BACKLOG.md).
 4. Check `git status --short --branch`, `git rev-parse HEAD` and the actual diff before editing.
 
 The repository must be sufficient for a new session. Product facts and commands must
@@ -21,6 +22,8 @@ Use [Architecture](docs/ARCHITECTURE.md) to locate code; historical pipelines ar
   and optional runtimes. Setup requires Python 3.10+ and uv. It installs into this repo's `.venv`.
 - Do not turn missing optional dependencies or skipped tests into runtime success.
 - Read actual reports and `current → manifest → data`; an implementation summary is insufficient.
+- For the file service, use `make serve` and [File Review Guide](docs/FILE_REVIEW_GUIDE.md). Verify
+  upload/query/export through HTTP and the browser, including previous-result and failure behavior.
 - If a finding does not prevent this outcome, record it in Backlog rather than opening another feature.
 - A new user, source, recovery policy, lateness policy, or dataset identity rule needs an explicit
   contract decision before implementation. Keep proposals marked as proposals.

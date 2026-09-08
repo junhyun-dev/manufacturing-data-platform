@@ -1,6 +1,38 @@
-# 제조 설비 데이터는 언제 믿을 수 있는가?
+# Telemetry Review — 설비 CSV를 검토하고 분석 결과를 전달하는 도구
 
 [![Unit, contract and local telemetry tests](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml)
+
+설비 기록을 CSV로 받아 분석하는 데이터 엔지니어·분석가를 위한 작은 웹 도구입니다.
+**파일 업로드 → 문제 확인 → 설비·측정 항목·시간 구간 조회 → 검토 근거와 함께 내려받기**를 제공합니다.
+잘못된 수정 파일을 올리면 최신 검사 실패를 알리고 이전 정상 결과를 유지합니다.
+
+```bash
+make setup
+make serve
+# http://127.0.0.1:8000
+```
+
+Python 3.10+와 uv가 필요합니다. MongoDB·클라우드 계정 없이 실행되며, 브라우저에서 자기 CSV를 올리거나
+**공개 샘플 열기**를 누르면 시작합니다. 샘플에는 실제 MetroPT-3 기록 하루치 21,432개 관측이 들어 있습니다.
+
+- 설비·태그·시간의 중복, 숫자, 단위, 시간대와 제공된 품질을 검사합니다. 품질 미제공은 Good으로 바꾸지 않습니다.
+- `[시작, 종료)`의 관측 수·표본 평균·최솟값·최댓값과 실제 관측 그래프를 제공합니다. 보간하거나 고장을 추정하지 않습니다.
+- ZIP에는 선택한 전체 CSV와 원본 hash·결과 버전·조회 조건·품질 한계를 기록한 manifest가 들어갑니다.
+- 수정 파일 교체와 재검사 이력을 남깁니다. 샘플에서 전달 누락 → 보관 원본 복구 → 같은 결과 버전도 체험할 수 있습니다.
+
+현재는 **로컬 서비스 후보**입니다. 외부 배포·실사용·production 성과는 검증하지 않았습니다.
+파일은 실행 서버의 임시 작업 공간에 저장됩니다. 8 MiB/50,000행, 작업 공간당 파일 10개이며 직접 삭제할 수 있습니다.
+비활성 공간은 24시간 뒤 다음 세션 생성 또는 서버 시작 때 정리됩니다.
+
+[사용법과 실행·검증](docs/FILE_REVIEW_GUIDE.md) · [파일 계약](docs/FILE_REVIEW_CONTRACT.md) ·
+[현재 작업](PROJECT_STATUS.md) · [보완 backlog](docs/BACKLOG.md) · [구조](docs/ARCHITECTURE.md)
+
+![공개 샘플에서 구간 분석과 데이터 근거를 확인하는 실제 로컬 화면](docs/assets/file-review-sample.png)
+
+## 기존 OPC UA 수집·발행 검증
+
+아래는 이 저장소의 기존 수집 실험과 보존된 공개 보고서입니다. 위 CSV 서비스와 계약·실행 경로가 다릅니다.
+일반 업로드를 OPC UA에서 수집한 데이터로 표시하지 않으며, 웹 서비스는 이 실험의 실행을 요구하지 않습니다.
 
 상정한 주 사용자는 설비 관측 데이터(telemetry)를 후속 분석·ML에 공개할 책임이 있는 제조 데이터 플랫폼
 운영자입니다. 관측 누락, 품질 이상, 도착 지연, 수집기(collector) 중단이 섞이면 같은 원본 데이터 범위라도
@@ -81,8 +113,8 @@ flowchart LR
 - `Motor_current`: 모터 전류, `A`
 
 따라서 한 collection의 기대 관측 집합은 `3 rows × 3 tags = 9 observations`입니다.
-저장소에는 CC BY 4.0 출처를 명시한 [3-row fixture](tests/fixtures/metropt3/README.md)만
-포함하며, 전체 CSV는 커밋하지 않습니다.
+OPC UA 검증은 CC BY 4.0 출처를 명시한 [3-row fixture](tests/fixtures/metropt3/README.md)를
+사용합니다. 웹 서비스의 하루치 샘플은 별도이며, 전체 CSV는 커밋하지 않습니다.
 
 ## 수집 단계에서 보존하는 것
 

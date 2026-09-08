@@ -1,4 +1,31 @@
-# Architecture — Industrial Telemetry Trust
+# Architecture — Telemetry Review and the retained collection laboratory
+
+## Current user flow: file review
+
+```mermaid
+flowchart LR
+  file["User CSV / pinned public sample"] --> check["File contract validation"]
+  check --> attempt["Latest attempt + issues"]
+  check -- valid --> version["Immutable checked version"]
+  version --> sql["One equipment/tag/time range"]
+  sql --> browser["Statistics + actual observations"]
+  sql --> zip["CSV + source/version manifest"]
+  attempt -- refused --> previous["Explicit previous result"]
+```
+
+`file_review/app.py` serves a static browser client and same-origin HTTP endpoints. `model.py` owns
+CSV normalization and content identities; `store.py` owns browser workspace isolation and SQLite
+transactions over sources, versions, attempts and current; `query.py` reads a verified snapshot into
+SQL and produces the pinned export. The client lives in `file_review/static/`; a hash-pinned public
+sample and attribution live in `file_review/sample/`.
+
+One process and one local SQLite file suffice. No legacy MongoDB path, OPC UA connection, external
+URL fetching, queue or warehouse is mounted. The [File Review Contract](FILE_REVIEW_CONTRACT.md)
+owns this file workflow. The original source bytes and normalized version are checked on read;
+publication failure rolls back the attempt/version/current transaction. A refused file cannot replace
+the previous result. Source gaps and missing source sensor quality remain visible.
+
+## Retained OPC UA laboratory
 
 ## 한 문장
 

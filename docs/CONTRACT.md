@@ -1,5 +1,9 @@
 # Industrial telemetry trust contract
 
+The usable CSV web service has a separate [File Review Contract](FILE_REVIEW_CONTRACT.md).
+This document continues to own the existing OPC UA laboratory only. It does not assign OPC UA
+provenance or Good sensor quality to uploaded files.
+
 This document describes existing bounded behavior. Executable validation lives beside the code;
 new semantics require a contract change. See [Architecture](ARCHITECTURE.md) for component ownership.
 

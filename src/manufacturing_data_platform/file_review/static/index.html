@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="설비 CSV의 상태를 확인하고, 필요한 구간을 조회해 검토 근거와 함께 내려받으세요.">
+  <title>Telemetry Review · 설비 데이터 검토</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="파일 작업 공간">
+      <a class="brand" href="/" aria-label="Telemetry Review 홈"><span class="brand-mark" aria-hidden="true">tr</span><span>Telemetry<span class="brand-sub">REVIEW</span></span></a>
+      <div class="workspace-label"><span class="workspace-dot" aria-hidden="true"></span>내 임시 작업 공간</div>
+      <button class="button primary wide" id="upload-button" type="button"><span aria-hidden="true">＋</span> CSV 업로드</button>
+      <input id="upload-input" type="file" accept=".csv,text/csv" hidden>
+      <input id="replace-input" type="file" accept=".csv,text/csv" hidden>
+      <div class="sidebar-section"><h2>검토할 파일</h2><span id="dataset-count" class="count-label">0 / 10</span></div>
+      <div id="dataset-list" class="dataset-list" aria-label="파일 목록"></div>
+      <p id="list-empty" class="sidebar-empty">업로드한 파일과 샘플이<br>여기에 표시됩니다.</p>
+      <div class="sidebar-bottom">
+        <button class="button sample-button wide" id="sample-button" type="button">공개 샘플 열기 <span aria-hidden="true">↗</span></button>
+        <a class="text-link template-link" href="/api/template.csv" download>CSV 양식 내려받기 <span aria-hidden="true">↓</span></a>
+        <div class="retention-note"><strong>파일은 서버에 저장됩니다.</strong><p>비활성 작업 공간은 24시간 후 정리 대상이 됩니다. 파일은 직접 삭제할 수 있습니다. 처음에는 공개·비민감 데이터로 사용하세요.</p></div>
+      </div>
+    </aside>
+
+    <main id="main" tabindex="-1">
+      <header class="topbar"><span>설비 데이터 검토</span><span class="local-label">파일 기반 분석</span></header>
+      <div id="global-error" class="alert error global-alert" role="alert" hidden></div>
+      <div id="loading" class="loading-note" role="status" hidden><span class="spinner" aria-hidden="true"></span><span id="loading-text">작업 공간을 불러오는 중…</span></div>
+
+      <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+        <p class="eyebrow">FROM FILE TO CHECKED RESULT</p>
+        <h1 id="welcome-title">분석하기 전에,<br>데이터부터 확인하세요.</h1>
+        <p class="welcome-description">설비 CSV를 넣고 필요한 구간을 살펴보세요.<br>파일 검증 결과와 분석에 사용한 버전을 함께 남깁니다.</p>
+        <div id="dropzone" class="dropzone">
+          <div class="file-symbol" aria-hidden="true"><span>CSV</span></div>
+          <h2>CSV 파일을 여기에 놓으세요</h2>
+          <p>또는 버튼을 눌러 파일을 선택하세요</p>
+          <button id="welcome-upload" type="button" class="button primary">파일 선택</button>
+          <p class="format-hint" id="format-hint">UTF-8 · 최대 8 MiB · 50,000행</p>
+        </div>
+        <div class="sample-callout"><div><strong>준비된 파일이 없나요?</strong><p>지하철 공기압축기의 공개 기록으로 먼저 확인해 보세요.</p></div><button id="welcome-sample" type="button" class="button secondary">샘플로 시작 <span aria-hidden="true">→</span></button></div>
+        <ol class="steps"><li><span>01</span><h3>파일 확인</h3><p>중복, 시간, 단위와 제공된 품질 정보를 검사합니다.</p></li><li><span>02</span><h3>구간 분석</h3><p>설비와 측정 항목을 골라 실제 값과 표본 통계를 봅니다.</p></li><li><span>03</span><h3>근거와 함께 저장</h3><p>선택한 관측값과 출처·버전 기록을 함께 내려받습니다.</p></li></ol>
+        <details class="input-guide"><summary>내 CSV는 어떤 형식이어야 하나요?</summary><p>한 행에 하나의 관측값을 넣으세요. 필수 열은 아래 다섯 개이며, 선택 열 <code>quality</code>에는 <code>good</code>, <code>uncertain</code>, <code>bad</code>, <code>unspecified</code>를 사용할 수 있습니다.</p><pre>timestamp,equipment,tag,value,unit
+2026-01-01T09:00:00,APU-1,Oil_temperature,53.6,°C
+2026-01-01T09:00:10,APU-1,Oil_temperature,53.7,°C</pre><p>시간대가 있는 시각과 없는 시각을 한 파일에서 섞지 마세요. 같은 설비·항목·시각의 중복 행이나 한 항목 안의 단위 변경은 허용하지 않습니다. 품질을 생략하면 ‘미제공’으로 표시됩니다.</p><a href="/api/template.csv" class="text-link" download>예제 양식 내려받기 ↓</a></details>
+      </section>
+
+      <section id="workspace" class="workspace" aria-labelledby="dataset-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow" id="source-kind">CSV REVIEW</p><h1 id="dataset-title"></h1><p id="dataset-subtitle" class="muted"></p></div><div class="heading-actions"><button id="replace-button" class="button secondary" type="button">수정 파일로 교체</button><button id="delete-button" class="icon-button danger-text" type="button" aria-label="현재 파일 삭제" title="파일 삭제">삭제</button></div></div>
+        <div id="attempt-banner" class="attempt-banner" role="status"><div class="status-symbol" id="attempt-symbol" aria-hidden="true">✓</div><div class="banner-content"><h2 id="attempt-title"></h2><p id="attempt-description"></p><ul id="attempt-issues" class="issue-list" hidden></ul></div><span id="attempt-status" class="status-pill"></span></div>
+        <div id="no-current" class="no-current" hidden><h2>아직 분석할 수 있는 결과가 없습니다.</h2><p>위 검사 결과를 확인하고 CSV를 수정한 뒤 ‘수정 파일로 교체’를 눌러주세요.</p><a href="/api/template.csv" class="text-link" download>CSV 양식 확인 ↓</a></div>
+
+        <div id="analysis-area" hidden>
+          <div class="result-context"><span id="result-basis"></span><span id="result-version" class="mono"></span></div>
+          <form id="query-form" class="filter-card"><div class="field"><label for="equipment-filter">설비</label><select id="equipment-filter" name="equipment"></select></div><div class="field"><label for="tag-filter">측정 항목</label><select id="tag-filter" name="tag"></select></div><div class="field date-field"><label for="start-filter">시작 시각 <span>포함</span></label><input id="start-filter" name="start" type="datetime-local" step="1"></div><div class="field date-field"><label for="end-filter">종료 시각 <span>미포함</span></label><input id="end-filter" name="end" type="datetime-local" step="1"></div><button class="button primary" id="query-button" type="submit">조회</button><div class="filter-footer"><span id="time-basis"></span><button id="reset-range" type="button" class="text-button">전체 기간 보기</button></div></form>
+          <div id="query-error" class="alert error" role="alert" hidden></div>
+          <div id="query-results" hidden>
+            <div class="analysis-heading"><h2>선택 구간 분석</h2><button id="export-button" class="button secondary small" type="button">결과 내려받기 <span aria-hidden="true">↓</span></button></div>
+            <p id="query-selection" class="selection-description"></p>
+            <div id="previous-query" class="alert caution" hidden>최근 검사가 완료되지 않아 이전에 검증한 결과를 표시합니다.</div>
+            <div class="metrics"><article class="metric"><p>관측값 수</p><strong id="metric-count">—</strong><span>선택 구간의 전체 행</span></article><article class="metric"><p>표본 평균</p><strong id="metric-mean">—</strong><span class="metric-unit"></span></article><article class="metric"><p>최솟값</p><strong id="metric-min">—</strong><span class="metric-unit"></span></article><article class="metric"><p>최댓값</p><strong id="metric-max">—</strong><span class="metric-unit"></span></article></div>
+            <article class="chart-card"><div class="card-heading"><div><h3 id="chart-title">관측값 추이</h3><p id="chart-description"></p></div><span class="chart-legend"><i aria-hidden="true"></i>원본 관측값</span></div><div id="chart" class="chart" aria-live="polite"></div><div class="chart-footnotes"><span id="gap-description"></span><span>보간 없음 · 표본 평균</span></div></article>
+            <div class="quality-note"><span class="info-mark" aria-hidden="true">i</span><p id="quality-description"></p></div>
+            <article class="table-card"><div class="card-heading"><h3>관측값 미리보기</h3><span id="preview-description" class="muted"></span></div><div class="table-scroll"><table><thead><tr><th scope="col">관측 시각</th><th scope="col">설비</th><th scope="col">측정 항목</th><th scope="col" class="numeric">값</th><th scope="col">단위</th><th scope="col">제공된 품질</th></tr></thead><tbody id="preview-body"></tbody></table></div><p class="table-footer">내려받기에는 선택 구간의 전체 관측값과 출처·버전·조회 조건을 담은 기록이 포함됩니다.</p></article>
+          </div>
+        </div>
+
+        <div class="details-grid"><details class="detail-card" id="source-details"><summary>파일과 검증 근거</summary><dl id="source-metadata"></dl><p class="scope-note">파일 검증은 센서 정확도나 설비 상태를 보증하지 않습니다. 원본에 이미 존재하는 시간 공백을 전달 누락으로 추정하지 않습니다.</p><p id="sample-attribution" hidden>샘플: <a href="https://archive.ics.uci.edu/dataset/791/metropt%203%20dataset" target="_blank" rel="noopener noreferrer">UCI MetroPT-3</a> · Narjes Davari, Bruno Veloso, Rita Ribeiro, Joao Gama · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. 2020-02-01 공개 기록에서 세 항목을 추출했습니다. 실제 공장에 연결된 실시간 데이터가 아닙니다.</p></details><details class="detail-card" id="history-details"><summary>최근 검사 기록 <span id="history-count"></span></summary><ol id="history-list" class="history-list"></ol><button id="retry-button" class="button secondary small" type="button">보관한 원본 다시 검사</button><p class="scope-note">같은 원본의 재검사로 파일 내용이 수정되지는 않습니다.</p></details></div>
+        <details id="sample-exercise" class="exercise-card" hidden><summary><span class="exercise-tag">샘플 체험</span>전달이 누락되면 결과는 어떻게 되나요?</summary><p>공개 샘플의 일부 행을 의도적으로 전달하지 않는 체험입니다. 최근 검사는 ‘전달 미완료’로 바뀌고 기존 결과는 유지됩니다. 보관된 전체 원본으로 복구하면 같은 버전으로 돌아옵니다.</p><div class="exercise-actions"><button id="delivery-button" class="button secondary" type="button">전달 누락 체험</button><button id="recover-button" class="button primary" type="button">보관 원본으로 복구</button></div><p class="scope-note">실제 센서 결측이나 네트워크 장애를 진단·복구하는 기능은 아닙니다.</p></details>
+      </section>
+      <footer class="page-footer"><span>Telemetry Review</span><span>확인한 데이터와 그 근거를 함께.</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="delete-dialog"><form method="dialog"><h2>이 파일을 삭제할까요?</h2><p>원본 파일, 검증된 결과와 검사 기록이 이 작업 공간에서 함께 삭제됩니다. 내려받은 파일에는 영향을 주지 않습니다.</p><div class="dialog-actions"><button value="cancel" class="button secondary">취소</button><button value="delete" class="button danger" id="confirm-delete">파일 삭제</button></div></form></dialog>
+</body>
+</html>

@@ -8,7 +8,8 @@
 
 **2026-09-08 외부 조사·원본 점검 완료 / 사용자 결과 중심의 제품화 방향 수용.** 작성자는 기술 시연에서
 사용자 결과·복구·반복 사용으로 발전시키고 여러 세션에서 이어가는 방향에 동의했다.
-아래 구체적인 사용자·질문·집계 정책은 여전히 검토할 가설이며 현재 구현은 로컬 품질·발행 검증이다.
+이후 작성자는 직접 사용할 수 있는 첫 서비스를 구현하도록 위임했다. CSV 검토·구간 분석·수정 파일·보관 원본 복구의
+구체적인 첫 정책은 [파일 계약](FILE_REVIEW_CONTRACT.md)으로 수용했고, 시장 수요는 여전히 검증할 가설이다.
 첫 사용자, 기존 업무의 비용, 반복 사용, 기존 대안보다 나은 결과는 확인하지 못했다. 실제 담당자·운영 데이터에
 접근할 통로도 아직 확인되지 않았다. 아래 공개 데이터 검증안을 출발점으로 삼되 실제 사용자 검증과 구분한다.
 
@@ -84,11 +85,9 @@ Uncertain으로 바꿔도 숫자는 `53.625°C` 그대로다. expected set·uniq
 계속할 수 있지만 실사용 검증을 통과한 것으로 처리하지 않는다. 첫 usable version 뒤에도 실제 업무와 기존 대안의
 빈틈을 찾지 못하면 범위를 로컬 품질·발행 도구로 유지한다. 제품 필요가 없는 기능 추가로 이를 보상하지 않는다.
 
-**다음 제품 gate:** MFG-01에서 사용자에게 보일 정상·거부 결과와 첫 소비자 계약 후보를 구체화한다.
-이 검토는 MFG-07 해결을 기다리지 않는다. MFG-07은 외부 재현·release의 신뢰성 선행조건이다.
-소비자 계약을 수용한 뒤 작은 구현을 열고, 이후 MFG-02의 복구, MFG-03의 재현 가능한 결과,
-MFG-09의 독립 사용·운영 피드백을 한 번의 사용 흐름으로 연결한다. MFG-04의 규모와 MFG-06의 Spark는
-그 사용 흐름에 필요한 경우에 선택한다.
+**현재 제품 gate:** MFG-01의 파일 서비스와 제한된 복구 흐름을 로컬 구현·검증한다. 이후 MFG-09에서
+외부 사용과 공개 운영 조건을 확인한다. MFG-07은 기존 OPC UA 실험의 미해결 결함이며, 그 런타임을
+사용하지 않는 파일 서비스의 사용자 흐름과 구분한다. Spark·전체 source·현장 수집은 실제 요구가 있을 때만 연다.
 
 ## MFG-00 — Reproducible local entry
 
@@ -123,39 +122,31 @@ MFG-09의 독립 사용·운영 피드백을 한 번의 사용 흐름으로 연�
 
 ## MFG-01 — One analyst result from a trusted version
 
-**선택한 다음 제품 작업 / DISCOVERY, 소비자 계약 후보 작성.** 현재 결과는 trusted JSONL에서 끝난다. 분석가의 실제 질문,
-분석 단위(grain), query, 반복 사용 근거가 없다. 데이터 신뢰성 데모를 유용한 데이터 엔지니어링
-프로젝트로 발전시킬 때 먼저 닫을 공백이다.
+**첫 파일 서비스 구현 / 로컬 검증.** 2026-09-08 작성자가 공개 가능한 실사용 서비스 후보를 만들도록 위임했다.
+기존 MetroPT/OPC UA 계약에 일반 업로드의 출처를 끼워 넣지 않고, [File Review Contract](FILE_REVIEW_CONTRACT.md)를
+별도로 수용했다. 실제 사용자 접근·반복 사용은 아직 미확인이다.
 
-- 결과 가설: 분석가가 검증된 version 하나를 읽어 설비·tag·시간 구간별 집계 하나를 얻고,
-  그 결과의 source coverage와 dataset version을 함께 확인한다.
-- 첫 행동: 질문 하나를 고르고 grain, 원본 timezone 해석, 구간, null/quality, 불완전한 구간의
-  표시를 정한다. 작성자가 수용하기 전까지 제안으로 둔다. 3-row fixture로 생산 규칙을 추측하지 않는다.
-- 첫 검토물은 사용자 한 명이 결과를 읽는 짧은 walkthrough와 입력·출력 예시다. 현재 가설로 작업을 시작하고,
-  작성자에게 배경을 처음부터 다시 설명하도록 요구하지 않는다. 새 정책을 바꿀 답이 필요한 지점만 질문한다.
-  예시는 정상 구간의 집계·source/version, 새 요청이 거부됐을 때의 이유·기존 결과 범위를 함께 보여 준다.
-  기존 SQL 기준선의 `Oil_temperature` 평균 `53.625°C`를 계산 반례로 사용하되, 이것을 실제 분석 수요로 간주하지 않는다.
-- 이 첫 작업은 full UI·전체 table·새 orchestration을 만드는 것이 아니다. 수용한 질문 하나에 대한 local consumer를
-  첫 구현 후보로 삼는다. 복구 후 같은 조회가 어떻게 바뀌어야 하는지도 설명하되, 복구 실행은 MFG-02의 별도 계약으로 둔다.
-- 검토용 최소 계약: `equipment × tag × [start, end) × dataset version`별 sample count·sample mean,
-  선택한 source row 범위와 전달 coverage, quality 판정, source time 해석을 함께 제공한다.
-  sample mean과 시간 가중 평균을 구분한다. source 공백은 관측 사실로 보여 주며 설비 운휴·결측률로 단정하지 않는다.
-  분석 목적에 구간 평균이 유용한지도 먼저 확인한다. 이 정의는 아직 현재 Contract의 구현 동작이 아니다.
-- 이전 결과의 가용성과 요청한 최신 구간의 준비 여부를 분리한다. 발행 거부 뒤 last-good을 계속 읽더라도
-  그 결과의 범위·version과 최신 요청의 거부 사유를 표시해야 한다. 오래된 구간을 최신 결과로 보이지 않게 한다.
-  모든 tag의 결과를 함께 막을지, 독립 구간별로 제공할지도 소비자 요구로 결정한다.
-- 이후 최소 구현: 기존 trusted dataset을 읽는 local reader/query 하나. 질문에 맞는 가장 작은
-  SQL/query 도구를 선택하며 Kafka·warehouse·대시보드 전면 개편은 열지 않는다.
-- 독립 판정: fixture 정답을 손으로 계산한다. 정상 발행, 발행 거부, current 손상을 비교하고
-  미검증 파일을 읽거나 여러 version을 섞는 경로가 없어야 한다.
-- 완료: 새 독자가 같은 답을 재현하고 source/version까지 추적한다. 발행이 거부되면 이전
-  검증된 답이 유지돼야 한다. 실제 독자를 구할 수 있으면 그 피드백도 별도로 기록한다.
-- 중단 조건: 의미 있는 질문과 검증·feedback 경로를 찾지 못하면 데이터 품질 검증 프로젝트의
-  좁은 주장으로 유지한다.
+- 대상과 결과: 설비 CSV를 전달받은 데이터 엔지니어·분석가가 파일을 검사하고, 설비/태그/시간 구간을 분석해
+  선택한 전체 CSV와 source/version/quality 근거를 ZIP으로 전달한다. 웹 화면·파일 교체·이력까지 한 흐름이다.
+- 수용한 의미: 한 행=한 관측, 키 중복·단위 혼합 거부, UTC 또는 시간대 미제공의 일관성,
+  `equipment × tag × [start,end) × version`의 SQL 표본 통계. 품질 미제공을 Good으로 승격하지 않는다.
+- 거부 행동: 최신 실패와 이전 정상 결과를 분리한다. 다운로드는 화면에서 확인한 버전을 고정한다.
+  저장 원본/버전 손상은 분석을 막되 다른 파일의 목록·삭제·교체는 계속 사용할 수 있게 한다.
+- 구현 경계: `file_review/`의 독립 FastAPI/SQLite/브라우저 서비스다. 기존 trusted OPC UA JSONL을
+  이 화면에 연결한 것은 아니며, `industrial_telemetry_v1`의 수집·품질 정책도 바꾸지 않았다.
+- 실제 공개 샘플: 하루치 7,144 source rows × 3 tags = 21,432 observations. 이 크기는 검증한 입력 범위이며 처리량 지표가 아니다.
+- 가장 강한 반례: 수정 파일 실패·저장 중 실패 뒤 이전 결과가 바뀌거나, 서로 다른 브라우저의 파일이 노출되거나,
+  다운로드가 화면과 다른 버전을 읽는 경우. API·저장소 오류 주입·실제 HTTP·브라우저로 검증한다.
+- 재현: [사용 흐름과 명령](FILE_REVIEW_GUIDE.md), 실행 결과는 [PROJECT_STATUS](../PROJECT_STATUS.md).
+- 남은 제품 gate: 제3자가 자기 CSV로 같은 일을 하고 도움/오류/기존 도구 대비 가치를 기록한다(MFG-09).
+  실제 파일이 wide CSV나 다른 열 이름을 쓰면, 먼저 한 건을 확보해 명시적인 매핑·단위·시간대 확인을 검토한다.
+  모든 제조 포맷을 추측해서 미리 지원하지 않는다.
 
 ## MFG-02 — Recovery and replay identity
 
-**계약 공백 / MFG-01 뒤.** `REPROCESS REQUIRED`는 현재 조치 제안이다.
+**파일 전달 복구는 구현 / OPC UA 재수집 계약은 미해결.** 새 파일 서비스는 보관한 동일 원본의 재검사와
+샘플 전달 누락 복구를 실제 실행하고 같은 content version으로 수렴한다. 수정 파일은 별도 version이다.
+이 제한된 근거를 기존 OPC UA 재수집에 적용하지 않는다. 아래 실험의 `REPROCESS REQUIRED`는 여전히 조치 제안이다.
 [`core.py`](../src/manufacturing_data_platform/event_time_trust/core.py)의 version hash에는
 server/collection time이 들어가고, [수집 실행](../src/manufacturing_data_platform/industrial_source/opcua_runtime.py)은
 봉인된 scenario spool을 만든다. 원본 재수집과 저장된 관측값 재전달은 다른 동작이다.
@@ -174,7 +165,8 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
 
 ## MFG-03 — Public report reproduction without the author's cache
 
-**공개 재현성 공백.** 저장된 HTML/JSON/PNG는 과거 실행 근거다. Builder는 exact full MetroPT CSV와
+**기존 보고서의 재현성 공백.** 새 CSV 서비스는 bundled sample과 `make verify-service`로 cache 없이 실행하도록
+구성했다. 이것으로 과거 OPC UA/Spark 보고서 재생성을 증명하지 않는다. 저장된 HTML/JSON/PNG는 과거 실행 근거다. Builder는 exact full MetroPT CSV와
 보존된 OPC UA·Spark 실행 결과를 요구하지만 새 checkout에는 3-row fixture만 있다.
 `make verify`의 새 Python trust evidence가 그 과거 full-source report를 재생성하지는 않는다.
 
@@ -198,7 +190,8 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
 
 ## MFG-05 — Failure during publication and multiple writers
 
-**필요가 생길 때 열 운영 경계.** 기존 파일 무결성 검사와 atomic rename이 구현돼 있지만
+**기존 OPC UA 경로의 후속 운영 경계.** 새 파일 서비스의 SQLite transaction은 저장 실패 rollback·동시 재검사·
+재시작·무결성 거부를 검증한다. process-kill·원격 storage·여러 replica의 보장은 별도다. 기존 OPC UA 파일 무결성 검사와 atomic rename이 구현돼 있지만
 서로 다른 process의 writer 조정은 없다. 동시 발행과 process-kill 복구는 검증하지 않았다.
 기존 exception injection 테스트의 증거는 그보다 좁다.
 
@@ -220,7 +213,15 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
 
 ## MFG-09 — Independent use, release and feedback
 
-**제품 검증 공백 / MFG-01·02의 usable version 뒤.** README와 테스트만으로 반복 사용이나 운영 책임을 증명하지 않는다.
+**다음 제품 gate / 실제 독립 사용·공개 운영은 미실행.** 첫 파일 서비스는 로컬 구현·검증 단계까지 진행한다.
+README와 테스트만으로 반복 사용이나 운영 책임을 증명하지 않는다.
+
+- 바로 다음 한 행동: 파일 검토를 실제로 하는 사람 한 명의 비민감 CSV와 업무 질문으로 10분 사용 시나리오를
+  구체화한다. 접근할 사용자가 없으면 후보 호스트의 공개 체험 배포안을 준비하되 제품 채택으로 기록하지 않는다.
+- 공개 전 구체화: TLS/허용 Host/secure cookie/영속 볼륨, 익명 요청·세션 생성 제한, 실제 동시 요청 메모리와
+  DB/WAL 용량, 정리 일정과 운영 책임. [실행 guide](FILE_REVIEW_GUIDE.md)의 현재 한도를 근거로 설정·검증한 뒤 승인받는다.
+- 알려진 UX 공백: CSV 열 매핑과 큰 파일/장기 보관/공유 계정은 없다. 실제 첫 파일이 요구하는 한 가지를 고른다.
+  Chrome으로 로컬 확인했으며 Safari·Firefox·모바일 실기기와 보조기술 검증은 후속이다.
 
 - 첫 전달물은 source 구간 선택 → 준비 여부와 집계 확인 → 실패 이유 확인 → 범위 복구 → 정정된 결과 확인을
   실제로 실행하는 한 경로다. 첫 독자에게 맞는 CLI 또는 작은 화면 하나를 선택한다. 화면만 새로 꾸미는 작업과 구분한다.
@@ -238,11 +239,13 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
 
 ## 이력서와 면접에서의 사용
 
-지금은 **로컬 산업 데이터 품질·발행 검증 프로젝트**로 설명할 수 있다. source/time/unit/quality를
+지금은 기존 **로컬 산업 데이터 품질·발행 검증**에 더해 **CSV 검토·분석·수정·근거 전달 웹 서비스 후보**를
+구현한 근거를 만들고 있다. 최종 통과 결과·현재 branch·외부 반영 여부는 PROJECT_STATUS로 확인한다. source/time/unit/quality를
 보존하고, 불완전하거나 신뢰할 수 없는 입력의 발행을 막고, 이전 trusted dataset을 보호한 근거가 있다.
 production 데이터 플랫폼, 사업 성과, 분석가의 실사용, 처리 규모는 아직 별도 근거가 필요하다.
 
-먼저 사용자 업무와 기존 대안(MFG-08)을 확인하고, 분석 결과(MFG-01), 복구 결과(MFG-02), 제3자 재현(MFG-03),
+파일 서비스의 분석·보관 원본 복구와 기존 OPC UA 실험을 분리해 설명한다. 다음은 사용자 업무·대안(MFG-08),
+분석 결과(MFG-01), 각 계약의 복구 결과(MFG-02), 제3자 재현(MFG-03),
 반복 사용·운영 피드백(MFG-09)을 연결한다. 측정한 규모(MFG-04)는 선택한 workload를 뒷받침한다.
 기술 이름을 늘리는 것보다 각 결과를 한 번씩 닫는다. row count만으로 충분하지 않은 이유,
 watermark와 완전성이 다른 이유, 정확히 무엇이 멱등한지를 code·반례·실행 명령으로 설명한다.

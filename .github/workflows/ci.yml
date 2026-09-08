@@ -50,6 +50,9 @@ jobs:
       - name: Run base unit and contract tests
         run: PYTHONPATH=src python -m pytest -q
 
+      - name: Verify file service over real HTTP and restart
+        run: python scripts/verify_file_review.py
+
   telemetry-runtime:
     name: Local OPC UA and trusted dataset read-back
     runs-on: ubuntu-latest
