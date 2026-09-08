@@ -5,16 +5,16 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | RELEASE PREP COMPLETE — bounded `v0.1.0` 로컬 후보와 clean-checkout runtime 검증 완료; PR gate |
-| 사용자 결정 | 2026-09-08 `2)`에 따라 공개 가능한 실사용 서비스 후보를 단계별로 준비하도록 위임. 외부 반영은 최종 확인 뒤 수행 |
+| 단계 | PR OPEN — [#1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1)의 current-head remote CI read-back과 merge gate |
+| 사용자 결정 | 2026-09-08 Apache-2.0 경계, branch push, PR 공개와 원격 CI 확인을 승인. merge·tag·Release·배포는 아직 승인하지 않음 |
 | Integration target | `main`; 원격 기준 `0a3dfb81a8d6341b6e456e0aec72303018da93aa` |
 | 구현 시작점 | `6a7c71e` — 기존 로컬 환경·source 조사·제품 방향 정비 위에서 시작 |
-| 검증한 서비스 revision | `8c8868dd5d7b76f2cd0f24bbfeb3173990de7af8` — service + sample-only release runtime |
+| 검증한 서비스 revision | `1f1a8c1cf486480508b41ac3f7f966abf97d36df` — service + sample-only release runtime + Apache-2.0 image label |
 | 작업 branch | `feat/telemetry-file-review` |
 | 현재 결과 | `full`: 자기 CSV 검토·분석·근거 ZIP·교체. `sample`: 임의 업로드 거부·공개 기록 분석·전달 실패/복구 |
-| Candidate 확인 | `.cache/release-cold-check/8c8868d/receipt.json`; clean Git SHA와 HTTP/container 하위 receipt 연결 |
-| 외부 상태 | NOT RELEASED. push·PR·merge·배포·새 원격 CI 미실행 |
-| 다음 한 행동 | 공개 코드 라이선스를 정하고, 승인 후 이 branch를 push해 `main` 대상 PR 하나에서 원격 CI를 read-back한다 |
+| Candidate 확인 | `.cache/release-container/20260908T042840284903Z/receipt.json`; clean `1f1a8c1`의 HTTP/container/OCI identity read-back PASS |
+| 외부 상태 | branch push 및 PR #1 OPEN. 구현 head `1f1a8c1`의 원격 run `34187169061` 시작. NOT MERGED / NOT RELEASED / NOT DEPLOYED |
+| 다음 한 행동 | PR #1의 최종 head에서 네 remote check를 green으로 read-back한 뒤 merge 여부를 사용자에게 확인한다 |
 
 ## 실행과 이어가기
 
@@ -50,6 +50,7 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
   공개 체험 후보는 server-side `sample` mode로 upload/replace를 거부하고 UI도 그 capability에 맞춘다.
 - 실행 artifact는 `/healthz`와 OCI label로 release·full Git revision·mode를 노출한다. Python 3.12.13 base digest와
   runtime-only dependency lock을 고정하고 UID 10001, read-only root, SQLite volume으로 실행한다.
+- 원본 코드·문서는 Apache-2.0으로 공개하고, 포함한 MetroPT-3 발췌본·파생 샘플의 CC BY 4.0 범위는 별도 출처 문서에 유지한다.
 - 계정은 넣지 않았다. 현재 24시간 익명 workspace와 공개 sample에는 필요가 없으며, 기기 간 복원·장기 보관·팀 공유가
   실제 사용자 gate에서 확인될 때 identity/authorization/retention 계약을 함께 연다.
 
@@ -61,12 +62,12 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 | 새 clean clone / Python 3.12.3 | `make setup → make test → make verify-service → make verify-container` PASS. 247 passed / 17 skipped; source clean, 작성자 venv/cache 불필요 |
 | 파일 서비스 API·저장 반례 | 정상/거부/수정, 동일 원본 재시도, timezone duplicate·quality·unit, 조회 구간, export 전체 행, CSRF·공간 분리, 용량 rollback, 동시 재검사, 만료·삭제, 변조 거부 |
 | 실제 HTTP와 서버 재시작 | PASS. Oil_temperature 7,144개 평균 55.74811730123181; 원본을 독립 계산한 값과 일치. ZIP digest·같은 복구 version·재시작 후 이력 확인 |
-| release container | clean `8c8868d`: Python 3.12.13, 141,602,236 bytes. HTTP/OCI identity, sample upload 거부, UID 10001·read-only root, 21,432개 sample과 volume restart 동일 version PASS; 관측 메모리 47.9MiB |
+| release container | clean `1f1a8c1`: Python 3.12.13, 141,710,269 bytes. HTTP/OCI license·release identity, sample upload 거부, UID 10001·read-only root, 21,432개 sample과 volume restart 동일 version PASS; 관측 메모리 49.04MiB |
 | 실제 Compose / Chromium 140 | WSL `--env-file` sample mode와 container health 확인. full 11개·sample 7개 UI 시나리오, 1440/390 px, browser isolation, page error 0 |
 | dependency advisory | `requirements-service.lock` 13개 package를 `pip-audit 2.10.1`로 조회해 알려진 취약점 0건. base OS scan은 Docker Scout 인증 부재로 미실행 |
 | 독립 내부 코드 검토 | 기초 service slice에서 손상 파일이 목록을 막는 문제, 빈 export version, 비 ASCII CSRF 500을 발견·수정. 이번 release runtime 변경의 별도 독립 검토는 미실행 |
 | 기존 OPC UA 실제 replay | PASS. 5개 판정 및 current → manifest → data digest chain 확인. `run-SQG1T2la` |
-| 외부 CI / 실제 사용자 / 배포 / 장기 운영 | 미실행. 로컬 결과로 대체하지 않음 |
+| 외부 CI / 실제 사용자 / 배포 / 장기 운영 | PR #1의 구현 head 원격 CI 네 check가 실행 중이며 최종 head read-back은 아직이다. 실제 사용자·배포·장기 운영은 미실행 |
 
 이번 clean-checkout 묶음은 `.cache/release-cold-check/8c8868d/receipt.json`이 HTTP와 container receipt를 연결한다.
 기존 실행 근거는 `.cache/file-review-tests.log`, `.cache/file-review-final-focused.log`,
@@ -83,8 +84,8 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 
 ## 다음 제품 gate와 Portfolio 경계
 
-[MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback): 먼저 준비된 한 PR에서 원격 CI를 확인하고
-merge·tag·GitHub Release를 별도 gate로 닫는다. 이후 실제 CSV 검토자 한 명이 자신의 비민감 파일로 설명 없이
+[MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback): 열린 PR #1의 최종 head에서 원격 CI를 확인하고
+merge·tag·GitHub Release를 각각 별도 gate로 닫는다. 이후 실제 CSV 검토자 한 명이 자신의 비민감 파일로 설명 없이
 업로드·오류 수정·구간 조회·근거 전달을 수행하는 짧은 검증을 준비한다.
 열 매핑, 공유, 큰 파일 같은 기능은 그 사용에서 드러난 한 문제에 맞춰 고른다. 기존 SQL/스프레드시트보다
 유용한 지점과 도움 요청을 기록한다. 접근 가능한 사람이 없으면 공개 체험 배포안을 구체화하되 사용자 채택으로 기록하지 않는다.
