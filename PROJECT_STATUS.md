@@ -5,16 +5,16 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | LOCAL RELEASE CANDIDATE — 첫 Telemetry Review 구현·로컬 검증·새 체크아웃 재현 완료 |
-| 사용자 결정 | 2026-09-08 공개 가능한 실사용 서비스 후보를 로컬에서 구현하도록 위임. 실제 수요·대표 프로젝트 선정은 별도 |
+| 단계 | RELEASE PREP COMPLETE — bounded `v0.1.0` 로컬 후보와 clean-checkout runtime 검증 완료; PR gate |
+| 사용자 결정 | 2026-09-08 `2)`에 따라 공개 가능한 실사용 서비스 후보를 단계별로 준비하도록 위임. 외부 반영은 최종 확인 뒤 수행 |
 | Integration target | `main`; 원격 기준 `0a3dfb81a8d6341b6e456e0aec72303018da93aa` |
 | 구현 시작점 | `6a7c71e` — 기존 로컬 환경·source 조사·제품 방향 정비 위에서 시작 |
-| 검증한 서비스 revision | `f2ddf8e1ef5c8ee12263e4d70452d4c9129ba7b2`; 이후 변경은 상태·검증 문서 |
+| 검증한 서비스 revision | `8c8868dd5d7b76f2cd0f24bbfeb3173990de7af8` — service + sample-only release runtime |
 | 작업 branch | `feat/telemetry-file-review` |
-| 현재 결과 | 자기 CSV → 파일 검증 → 구간 분석 → 근거 ZIP → 수정 파일·재검사. 공개 샘플 전달 누락·보관 원본 복구 |
-| Candidate 확인 | `git log -1 --oneline`, `git status --short --branch`; 실행 receipt에는 Git HEAD와 source 파일 hash 기록 |
+| 현재 결과 | `full`: 자기 CSV 검토·분석·근거 ZIP·교체. `sample`: 임의 업로드 거부·공개 기록 분석·전달 실패/복구 |
+| Candidate 확인 | `.cache/release-cold-check/8c8868d/receipt.json`; clean Git SHA와 HTTP/container 하위 receipt 연결 |
 | 외부 상태 | NOT RELEASED. push·PR·merge·배포·새 원격 CI 미실행 |
-| 다음 한 행동 | MFG-09에서 실제 CSV 검토자 한 명의 비민감 파일·업무 질문으로 독립 사용 시나리오를 준비한다 |
+| 다음 한 행동 | 공개 코드 라이선스를 정하고, 승인 후 이 branch를 push해 `main` 대상 PR 하나에서 원격 CI를 read-back한다 |
 
 ## 실행과 이어가기
 
@@ -22,10 +22,13 @@
 make setup
 make serve
 # http://127.0.0.1:8000
+
+# bounded sample-only container
+docker compose --env-file .env.example up --build
 ```
 
 [사용법](docs/FILE_REVIEW_GUIDE.md)의 공개 샘플이나 CSV 양식으로 시작한다. 웹 서비스는 MongoDB·OPC UA·
-Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verify-service`가 검증 입구다.
+Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verify-service`, `make verify-container`가 검증 입구다.
 기존 OPC UA 실험은 `make verify`로 별도 실행한다.
 
 새 세션은 `AGENTS.md → 이 파일 → File Review Contract → MFG-09` 순서로 복원한다. 환경 정비나 Discovery를
@@ -43,21 +46,30 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 - 공개 샘플은 MetroPT-3 하루치 7,144 source rows / 21,432 observations다. 센서 품질과 시간대는 미제공으로 남긴다.
   누락 체험은 2,143개 관측을 전달에서 제외한다. 보관 전체 입력의 복구·반복 재검사는 같은 version으로 수렴한다.
 - 웹 클라이언트는 실제 업로드·교체·분석·다운로드·이력·삭제를 제공한다. 화면 수치를 하드코딩한 데모가 아니다.
+- 기본 Compose 정문은 현재 Telemetry Review를 실행한다. 과거 MongoDB는 `historical` profile로 격리했다.
+  공개 체험 후보는 server-side `sample` mode로 upload/replace를 거부하고 UI도 그 capability에 맞춘다.
+- 실행 artifact는 `/healthz`와 OCI label로 release·full Git revision·mode를 노출한다. Python 3.12.13 base digest와
+  runtime-only dependency lock을 고정하고 UID 10001, read-only root, SQLite volume으로 실행한다.
+- 계정은 넣지 않았다. 현재 24시간 익명 workspace와 공개 sample에는 필요가 없으며, 기기 간 복원·장기 보관·팀 공유가
+  실제 사용자 gate에서 확인될 때 identity/authorization/retention 계약을 함께 연다.
 
 ## 2026-09-08 검증과 한계
 
 | 검사 | 관측 결과 |
 |---|---|
-| 전체 Python 3.10.12 suite | 244 passed / 17 skipped. 이후 정밀 timestamp 거부 회귀 1개 추가; 영향 범위 77 passed |
-| 새 clean clone / Python 3.12.3 | `make setup → make test → make verify-service` PASS. 245 passed / 17 skipped, 실제 HTTP·정적 화면·ZIP·재시작 확인. 작성자 cache 불필요 |
+| 전체 Python 3.10.12 suite | 247 passed / 17 skipped. 파일 계약·공개 capability·schema/version·reader-facing claim 포함 |
+| 새 clean clone / Python 3.12.3 | `make setup → make test → make verify-service → make verify-container` PASS. 247 passed / 17 skipped; source clean, 작성자 venv/cache 불필요 |
 | 파일 서비스 API·저장 반례 | 정상/거부/수정, 동일 원본 재시도, timezone duplicate·quality·unit, 조회 구간, export 전체 행, CSRF·공간 분리, 용량 rollback, 동시 재검사, 만료·삭제, 변조 거부 |
 | 실제 HTTP와 서버 재시작 | PASS. Oil_temperature 7,144개 평균 55.74811730123181; 원본을 독립 계산한 값과 일치. ZIP digest·같은 복구 version·재시작 후 이력 확인 |
-| 실제 Chromium 140 / Playwright 1.55 | 업로드·거부 후 이전 결과 ZIP·수정·빈 구간·샘플·누락·복구·새로고침·다른 브라우저 확인. 1440/390 px 가로 넘침 없음, page error 0 |
-| 독립 내부 코드 검토 | 손상 파일이 목록을 막는 문제, 빈 export version, 비 ASCII CSRF의 500을 발견·수정하고 회귀 검증 |
+| release container | clean `8c8868d`: Python 3.12.13, 141,602,236 bytes. HTTP/OCI identity, sample upload 거부, UID 10001·read-only root, 21,432개 sample과 volume restart 동일 version PASS; 관측 메모리 47.9MiB |
+| 실제 Compose / Chromium 140 | WSL `--env-file` sample mode와 container health 확인. full 11개·sample 7개 UI 시나리오, 1440/390 px, browser isolation, page error 0 |
+| dependency advisory | `requirements-service.lock` 13개 package를 `pip-audit 2.10.1`로 조회해 알려진 취약점 0건. base OS scan은 Docker Scout 인증 부재로 미실행 |
+| 독립 내부 코드 검토 | 기초 service slice에서 손상 파일이 목록을 막는 문제, 빈 export version, 비 ASCII CSRF 500을 발견·수정. 이번 release runtime 변경의 별도 독립 검토는 미실행 |
 | 기존 OPC UA 실제 replay | PASS. 5개 판정 및 current → manifest → data digest chain 확인. `run-SQG1T2la` |
 | 외부 CI / 실제 사용자 / 배포 / 장기 운영 | 미실행. 로컬 결과로 대체하지 않음 |
 
-실행 근거는 `.cache/file-review-tests.log`, `.cache/file-review-final-focused.log`,
+이번 clean-checkout 묶음은 `.cache/release-cold-check/8c8868d/receipt.json`이 HTTP와 container receipt를 연결한다.
+기존 실행 근거는 `.cache/file-review-tests.log`, `.cache/file-review-final-focused.log`,
 `.cache/file-review-verification/<run>/receipt.json`, `.cache/file-review-browser/receipt.json`,
 `.cache/file-review-legacy-replay.log`에 있다. 새 체크아웃의 명령·revision·clean 여부는
 `.cache/file-review-cold-check/receipt.json`, 실제 HTTP 수치와 source 파일 hash는 같은 디렉터리의
@@ -71,12 +83,14 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 
 ## 다음 제품 gate와 Portfolio 경계
 
-[MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback): 실제 CSV 검토자 한 명이 자신의
-비민감 파일로 설명 없이 업로드·오류 수정·구간 조회·근거 전달을 수행하는 짧은 검증을 준비한다.
+[MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback): 먼저 준비된 한 PR에서 원격 CI를 확인하고
+merge·tag·GitHub Release를 별도 gate로 닫는다. 이후 실제 CSV 검토자 한 명이 자신의 비민감 파일로 설명 없이
+업로드·오류 수정·구간 조회·근거 전달을 수행하는 짧은 검증을 준비한다.
 열 매핑, 공유, 큰 파일 같은 기능은 그 사용에서 드러난 한 문제에 맞춰 고른다. 기존 SQL/스프레드시트보다
 유용한 지점과 도움 요청을 기록한다. 접근 가능한 사람이 없으면 공개 체험 배포안을 구체화하되 사용자 채택으로 기록하지 않는다.
 
-공개 배포 후보의 host/TLS·보관 볼륨·정리·요청/세션 제한·동시 메모리·운영 책임은 아직 정하지 않았다.
+공개 배포 후보의 host/TLS·보관 또는 폐기 volume·정리·edge 요청/세션 제한·runtime log/alert·OS image scan·
+동시 메모리·운영 책임은 아직 정하지 않았다.
 설정과 실제 검증 결과를 먼저 준비하고 사용자 최종 승인 뒤 외부 반영한다. 로컬 서비스 완성을 그 승인 대기로 오해하지 않는다.
 
 현재 새로 설명할 수 있는 것은 CSV 검토·분석·교체·보관 입력 복구·근거 전달 서비스를 구현하고 로컬에서 검증한 범위다.
