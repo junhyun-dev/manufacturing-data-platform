@@ -114,3 +114,96 @@ PYTHON_BIN=.cache/venvs/spark/bin/python ./scripts/verify_event_time_trust.sh
 소스 계약·실패 판정·로컬 무결성은 재현 가능한 주장이다. 실제 제조 운영자의 반복 사용,
 재처리 실행, downstream 분석 결과, 처리량·SLA·HA·실제 공장 연결은 해당 근거가 생기기 전
 미검증으로 둔다. 보존된 full CSV의 행 수를 처리 실적으로 사용하지 않는다.
+
+## Source and consumer research probes
+
+[MFG-08](BACKLOG.md#mfg-08--product-value-and-source-reality)의 조사 결과를 제품 코드와 독립적으로 확인하는
+선택적 명령이다. Python 표준 라이브러리만 사용하며 현재 trusted dataset을 수정하지 않는다.
+전체 source 점검을 위해 [UCI 배포 archive](https://archive.ics.uci.edu/static/public/791/metropt%2B3%2Bdataset.zip)를
+`.cache/source-research/metropt3.zip`에 둔다. 다운로드는 약 218 MB이며 기본 setup·test·verify에는 필요 없다.
+CSV를 별도로 압축 해제하거나 Git에 추가할 필요도 없다. CC BY 4.0 출처는 [fixture 설명](../tests/fixtures/metropt3/README.md)을 따른다.
+
+다음 명령은 byte identity를 먼저 확인한 뒤 physical order의 인접 시간 차이를 센다. 간격의 원인이나
+현실의 관측 완전성은 판정하지 않는다. 숫자가 달라지면 source hash와 계산 범위를 먼저 확인한다.
+
+```bash
+python3 - <<'PY'
+import collections, csv, datetime, hashlib, io, json, math, zipfile
+
+with zipfile.ZipFile('.cache/source-research/metropt3.zip') as archive:
+    name = 'MetroPT3(AirCompressor).csv'
+    digest = hashlib.sha256()
+    with archive.open(name) as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b''):
+            digest.update(chunk)
+    expected = 'db30ccb4ea402e3c8bf2c99db06e288d4f2a772f6928f9dbe26a920d69793e24'
+    if digest.hexdigest() != expected:
+        raise SystemExit('Different source bytes; do not reuse the recorded profile')
+    intervals = collections.Counter()
+    invalid = collections.Counter()
+    count, previous, largest = 0, None, None
+    with archive.open(name) as source:
+        for row in csv.DictReader(io.TextIOWrapper(source)):
+            timestamp = datetime.datetime.fromisoformat(row['timestamp'])
+            count += 1
+            if previous is None:
+                first = row['timestamp']
+            else:
+                seconds = int((timestamp - previous).total_seconds())
+                intervals[seconds] += 1
+                if largest is None or seconds > largest[0]:
+                    largest = (seconds, str(previous), str(timestamp))
+            for tag in ('TP2', 'Oil_temperature', 'Motor_current'):
+                try:
+                    finite = math.isfinite(float(row[tag]))
+                except (ValueError, TypeError):
+                    finite = False
+                if not finite:
+                    invalid[tag] += 1
+            previous = timestamp
+print(json.dumps({
+    'csv_sha256': digest.hexdigest(), 'rows': count,
+    'first': first, 'last': str(previous), 'largest_gap': largest,
+    'intervals_9s': intervals[9], 'intervals_10s': intervals[10],
+    'intervals_above_60s': sum(n for gap, n in intervals.items() if gap > 60),
+    'nonpositive_intervals': sum(n for gap, n in intervals.items() if gap <= 0),
+    'nonfinite_selected_values': dict(invalid)
+}, indent=2))
+PY
+```
+
+소비자 기준선은 committed fixture만 사용한다. sample mean과 전달 전 기본 검사만 비교하며 제품의
+event-time 정책·멱등성·발행·복구를 재구현하는 검증은 아니다. 중복 행은 이 기준선에서 보수적으로 거부한다.
+추가한 quality·누락·중복은 실험 입력이다. 출력의 평균은 소수 셋째 자리로 반올림한다.
+
+```bash
+python3 - <<'PY'
+import csv, json, sqlite3
+from pathlib import Path
+
+fixture = Path('tests/fixtures/metropt3/MetroPT3_first_3_rows.csv')
+with fixture.open() as source:
+    base = [(i, float(row['Oil_temperature']), 'GOOD')
+            for i, row in enumerate(csv.DictReader(source), 1)]
+cases = {
+    'normal': base,
+    'missing_middle': [base[0], base[2]],
+    'uncertain_middle': [base[0], (2, base[1][1], 'UNCERTAIN'), base[2]],
+    'duplicate_middle': base + [base[1]],
+}
+for name, observations in cases.items():
+    with sqlite3.connect(':memory:') as db:
+        db.execute('CREATE TABLE obs (row_id INTEGER, temperature REAL, quality TEXT)')
+        db.executemany('INSERT INTO obs VALUES (?, ?, ?)', observations)
+        count, mean = db.execute('SELECT COUNT(*), ROUND(AVG(temperature), 3) FROM obs').fetchone()
+        identities = {row[0] for row in db.execute('SELECT DISTINCT row_id FROM obs')}
+        bad = db.execute("SELECT COUNT(*) FROM obs WHERE quality != 'GOOD' OR temperature IS NULL").fetchone()[0]
+        fit = identities == {1, 2, 3} and count == len(identities) and bad == 0
+        print(json.dumps({'case': name, 'count': count, 'sample_mean_c': mean,
+                          'basic_checks': 'PASS' if fit else 'REFUSE'}))
+PY
+```
+
+정상 평균은 `53.625`, 가운데 관측 누락은 `53.600`, 가운데 행 중복은 `53.638`이다.
+Uncertain 변형은 평균이 정상이더라도 거부해야 한다. 기본 검사로도 이 차이를 판정할 수 있다는 사실이
+새 데이터 플랫폼의 필요성을 입증하지는 않는다. 제품 후보의 복구·전달 업무를 별도로 검증한다.

@@ -5,16 +5,16 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | CLOSEOUT — 로컬 정비 완료, 알려진 재현성 공백을 남긴 검토 후보 |
+| 단계 | CLOSEOUT — 로컬 정비·외부 조사 완료, 제품 가설과 검증 backlog를 남긴 검토 후보 |
 | 결정자 | 프로젝트 작성자. 대표 프로젝트 선정과 외부 반영은 사용자 판단 |
 | Integration target | `main` |
 | 기존 기준점 | `0a3dfb81a8d6341b6e456e0aec72303018da93aa`; 시작 시 clean checkout |
-| 새 checkout 검증 revision | `fbda33d13477c9bd5c8ad8354ec3d085e8e89283`; 아래 검증 뒤 상태 설명만 보완 |
+| 새 checkout 검증 revision | `fbda33d13477c9bd5c8ad8354ec3d085e8e89283`; 아래 검증 뒤 제품 code/test는 그대로이며 상태·조사 문서 보완 |
 | 작업 branch | `chore/reproducible-telemetry-handoff` |
-| 이번 변경 | [MFG-00](docs/BACKLOG.md#mfg-00--reproducible-local-entry), 로컬 결과 준비 완료 |
+| 이번 변경 | [MFG-00](docs/BACKLOG.md#mfg-00--reproducible-local-entry) 로컬 정비, [MFG-08](docs/BACKLOG.md#mfg-08--product-value-and-source-reality) 제품 조사·독립 기준선 준비 완료 |
 | Candidate 확인 | `git log -1 --oneline`·`git status --short --branch`; 검증 당시 code/test hash는 각 run의 receipt |
 | 외부 상태 | NOT RELEASED. push·PR·merge·배포 미실행; 새 원격 CI job도 미실행 |
-| 다음 한 행동 | 기능 확장 전에 [MFG-07](docs/BACKLOG.md#mfg-07--intermittent-local-collection-timeout)의 수집 timeout 재현을 좁힌다 |
+| 다음 한 행동 | [MFG-07](docs/BACKLOG.md#mfg-07--intermittent-local-collection-timeout)의 수집 timeout 재현을 좁힌다. 외부 재현·release의 선행조건 |
 
 ## 이번에 닫은 범위
 
@@ -22,6 +22,10 @@
 read-back, 현재 계약과 작업 입구를 만들었다. OPC UA CI job을 추가하고 callback 실패가 원인을
 숨긴 timeout으로 바뀌는 경로를 수정했다. 새 데이터 제품이나 복구 기능을 구현한 것은 아니다.
 과거 작업을 이 변경 이후의 전달 방식으로 진행했다고 사후 포장하지 않는다.
+
+추가로 제품 가치의 공백을 조사하고 기존 산업 데이터 제품·실제 source·단순 SQL 대안을 대조했다.
+사용자의 업무 결과와 복구·독립 사용까지 보강할 후보를 backlog에 남겼다. 조사를 제품 수용이나
+신규 기능 구현으로 처리하지 않는다.
 
 ## 2026-09-08 로컬 검증
 
@@ -48,15 +52,33 @@ checkout 경로는 검증 당시 위치이며 정리 후 존재하지 않는다.
 `.cache/telemetry-failure-observation/`에 있다. 이 생성물은 Git에 넣지 않으며 새 checkout은
 [Verification](docs/VERIFICATION.md)의 명령으로 자체 근거를 만든다. 보존된 public JSON/HTML/PNG는 변경하지 않았다.
 
+## 2026-09-08 제품 조사와 독립 점검
+
+[MFG-08](docs/BACKLOG.md#mfg-08--product-value-and-source-reality)이 외부 출처·제품 가설·기존 대안·
+source 실측·중단 조건을 소유한다. 조사 시 code revision은 `2ab0927eafeeffc5b62819d9985464a627069a94`이며
+이 후속 변경은 문서와 로컬 조사 생성물에 한정한다.
+
+- 새로 받은 전체 CSV의 hash·행 수·시간 간격을 확인했다. 파일 전달의 완전성을 물리 설비 관측의 완전성과 구분한다.
+- committed fixture로 독립 SQL 계산과 기본 검사를 실행했다. 기본 집계·거부만으로 제품 필요가 증명되지 않는다.
+- [문서의 두 재현 명령](docs/VERIFICATION.md#source-and-consumer-research-probes)을 그대로 실행해 결과를 대조했다.
+  README·공개 결과 관련 기존 검사 42개도 통과했다. 제품 code가 그대로이므로 위 전체 runtime 검증 날짜·revision은 유지한다.
+- 실제 담당자·사용 환경에 대한 접근은 미확인이다. 기술 재현, 사용자 수용, 반복 사용을 별도 gate로 남겼다.
+  새 제품 후보는 요청한 구간의 분석 결과·누락 범위·복구 후 변경을 함께 제공하는 흐름이다.
+
+로컬 원본과 조사 결과는 `.cache/source-research/`에 있다. 전체 CSV가 들어 있는 archive는 기본 실행의
+선행조건이 아니며 Git에 넣지 않았다. [MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback)가
+제3자 사용·release·운영 피드백의 후속 완료 조건을 소유한다.
+
 ## 새 세션에서 이어가기
 
 ```text
-AGENTS.md → 이 파일 → MFG-07 → 해당 code/test와 실제 Git
+AGENTS.md → 이 파일 → MFG-08의 제품 방향·근거 → MFG-07의 code/test와 실제 Git
 ```
 
 환경이 없으면 `make setup`, 로컬 정상 경로 확인은 `make test`, `make verify`다. 도구 설치나 진단은
-로컬 범위에서 진행할 수 있다. MFG-07을 먼저 조사한 뒤, 제품 보강은 MFG-01의 분석 질문·grain·시간·
-실패 의미를 작성자와 정하고 작은 consumer 하나로 시작한다. 나머지 backlog를 자동으로 모두 열지 않는다.
+로컬 범위에서 진행할 수 있다. MFG-07을 먼저 조사한 뒤, 제품 보강은 MFG-08의 실제 사용자·대안과
+MFG-01의 분석 질문·grain·시간·실패 의미를 작성자와 정하고 작은 consumer 하나로 시작한다.
+이후 복구·재현·독립 사용을 연결한다. 나머지 backlog를 자동으로 모두 열지 않는다.
 
 현재 이력서 주장은 로컬 source·품질·발행·무결성 검증에 한정한다. 실제 분석 결과, 복구 완료,
 처리 규모, 외부 사용자 가치, production 성과는 아직 근거가 필요하다. 공개 반영이 필요할 때는

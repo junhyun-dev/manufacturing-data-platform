@@ -33,6 +33,10 @@ not verified       실제 공장 네트워크·physical plant·production OPC UA
 판정 의미는 [Contract](docs/CONTRACT.md), 보완 순서와 완료 조건은 [Backlog](docs/BACKLOG.md)가 소유합니다.
 빠른 로컬 재현은 아래 `make setup`, `make test`, `make verify` 세 명령입니다.
 
+제품으로 보강할 방향과 기존 대안 비교는 [사용자 업무·source 조사](docs/BACKLOG.md#mfg-08--product-value-and-source-reality)에
+정리했습니다. 원본의 시간 공백, 독립 SQL 기준선, 분석 결과·복구·반복 사용의 검증 조건을 포함합니다.
+현재 구현과 후속 제품 가설을 구분하며, 실제 사용자 수용은 아직 확인하지 않았습니다.
+
 ## 한눈에 보는 결과
 
 같은 MetroPT-3 원본 데이터 범위를 정상·품질 이상·수집기 중단 상황으로 재현해 서로 다른 다음 행동을 확인합니다.

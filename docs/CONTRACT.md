@@ -27,6 +27,11 @@ replay and deliberate faults exercise the collection boundary. This is not live 
 An event exactly on that boundary is accepted; one before it is too late. This is a fixture policy,
 not a measured source SLA. Arrival sequence orders evaluation; received-at time does not prove completeness.
 
+Expected-set coverage describes delivery of the selected file observations. It does not establish
+continuous acquisition from the physical equipment or explain gaps already present in the source CSV.
+The [source audit](BACKLOG.md#mfg-08--product-value-and-source-reality) records this distinction;
+its proposed consumer rules are not implemented contract changes.
+
 ## Decisions and persistence
 
 | Condition, in evaluation priority order | Internal status | Visible action | Trusted current |
