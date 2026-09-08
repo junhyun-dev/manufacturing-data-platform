@@ -5,18 +5,22 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | CLOSEOUT — 로컬 정비·외부 조사 완료, 제품 가설과 검증 backlog를 남긴 검토 후보 |
+| 단계 | DISCOVERY — 사용자 결과 중심의 제품화 방향 수용, 첫 소비자 계약 후보 준비. 로컬 정비·외부 조사는 완료 |
 | 결정자 | 프로젝트 작성자. 대표 프로젝트 선정과 외부 반영은 사용자 판단 |
 | Integration target | `main` |
 | 기존 기준점 | `0a3dfb81a8d6341b6e456e0aec72303018da93aa`; 시작 시 clean checkout |
 | 새 checkout 검증 revision | `fbda33d13477c9bd5c8ad8354ec3d085e8e89283`; 아래 검증 뒤 제품 code/test는 그대로이며 상태·조사 문서 보완 |
 | 작업 branch | `chore/reproducible-telemetry-handoff` |
-| 이번 변경 | [MFG-00](docs/BACKLOG.md#mfg-00--reproducible-local-entry) 로컬 정비, [MFG-08](docs/BACKLOG.md#mfg-08--product-value-and-source-reality) 제품 조사·독립 기준선 준비 완료 |
+| 현재 선택 | [MFG-01](docs/BACKLOG.md#mfg-01--one-analyst-result-from-a-trusted-version)의 사용자 walkthrough와 소비자 계약 후보. 기능 구현 미착수 |
 | Candidate 확인 | `git log -1 --oneline`·`git status --short --branch`; 검증 당시 code/test hash는 각 run의 receipt |
 | 외부 상태 | NOT RELEASED. push·PR·merge·배포 미실행; 새 원격 CI job도 미실행 |
-| 다음 한 행동 | [MFG-07](docs/BACKLOG.md#mfg-07--intermittent-local-collection-timeout)의 수집 timeout 재현을 좁힌다. 외부 재현·release의 선행조건 |
+| 다음 한 행동 | [MFG-01](docs/BACKLOG.md#mfg-01--one-analyst-result-from-a-trusted-version)에서 정상 결과와 발행 거부 시 보일 내용, 독립 정답을 한 사용자 흐름으로 구체화한다 |
 
-## 이번에 닫은 범위
+작성자는 2026-09-08 사용자 결과·복구·반복 사용을 중심으로 제품을 발전시키는 방향과 여러 세션의 이어가기에
+동의했다. 구체적인 사용자·집계·시간·identity 정책이나 실제 사용자의 수용까지 확정한 것은 아니다.
+다음 담당자는 아래의 조사 근거에서 시작하며, 환경 정비만 반복하거나 작성자에게 프로젝트 배경을 다시 요청하지 않는다.
+
+## 완료한 로컬 정비·조사
 
 기존 code와 공개 보고서를 보존하고 버전이 고정된 local env, setup/test/verify 명령, 보존된 결과의
 read-back, 현재 계약과 작업 입구를 만들었다. OPC UA CI job을 추가하고 callback 실패가 원인을
@@ -72,13 +76,18 @@ source 실측·중단 조건을 소유한다. 조사 시 code revision은 `2ab09
 ## 새 세션에서 이어가기
 
 ```text
-AGENTS.md → 이 파일 → MFG-08의 제품 방향·근거 → MFG-07의 code/test와 실제 Git
+AGENTS.md → 이 파일 → MFG-08의 제품 방향·근거 → MFG-01 → Contract와 실제 Git
 ```
 
 환경이 없으면 `make setup`, 로컬 정상 경로 확인은 `make test`, `make verify`다. 도구 설치나 진단은
-로컬 범위에서 진행할 수 있다. MFG-07을 먼저 조사한 뒤, 제품 보강은 MFG-08의 실제 사용자·대안과
-MFG-01의 분석 질문·grain·시간·실패 의미를 작성자와 정하고 작은 consumer 하나로 시작한다.
+로컬 범위에서 진행할 수 있다. 다음 세션은 MFG-01의 정상·거부 walkthrough와 계약 후보부터 구체화한다.
+MFG-08의 실제 사용자·대안과 분석 질문·grain·시간·실패 의미를 정하고, 수용된 결과 하나를 구현·검증한다.
+MFG-07의 timeout 원인 조사는 외부 재현·release 전에 닫아야 하며, 소비자 질문을 정하는 작업을 막는 선행조건은 아니다.
 이후 복구·재현·독립 사용을 연결한다. 나머지 backlog를 자동으로 모두 열지 않는다.
+
+매 작업은 사용자 결과와 가장 강한 실패 반례를 먼저 잡고, 수용된 계약·code·test를 함께 변경한다.
+실제 저장 결과를 다시 읽고 관측한 한계를 기록한 뒤 다음 작업을 연다. 모델을 바꿀 때에도 같은 기준을 사용하며,
+담당 모델의 완료 보고만으로 test·runtime·사용자 수용을 대신하지 않는다.
 
 현재 이력서 주장은 로컬 source·품질·발행·무결성 검증에 한정한다. 실제 분석 결과, 복구 완료,
 처리 규모, 외부 사용자 가치, production 성과는 아직 근거가 필요하다. 공개 반영이 필요할 때는
