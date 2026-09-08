@@ -6,6 +6,7 @@ ARG VCS_REF=unknown
 LABEL org.opencontainers.image.title="Telemetry Review" \
       org.opencontainers.image.description="Review telemetry CSV files and export a version-pinned result" \
       org.opencontainers.image.source="https://github.com/junhyun-dev/manufacturing-data-platform" \
+      org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${RELEASE_VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}"
 

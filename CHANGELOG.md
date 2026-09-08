@@ -18,6 +18,8 @@ a date and immutable Git tag are added only after remote CI and release verifica
   volume, read-only root filesystem, health check and release/revision labels.
 - Configurable `sample` mode that disables arbitrary uploads for a bounded public preview while
   retaining the complete local CSV workflow in `full` mode.
+- Apache-2.0 licensing for original code and documentation, with the bundled MetroPT-3 excerpts and
+  derived samples kept under their attributed CC BY 4.0 terms.
 
 ### Known limitations
 

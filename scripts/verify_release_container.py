@@ -118,9 +118,10 @@ def main():
         receipt["checks"].append("persistent volume restart")
         image_details = json.loads(command("docker", "image", "inspect", image).stdout)[0]
         labels = image_details["Config"]["Labels"]
+        assert labels["org.opencontainers.image.licenses"] == "Apache-2.0"
         assert labels["org.opencontainers.image.version"] == RELEASE
         assert labels["org.opencontainers.image.revision"] == revision
-        receipt["checks"].append("OCI release labels")
+        receipt["checks"].append("OCI license and release labels")
         receipt.update(status="PASS", image_id=image_details["Id"], image_bytes=image_details["Size"],
                        sample_version=sample["current"]["version"], sample_rows=sample["current"]["rows"],
                        oil_temperature_rows=selected["summary"]["count"],

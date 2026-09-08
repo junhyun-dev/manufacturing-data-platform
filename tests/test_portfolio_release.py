@@ -255,6 +255,21 @@ def test_root_readme_entry_exposes_the_usable_service_and_local_boundary():
         assert target in entry
 
 
+def test_public_license_boundary_links_code_and_dataset_terms():
+    text = ROOT_README.read_text(encoding="utf-8")
+    license_text = (REPO_ROOT / "LICENSE").read_text(encoding="utf-8")
+
+    assert "Apache License" in license_text
+    assert "Version 2.0, January 2004" in license_text
+    for target in (
+        "[Apache License 2.0](LICENSE)",
+        "src/manufacturing_data_platform/file_review/sample/README.md",
+        "tests/fixtures/metropt3/README.md",
+        "CC BY 4.0",
+    ):
+        assert target in text
+
+
 def test_root_readme_places_the_simulation_boundary_before_the_headline_result():
     """A reader who stops at the result table must already have seen what is not verified."""
     text = ROOT_README.read_text(encoding="utf-8")

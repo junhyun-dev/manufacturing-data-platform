@@ -287,3 +287,10 @@ sealed edge spool
 - [보완할 결과와 완료 조건](docs/BACKLOG.md)
 - [검증 환경·명령·검증 범위와 한계](docs/VERIFICATION.md)
 - [기존 v1 Historical Evidence](docs/HISTORICAL-EVIDENCE.md)
+
+## 라이선스
+
+이 저장소의 원본 소스 코드와 문서는 [Apache License 2.0](LICENSE)으로 공개합니다.
+저장소에 포함된 MetroPT-3 발췌본과 파생 샘플에는 데이터 저자의 CC BY 4.0 조건이 유지됩니다.
+[파일 검토 샘플 출처](src/manufacturing_data_platform/file_review/sample/README.md)와
+[OPC UA fixture 출처](tests/fixtures/metropt3/README.md)에서 각각의 범위를 확인할 수 있습니다.
