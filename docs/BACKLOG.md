@@ -216,8 +216,8 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
 **활성 release gate / 실제 독립 사용·공개 운영은 미실행.** 첫 파일 서비스와 bounded sample-only
 컨테이너를 로컬에서 구현·검증했다. README와 테스트만으로 반복 사용이나 운영 책임을 증명하지 않는다.
 
-- 바로 다음 한 행동: local release-prep diff와 라이선스를 검토한 뒤 승인된 branch를 push하고 `main` 대상 PR에서
-  원격 unit/HTTP/OPC UA/container CI를 read-back한다. merge·tag·GitHub Release는 그 결과를 다시 확인한 뒤 별도 승인한다.
+- 바로 다음 한 행동: 병합된 `main`의 `v0.1.0` release notes와 tag 대상을 검토하고 GitHub Release 여부를 결정한다.
+  그 뒤 실제 검토자 한 명의 비민감 CSV로 설명 없는 10분 사용을 관찰한다.
 - 로컬 수용 근거: sample 모드는 임의 upload/replace를 API 403으로 거부한다. digest-pinned Python 3.12 이미지가
   UID 10001·read-only root로 실행됐고, release/revision read-back, 7,144개 Oil_temperature 조회,
   같은 volume 재시작 후 동일 dataset version을 확인했다. Chromium desktop/mobile에서도 upload UI 제거,
@@ -230,6 +230,24 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
   base OS image scan은 로컬 Docker Scout 인증이 없어 미실행이므로 선택한 registry/host의 scanner로 다시 확인한다.
 - 알려진 UX 공백: CSV 열 매핑과 큰 파일/장기 보관/공유 계정은 없다. 실제 첫 파일이 요구하는 한 가지를 고른다.
   Chrome으로 로컬 확인했으며 Safari·Firefox·모바일 실기기와 보조기술 검증은 후속이다.
+
+### 첫 독립 사용에서만 여는 구조 gate
+
+아래는 예정 기능 목록이 아니다. 첫 검토자가 실제로 멈춘 질문 하나를 고르고, 가장 작은 변경으로 다시 관찰한다.
+같은 문제가 반복되거나 현재 단일 프로세스·SQLite 경계를 넘는 증거가 생겼을 때만 오른쪽 구조를 연다.
+
+| 관찰할 사용자 질문 | 먼저 검증할 작은 변경 | 더 큰 구조를 여는 근거 |
+|---|---|---|
+| “내 파일의 열 이름·시간대·단위가 다른데 어디서 맞추는가?” | 업로드 전 열 대응과 시간대·단위 확인 한 화면, 저장하지 않는 매핑 1회 | 두 번째 파일에서도 같은 대응을 재사용해야 할 때 versioned mapping profile/schema registry 검토 |
+| “수정 전후에 무엇이 달라졌고 왜 이제 전달해도 되는가?” | 두 source version의 행·구간·품질 변화 요약을 기존 manifest에 연결 | 여러 사람이 정정 원인과 승인 순서를 남겨야 할 때 append-only event/audit model 검토 |
+| “받는 사람이 계정 없이도 같은 결과를 확인할 수 있는가?” | dataset version·query·digest에 고정된 읽기 전용 결과물의 이해 가능성부터 시험 | 비공개 장기 공유·회수·기기 간 복원이 실제로 필요할 때 identity, authorization, retention 계약을 함께 설계 |
+| “8 MiB/50,000행을 넘기거나 동시에 두 명이 쓰면 끝까지 처리되는가?” | 실제 한계 파일의 시간·메모리·DB 증가와 명확한 거부 메시지 측정 | 요청 시간이 사용자 흐름을 막거나 동시 사용이 확인될 때 async job state, queue, object storage와 다중 writer DB 검토 |
+| “이 구간 판단과 관련된 매뉴얼·점검 절차의 어느 페이지를 같이 보내야 하는가?” | 사용 허가가 분명한 PDF 한 건을 구조화해 문서 hash·page 근거를 evidence ZIP에 고정 | 반복 검색할 여러 문서가 생길 때 versioned document store와 비동기 변환 검토. 검색/RAG는 page 근거 정확도 평가 뒤 결정 |
+
+마지막 행은 [Docling Serve](https://github.com/docling-project/docling-serve)를 붙이기 위한 명분이 아니라, telemetry 검토자가
+실제로 문서 근거를 함께 전달하는지 확인하는 질문이다. Docling의 실제 사용자도 object별 source confidence를 결과 gate에
+쓰려는 [요구 #624](https://github.com/docling-project/docling-serve/issues/624)를 남겼다. 이는 provenance 설계 참고이며 이
+Manufacturing 흐름의 수요 증거는 아니다.
 
 - 첫 전달물은 source 구간 선택 → 준비 여부와 집계 확인 → 실패 이유 확인 → 범위 복구 → 정정된 결과 확인을
   실제로 실행하는 한 경로다. 첫 독자에게 맞는 CLI 또는 작은 화면 하나를 선택한다. 화면만 새로 꾸미는 작업과 구분한다.
