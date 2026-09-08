@@ -283,11 +283,23 @@ class SubscriptionCollector:
         )
 
     async def wait_for_accepted(self, count: int) -> None:
-        await _wait_for(
-            lambda: bool(self.handler) and self.handler.accepted_count >= count,
-            f"{count} accepted observations",
-        )
-        self.raise_handler_errors()
+        def ready() -> bool:
+            # A failed callback cannot increase accepted_count. Surface its cause
+            # during the wait instead of replacing it with a timeout later.
+            self.raise_handler_errors()
+            return bool(self.handler) and self.handler.accepted_count >= count
+
+        try:
+            await _wait_for(ready, f"{count} accepted observations")
+        except IndustrialSourceRuntimeError as exc:
+            if self.handler is None:
+                raise
+            raise IndustrialSourceRuntimeError(
+                f"{exc}; session={self.replay_session_id} "
+                f"accepted={self.handler.accepted_count} "
+                f"waiting={self.handler.waiting_notification_count} "
+                f"unknown_mapping={self.handler.unknown_mapping_count}"
+            ) from exc
 
     def raise_handler_errors(self) -> None:
         if self.handler and self.handler.errors:

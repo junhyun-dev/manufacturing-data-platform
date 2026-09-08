@@ -1,0 +1,3 @@
+# The bundled sample has its own provenance and SHA-256 check. Keep its bytes stable
+# across platforms and collapse the 21,433-line derived dataset in GitHub review.
+src/manufacturing_data_platform/file_review/sample/metropt3-day.csv text eol=lf linguist-generated=true

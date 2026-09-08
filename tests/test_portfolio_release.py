@@ -238,47 +238,36 @@ def test_three_screenshots_exist_and_are_non_trivial_pngs():
 # --------------------------------------------------------------------------- #
 # Reader-facing pages
 # --------------------------------------------------------------------------- #
-def test_root_readme_first_screen_carries_the_current_release_contract():
-    lines = ROOT_README.read_text(encoding="utf-8").splitlines()
-    first_screen = "\n".join(lines[:FIRST_SCREEN_LIMIT])
-
-    required = {
-        "CI badge": "actions/workflows/ci.yml/badge.svg",
-        "architecture diagram": "```mermaid",
-        "trust walkthrough": "docs/portfolio/industrial-telemetry-trust/README.md",
-        "trust runtime evidence": (
-            "industrial-telemetry-trust/evidence/runtime-evidence.json"
-        ),
-        "operator screenshot": "01-operator-decisions.png",
-        "publish decision": "PUBLISH",
-        "blocked decision": "BLOCKED",
-        "reprocess decision": "REPROCESS REQUIRED",
-    }
-    missing = [name for name, needle in required.items() if needle not in first_screen]
-    assert not missing, f"README.md first screen is missing: {missing}"
+def test_root_readme_preserves_access_to_the_published_lab_evidence():
+    text = ROOT_README.read_text(encoding="utf-8")
+    for target in (
+        "docs/portfolio/industrial-telemetry-trust/README.md",
+        "industrial-telemetry-trust/evidence/runtime-evidence.json",
+        "01-operator-decisions.png",
+    ):
+        assert target in text
 
 
-def test_root_readme_first_30_lines_answer_the_five_reader_questions():
-    lines = ROOT_README.read_text(encoding="utf-8").splitlines()
-    entry_point = "\n".join(lines[:FIRST_30_LIMIT])
+def test_root_readme_entry_exposes_the_usable_service_and_local_boundary():
+    entry = "\n".join(ROOT_README.read_text(encoding="utf-8").splitlines()[:FIRST_30_LIMIT])
+    for target in ("Telemetry Review", "CSV", "make setup", "make serve",
+                   "127.0.0.1:8000", "로컬 릴리스 후보", "docs/FILE_REVIEW_CONTRACT.md"):
+        assert target in entry
 
-    required = {
-        "user": "제조 데이터 플랫폼",
-        "missing observations": "누락",
-        "quality fault": "품질 이상",
-        "late arrival": "지연",
-        "collector interruption": "수집기(collector) 중단",
-        "publish decision": "PUBLISH",
-        "blocked decision": "BLOCKED",
-        "reprocess decision": "REPROCESS REQUIRED",
-        "trust walkthrough": "docs/portfolio/industrial-telemetry-trust/README.md",
-        "actual record": "actual record",
-        "replay boundary": "local OPC UA",
-        "fault injection": "fault injection",
-        "not verified boundary": "production OPC UA",
-    }
-    missing = [name for name, needle in required.items() if needle not in entry_point]
-    assert not missing, f"README.md first {FIRST_30_LIMIT} lines are missing: {missing}"
+
+def test_public_license_boundary_links_code_and_dataset_terms():
+    text = ROOT_README.read_text(encoding="utf-8")
+    license_text = (REPO_ROOT / "LICENSE").read_text(encoding="utf-8")
+
+    assert "Apache License" in license_text
+    assert "Version 2.0, January 2004" in license_text
+    for target in (
+        "[Apache License 2.0](LICENSE)",
+        "src/manufacturing_data_platform/file_review/sample/README.md",
+        "tests/fixtures/metropt3/README.md",
+        "CC BY 4.0",
+    ):
+        assert target in text
 
 
 def test_root_readme_places_the_simulation_boundary_before_the_headline_result():
@@ -326,7 +315,7 @@ def test_root_readme_names_commands_evidence_and_claim_boundary():
         "docs/VERIFICATION.md",
         "docs/HISTORICAL-EVIDENCE.md",
         "## 검증 범위와 한계",
-        "badge는 이 base suite만 증명",
+        "badge는 해당 commit의 CI 실행 범위만 증명",
     )
     for value in required:
         assert value in text
@@ -336,7 +325,7 @@ def test_root_readme_is_korean_first():
     first_screen = "\n".join(
         ROOT_README.read_text(encoding="utf-8").splitlines()[:FIRST_SCREEN_LIMIT]
     )
-    assert "제조 설비 데이터는 언제 믿을 수 있는가" in first_screen
+    assert "Telemetry Review" in first_screen
     assert sum("가" <= char <= "힣" for char in first_screen) > 100
 
 

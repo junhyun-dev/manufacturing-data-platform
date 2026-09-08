@@ -1,0 +1,25 @@
+{
+  "source": "UCI MetroPT-3",
+  "doi": "10.24432/C5VW3R",
+  "url": "https://archive.ics.uci.edu/dataset/791/metropt%203%20dataset",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "creators": [
+    "Narjes Davari",
+    "Bruno Veloso",
+    "Rita Ribeiro",
+    "Joao Gama"
+  ],
+  "parent_csv_sha256": "db30ccb4ea402e3c8bf2c99db06e288d4f2a772f6928f9dbe26a920d69793e24",
+  "selection": "All physical rows dated 2020-02-01; TP2, Oil_temperature, Motor_current",
+  "physical_rows": 7144,
+  "observations": 21432,
+  "sample_sha256": "7c323d54b88a25cad9ca34fc28b8326a7ebd5c3bed8c932faf81a63fab303c38",
+  "bytes": 1385520,
+  "transformations": [
+    "Wide to long CSV; original value text retained",
+    "Space in timestamp replaced with T; source timezone remains unspecified",
+    "Equipment label added for sample identification, not a verified asset identifier",
+    "Units from existing source mapping; quality blank because source does not provide sensor quality"
+  ]
+}

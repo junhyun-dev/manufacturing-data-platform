@@ -1,4 +1,46 @@
-# Architecture — Industrial Telemetry Trust
+# Architecture — Telemetry Review and the retained collection laboratory
+
+## Current user flow: file review
+
+```mermaid
+flowchart LR
+  file["User CSV / pinned public sample"] --> check["File contract validation"]
+  check --> attempt["Latest attempt + issues"]
+  check -- valid --> version["Immutable checked version"]
+  version --> sql["One equipment/tag/time range"]
+  sql --> browser["Statistics + actual observations"]
+  sql --> zip["CSV + source/version manifest"]
+  attempt -- refused --> previous["Explicit previous result"]
+```
+
+`file_review/app.py` serves a static browser client and same-origin HTTP endpoints. `model.py` owns
+CSV normalization and content identities; `store.py` owns browser workspace isolation and SQLite
+transactions over sources, versions, attempts and current; `query.py` reads a verified snapshot into
+SQL and produces the pinned export. The client lives in `file_review/static/`; a hash-pinned public
+sample and attribution live in `file_review/sample/`.
+
+One process and one local SQLite file suffice. No legacy MongoDB path, OPC UA connection, external
+URL fetching, queue or warehouse is mounted. The [File Review Contract](FILE_REVIEW_CONTRACT.md)
+owns this file workflow. The original source bytes and normalized version are checked on read;
+publication failure rolls back the attempt/version/current transaction. A refused file cannot replace
+the previous result. Source gaps and missing source sensor quality remain visible.
+
+### Runtime boundary
+
+```mermaid
+flowchart LR
+  browser["Anonymous browser workspace"] --> app["One FastAPI process\nfull or sample mode"]
+  app --> db["One SQLite volume\nsources · versions · attempts · current"]
+  probe["/healthz"] --> app
+  app --> identity["contract · release · revision · mode"]
+```
+
+The default Compose entry point now starts this service; the retained MongoDB laboratory is available only through the
+`historical` profile. The container runs as a fixed non-root user with a read-only root filesystem and one writable data
+volume. `sample` mode refuses arbitrary uploads at the API boundary. It remains a single-process candidate: a reverse
+proxy, TLS, rate limits, monitoring and multi-replica coordination are not part of this repository's verified runtime.
+
+## Retained OPC UA laboratory
 
 ## 한 문장
 
@@ -7,7 +49,8 @@
 
 이 문서는 현재 제품의 Golden Flow와 component 책임만 설명한다. 과거 synthetic
 catalog/lakehouse/Kafka/Spark 경로는 [Historical Evidence](HISTORICAL-EVIDENCE.md)이며 현재
-runtime 흐름으로 연결됐다고 주장하지 않는다.
+runtime 흐름으로 연결됐다고 주장하지 않는다. identity·시간·판정의 정확한 의미와
+재수집·단일 writer 한계는 [Contract](CONTRACT.md)가 소유한다.
 
 ## Golden Flow
 
@@ -75,18 +118,9 @@ source record
 ## 가장 짧은 진입점
 
 ```bash
-# base·contract tests
-python -m pip install -r requirements.txt
-PYTHONPATH=src python -m pytest -q
-
-# local OPC UA replay와 normal/quality/interrupted 비교
-python -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt -r requirements-opcua.txt
-PYTHON_BIN=.venv/bin/python ./scripts/verify_industrial_source_contract.sh
-
-# event-time trust와 local Spark parity
-.venv/bin/python -m pip install -r requirements-event-time.txt
-./scripts/verify_event_time_trust.sh
+make setup
+make test
+make verify
 ```
 
 실행 환경과 claim 경계는 [Verification](VERIFICATION.md)을 따른다.
