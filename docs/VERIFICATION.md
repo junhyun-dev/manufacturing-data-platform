@@ -1,7 +1,8 @@
 # Verification — 재현과 증거의 범위
 
 현재 변경의 exact baseline·결과·다음 gate는 [PROJECT_STATUS](../PROJECT_STATUS.md)가 소유한다.
-이 문서는 새 checkout의 실행 방법과 각 검증으로 말할 수 있는 범위를 설명한다.
+이 문서는 새 checkout의 실행 방법과 각 검증의 범위, [날짜별 파일 서비스 검증 기록](#file-service-verification)을 소유한다.
+기록된 검증은 당시 revision의 근거이며 현재 배포·실사용을 자동으로 주장하지 않는다.
 
 현재 CSV 웹 서비스는 [사용·검증 guide](FILE_REVIEW_GUIDE.md)의 `make serve`·`make verify-service`로
 실행한다. 이 문서의 OPC UA·Spark·historical report 검증은 별도의 기존 실험이며 웹 실행의 선행조건이 아니다.
@@ -120,7 +121,7 @@ PYTHON_BIN=.cache/venvs/spark/bin/python ./scripts/verify_event_time_trust.sh
 
 ## Source and consumer research probes
 
-[MFG-08](BACKLOG.md#mfg-08--product-value-and-source-reality)의 조사 결과를 제품 코드와 독립적으로 확인하는
+[CSV 원본·업무 조사](research/file-review-workflow.md)의 결과를 제품 코드와 독립적으로 확인하는
 선택적 명령이다. Python 표준 라이브러리만 사용하며 현재 trusted dataset을 수정하지 않는다.
 전체 source 점검을 위해 [UCI 배포 archive](https://archive.ics.uci.edu/static/public/791/metropt%2B3%2Bdataset.zip)를
 `.cache/source-research/metropt3.zip`에 둔다. 다운로드는 약 218 MB이며 기본 setup·test·verify에는 필요 없다.
@@ -210,3 +211,41 @@ PY
 정상 평균은 `53.625`, 가운데 관측 누락은 `53.600`, 가운데 행 중복은 `53.638`이다.
 Uncertain 변형은 평균이 정상이더라도 거부해야 한다. 기본 검사로도 이 차이를 판정할 수 있다는 사실이
 새 데이터 플랫폼의 필요성을 입증하지는 않는다. 제품 후보의 복구·전달 업무를 별도로 검증한다.
+
+<a id="file-service-verification"></a>
+
+## File service verification — 2026-09-08
+
+| 검사 | 관측 결과 |
+|---|---|
+| 전체 Python 3.10.12 suite | 247 passed / 17 skipped. 파일 계약·공개 capability·schema/version·reader-facing claim 포함 |
+| 새 clean clone / Python 3.12.3 | `make setup → make test → make verify-service → make verify-container` PASS. 247 passed / 17 skipped; source clean, 작성자 venv/cache 불필요 |
+| 파일 서비스 API·저장 반례 | 정상/거부/수정, 동일 원본 재시도, timezone duplicate·quality·unit, 조회 구간, export 전체 행, CSRF·공간 분리, 용량 rollback, 동시 재검사, 만료·삭제, 변조 거부 |
+| 실제 HTTP와 서버 재시작 | PASS. Oil_temperature 7,144개 평균 55.74811730123181; 원본을 독립 계산한 값과 일치. ZIP digest·같은 복구 version·재시작 후 이력 확인 |
+| release container | clean `1f1a8c1`: Python 3.12.13, 141,710,269 bytes. HTTP/OCI license·release identity, sample upload 거부, UID 10001·read-only root, 21,432개 sample과 volume restart 동일 version PASS; 관측 메모리 49.04MiB |
+| 실제 Compose / Chromium 140 | WSL `--env-file` sample mode와 container health 확인. full 11개·sample 7개 UI 시나리오, 1440/390 px, browser isolation, page error 0 |
+| dependency advisory | `requirements-service.lock` 13개 package를 `pip-audit 2.10.1`로 조회해 알려진 취약점 0건. base OS scan은 Docker Scout 인증 부재로 미실행 |
+| 독립 내부 코드 검토 | 기초 service slice에서 손상 파일이 목록을 막는 문제, 빈 export version, 비 ASCII CSRF 500을 발견·수정. 이번 release runtime 변경의 별도 독립 검토는 미실행 |
+| 기존 OPC UA 실제 replay | PASS. 5개 판정 및 current → manifest → data digest chain 확인. `run-SQG1T2la` |
+| 외부 CI / 실제 사용자 / 배포 / 장기 운영 | merged `main@2e8e58c`의 [run 34187959052](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34187959052)에서 Python 3.10·3.12, OPC UA read-back, sample container 네 check PASS. 실제 사용자·배포·장기 운영은 미실행 |
+
+당시 clean-checkout 묶음은 `.cache/release-cold-check/8c8868d/receipt.json`이 HTTP와 container receipt를 연결한다.
+기존 실행 근거는 `.cache/file-review-tests.log`, `.cache/file-review-final-focused.log`,
+`.cache/file-review-verification/<run>/receipt.json`, `.cache/file-review-browser/receipt.json`,
+`.cache/file-review-legacy-replay.log`에 있다. 새 체크아웃의 명령·revision·clean 여부는
+`.cache/file-review-cold-check/receipt.json`, 실제 HTTP 수치와 source 파일 hash는 같은 디렉터리의
+`http-receipt.json`, 전체 출력은 `run.log`에 보존했다. 검증 전용 임시 clone은 근거 보존과 clean 확인 뒤 제거했다. 원본/결과 변조·저장 실패·quota·동시 재시도는 자동 테스트가 실행한다.
+브라우저 실행기는 자신이 생성한 파일만 삭제한다. 기존 공개 보고서 JSON/HTML/PNG는 보존했다.
+
+기존 정비 기준 `fbda33d`의 새 clone 검증(210 pass / 17 skipped, OPC UA read-back)은 이전 환경 정비의 근거다.
+해당 서비스 결과와 합쳐 과거에 제품 사용까지 검증한 것처럼 쓰지 않는다. 과거 간헐 collection timeout은
+[MFG-07](BACKLOG.md#mfg-07--intermittent-local-collection-timeout)에 남아 있다. 이번 replay 성공은 원인 해결이 아니다.
+웹 서비스는 해당 OPC UA 수집 경로를 사용하지 않는다.
+
+
+## Documentation verification — 2026-09-09
+
+조사안 통합 `dd82b75`에서 source/UI 변경 없이 `make setup`, `make test`(248 passed / 17 skipped),
+`make verify`를 통과했다. 기존 OPC UA fixture의 5개 판정과 9개 event의 current → manifest → data read-back이다.
+명령·시간·출력은 `.cache/chat-discovery-checks/20260909/receipt.json`, read-back은
+`.cache/telemetry-runs/run-szNw37UW/readback.json`이다. chat 구현·AI 품질의 검증이 아니며 브라우저/컨테이너를 재실행하지 않았다.
