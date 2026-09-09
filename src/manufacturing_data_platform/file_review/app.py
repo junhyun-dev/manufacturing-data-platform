@@ -5,8 +5,9 @@ import os
 import sqlite3
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
@@ -15,6 +16,7 @@ from starlette.staticfiles import StaticFiles
 
 from manufacturing_data_platform import __version__
 
+from .explanation import explain
 from .model import CONTRACT, MAX_ROWS, UPLOAD_BYTES, ReviewError, digest
 from .query import export_zip, query
 from .store import EXPIRY_SECONDS, MAX_DATASETS, Store
@@ -174,6 +176,19 @@ def create_app(storage_path=None, mode=None, release=None, revision=None):
                 start: str = None, end: str = None, version: str = None):
         result, _, _ = selected(request, dataset, equipment, tag, start, end, version)
         return result
+
+    @app.get("/api/datasets/{dataset}/explanation")
+    def explanation(dataset: str, request: Request,
+                    question: Literal["previous_result", "handoff_limits", "gap_limits"] = Query(...),
+                    latest_attempt_id: int = Query(..., gt=0), version: str = Query(...),
+                    equipment: str = None, tag: str = None, start: str = None, end: str = None):
+        if not version.strip():
+            raise ReviewError("VERSION_REQUIRED", "설명할 결과 버전을 지정해 주세요.")
+        payload, stored, latest = store(request).snapshot(workspace(request), dataset, version)
+        if latest["id"] != latest_attempt_id:
+            raise ReviewError("CONTEXT_CHANGED", "최근 검사 상태가 바뀌었습니다. 파일 결과를 다시 확인해 주세요.", 409)
+        result, _ = query(payload, stored, latest, equipment, tag, start, end)
+        return explain(dataset, question, result, stored, latest)
 
     @app.get("/api/datasets/{dataset}/export")
     def download(dataset: str, request: Request, version: str, equipment: str = None, tag: str = None,

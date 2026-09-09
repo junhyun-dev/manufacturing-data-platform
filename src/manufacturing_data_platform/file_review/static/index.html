@@ -10,7 +10,7 @@
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
-  <div class="app-shell">
+  <div class="app-shell" id="application-shell">
     <aside class="sidebar" aria-label="파일 작업 공간">
       <a class="brand" href="/" aria-label="Telemetry Review 홈"><span class="brand-mark" aria-hidden="true">tr</span><span>Telemetry<span class="brand-sub">REVIEW</span></span></a>
       <div class="workspace-label"><span class="workspace-dot" aria-hidden="true"></span>내 임시 작업 공간</div>
@@ -75,7 +75,34 @@
       </section>
       <footer class="page-footer"><span>Telemetry Review</span><span>확인한 데이터와 그 근거를 함께.</span></footer>
     </main>
+    <button id="explanation-launcher" class="explanation-launcher" type="button" aria-controls="explanation-panel" aria-expanded="false"><span aria-hidden="true">?</span> 이 결과에 질문</button>
   </div>
+  <div id="explanation-backdrop" class="explanation-backdrop" hidden></div>
+  <section id="explanation-panel" class="explanation-panel" role="complementary" aria-labelledby="explanation-title" hidden>
+    <header class="explanation-header">
+      <div><p class="eyebrow">GUIDED EXPLANATION</p><h2 id="explanation-title" tabindex="-1">결과 설명</h2></div>
+      <button id="explanation-close" class="icon-button" type="button" aria-label="결과 설명 닫기">닫기</button>
+    </header>
+    <p class="explanation-intro">검증된 데이터에서 선택한 질문만 규칙으로 설명합니다. AI 자유 대화가 아닙니다.</p>
+    <div class="explanation-questions" role="group" aria-label="설명할 질문 선택">
+      <button type="button" data-explanation-question="previous_result">왜 이 결과가 보이나요?</button>
+      <button type="button" data-explanation-question="handoff_limits">전달할 때 무엇을 적어야 하나요?</button>
+      <button type="button" data-explanation-question="gap_limits">시간 공백은 설비 중단인가요?</button>
+    </div>
+    <div id="explanation-context" class="explanation-context" aria-label="마지막 조회 결과 기준"></div>
+    <p id="explanation-status" class="explanation-status" role="status" aria-live="polite"></p>
+    <div id="explanation-answer" class="explanation-answer" aria-live="polite"></div>
+    <div class="explanation-evidence" aria-label="같은 결과의 근거" hidden>
+      <p>같은 결과에서 확인</p>
+      <button type="button" data-explanation-evidence="query">선택 구간 분석</button>
+      <button type="button" data-explanation-evidence="source">파일과 검증 근거</button>
+      <button type="button" data-explanation-evidence="history">최근 검사 기록</button>
+    </div>
+    <div class="explanation-actions">
+      <button id="explanation-cancel" class="button secondary small" type="button" hidden>요청 취소</button>
+      <button id="explanation-retry" class="button secondary small" type="button" hidden>다시 시도</button>
+    </div>
+  </section>
   <div id="toast" class="toast" role="status" hidden></div>
   <dialog id="delete-dialog"><form method="dialog"><h2>이 파일을 삭제할까요?</h2><p>원본 파일, 검증된 결과와 검사 기록이 이 작업 공간에서 함께 삭제됩니다. 내려받은 파일에는 영향을 주지 않습니다.</p><div class="dialog-actions"><button value="cancel" class="button secondary">취소</button><button value="delete" class="button danger" id="confirm-delete">파일 삭제</button></div></form></dialog>
 </body>

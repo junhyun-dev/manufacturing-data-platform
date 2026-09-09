@@ -67,7 +67,8 @@ def query(payload, stored, latest, equipment=None, tag=None, start=None, end=Non
         points.append({"timestamp": row["timestamp"], "value": row["value"], "quality": row["quality"],
                        "gap_before": any(d > 60 for d in deltas[previous + 1:index + 1])})
         previous = index
-    result = {"version": stored["version"], "latest_status": latest["status"],
+    result = {"version": stored["version"], "latest_attempt_id": latest.get("id"),
+              "latest_status": latest["status"],
               "previous_result": latest["status"] != "ready" or stored["version"] != latest["version"],
               "time_basis": payload["time_basis"], "equipment": equipment, "tag": tag, "unit": series["unit"],
               "filter": {"start": start, "end": end}, "summary": stats, "points": points,

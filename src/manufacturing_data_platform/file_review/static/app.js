@@ -1,7 +1,13 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
-const state = { csrf: null, datasets: [], active: null, query: null, busy: false, queryGeneration: 0, capabilities: { uploads: true, sample: true, accounts: false }, limits: { upload_bytes: 8 * 1024 * 1024, rows: 50000, datasets: 10 } };
+const state = {
+  csrf: null, datasets: [], active: null, query: null, busy: false, queryGeneration: 0,
+  capabilities: { uploads: true, sample: true, accounts: false }, limits: { upload_bytes: 8 * 1024 * 1024, rows: 50000, datasets: 10 },
+  explanation: { generation: 0, controller: null, timeout: null, loading: false, question: null, requestKey: null, answerKey: null, retryVisible: false, returnFocus: null }
+};
+const explanationNarrow = window.matchMedia("(max-width: 850px)");
+const EXPLANATION_TIMEOUT_MS = 10000;
 const statusNames = { ready: "파일 검증 완료", incomplete: "전달 미완료", blocked: "파일 수정 필요" };
 const qualityNames = { good: "Good 제공", unspecified: "미제공", uncertain: "Uncertain 제공", bad: "Bad 제공" };
 const kindNames = { import: "파일 검사", sample: "샘플 검사", replace: "수정 파일 검사", retry: "보관 원본 재검사", "delivery-check": "전달 누락 체험", delivery_check: "전달 누락 체험", recovery: "보관 원본 복구" };
@@ -26,11 +32,12 @@ function setBusy(busy, message = "처리 중…") {
   state.busy = busy;
   $("loading").hidden = !busy;
   $("loading-text").textContent = message;
-  for (const id of ["upload-button", "welcome-upload", "sample-button", "welcome-sample", "replace-button", "delete-button", "query-button", "reset-range", "retry-button", "delivery-button", "recover-button", "export-button"]) $(id).disabled = busy;
+  for (const id of ["upload-button", "welcome-upload", "sample-button", "welcome-sample", "replace-button", "delete-button", "query-button", "reset-range", "retry-button", "delivery-button", "recover-button", "export-button", "explanation-launcher"]) $(id).disabled = busy;
   for (const item of document.querySelectorAll(".dataset-item")) item.disabled = busy;
   $("equipment-filter").disabled = busy;
   $("tag-filter").disabled = busy;
   $("main").setAttribute("aria-busy", String(busy));
+  updateExplanationControls();
 }
 
 async function request(path, options = {}) {
@@ -38,10 +45,13 @@ async function request(path, options = {}) {
   if (options.method && !["GET", "HEAD"].includes(options.method)) headers.set("X-Review-CSRF", state.csrf || "");
   const response = await fetch(path, { ...options, headers, credentials: "same-origin" });
   if (!response.ok) {
-    let description;
-    try { const payload = await response.json(); description = payload.error?.message || payload.detail; } catch (_) { /* Preserve a useful error for non-JSON failures. */ }
+    let description, code;
+    try { const payload = await response.json(); description = payload.error?.message || payload.detail; code = payload.error?.code; } catch (_) { /* Preserve a useful error for non-JSON failures. */ }
     if (response.status === 401 || response.status === 403) description = "작업 공간이 만료되었거나 요청을 확인할 수 없습니다. 페이지를 새로고침한 뒤 다시 시도하세요.";
-    throw new Error(typeof description === "string" ? description : `요청을 완료하지 못했습니다 (${response.status}). 잠시 후 다시 시도하세요.`);
+    const error = new Error(typeof description === "string" ? description : `요청을 완료하지 못했습니다 (${response.status}). 잠시 후 다시 시도하세요.`);
+    error.status = response.status;
+    error.code = code;
+    throw error;
   }
   return options.binary ? response : response.json();
 }
@@ -67,6 +77,242 @@ function attemptDate(value) {
 
 function currentDataset() { return state.datasets.find((dataset) => dataset.id === state.active); }
 
+function explanationKey(selected = state.query) {
+  if (!selected) return null;
+  const params = new URLSearchParams(selected.params);
+  params.sort();
+  return JSON.stringify([selected.datasetId, selected.result.version, selected.result.latest_attempt_id, params.toString()]);
+}
+
+function stopExplanationRequest(invalidate = true) {
+  const current = state.explanation;
+  if (invalidate) current.generation += 1;
+  if (current.timeout !== null) clearTimeout(current.timeout);
+  current.timeout = null;
+  if (current.controller) current.controller.abort();
+  current.controller = null;
+  current.loading = false;
+}
+
+function clearExplanationContent() {
+  state.explanation.question = null;
+  state.explanation.requestKey = null;
+  state.explanation.answerKey = null;
+  state.explanation.retryVisible = false;
+  $("explanation-answer").replaceChildren();
+  $("explanation-context").replaceChildren();
+  $("explanation-status").textContent = "";
+  $("explanation-panel").querySelector(".explanation-evidence").hidden = true;
+  for (const button of document.querySelectorAll("[data-explanation-evidence]")) button.hidden = false;
+  for (const button of document.querySelectorAll("[data-explanation-question]")) {
+    button.classList.remove("selected");
+    button.removeAttribute("aria-pressed");
+  }
+}
+
+function updateExplanationControls() {
+  const available = !!state.query && !state.busy && !state.explanation.loading;
+  for (const button of document.querySelectorAll("[data-explanation-question]")) button.disabled = !available;
+  $("explanation-cancel").hidden = !state.explanation.loading;
+  $("explanation-retry").hidden = state.explanation.loading || !state.explanation.retryVisible;
+}
+
+function contextLine(list, label, value, mono = false) {
+  list.append(node("dt", label), node("dd", value ?? "—", mono ? "mono" : undefined));
+}
+
+function renderExplanationContext(context, summary) {
+  const root = $("explanation-context");
+  root.replaceChildren();
+  if (!context) return;
+  const current = currentDataset()?.current;
+  root.append(node("strong", "마지막 조회 결과 기준"));
+  const list = node("dl");
+  contextLine(list, "출처", context.source_name || current?.source_name || "현재 검증 파일");
+  contextLine(list, "결과 버전", context.version, true);
+  const sourceHash = context.source_sha256 || (context.version === current?.version ? current.source_sha256 : null);
+  if (sourceHash) contextLine(list, "원본 SHA", sourceHash, true);
+  contextLine(list, "설비 · 항목", `${context.equipment} · ${context.tag}`);
+  const start = context.filter?.start ? `${dateLabel(context.filter.start)}부터` : "첫 관측부터";
+  const end = context.filter?.end ? `${dateLabel(context.filter.end)} 전까지` : "마지막 관측까지";
+  contextLine(list, "조회 범위", `${start} ${end}`);
+  contextLine(list, "시각 기준", context.time_basis === "unspecified" ? "시간대 미제공" : "UTC");
+  if (context.latest_attempt_id) contextLine(list, "최근 검사", `#${context.latest_attempt_id} · ${statusNames[context.latest_status] || context.latest_status}`);
+  if (summary) contextLine(list, "선택 결과", `${number(summary.count)}개 · 평균 ${number(summary.mean)} ${context.unit || ""}`.trim());
+  root.append(list);
+}
+
+function applyExplanationMode() {
+  const panel = $("explanation-panel");
+  const modal = !panel.hidden && explanationNarrow.matches;
+  panel.setAttribute("role", modal ? "dialog" : "complementary");
+  if (modal) panel.setAttribute("aria-modal", "true"); else panel.removeAttribute("aria-modal");
+  $("application-shell").inert = modal;
+  for (const element of document.querySelectorAll(".skip-link,#toast,#delete-dialog")) element.inert = modal;
+  document.body.classList.toggle("explanation-modal-open", modal);
+  $("explanation-backdrop").hidden = !modal;
+}
+
+function openExplanation() {
+  const panel = $("explanation-panel");
+  state.explanation.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : $("explanation-launcher");
+  panel.hidden = false;
+  $("explanation-launcher").setAttribute("aria-expanded", "true");
+  applyExplanationMode();
+  if (state.query) {
+    renderExplanationContext(state.query.result, state.query.result.summary);
+    $("explanation-status").textContent = "마지막으로 성공한 조회 결과에서 설명할 질문을 선택하세요.";
+  } else {
+    $("explanation-status").textContent = "먼저 파일의 분석 가능한 결과를 조회해 주세요. 조회에 성공하면 이곳에서 설명을 요청할 수 있습니다.";
+  }
+  updateExplanationControls();
+  $("explanation-title").focus();
+}
+
+function closeExplanation({ returnFocus = true, discard = true } = {}) {
+  const target = state.explanation.returnFocus;
+  stopExplanationRequest(true);
+  if (discard) clearExplanationContent();
+  $("explanation-panel").hidden = true;
+  $("explanation-backdrop").hidden = true;
+  $("application-shell").inert = false;
+  for (const element of document.querySelectorAll(".skip-link,#toast,#delete-dialog")) element.inert = false;
+  document.body.classList.remove("explanation-modal-open");
+  $("explanation-launcher").setAttribute("aria-expanded", "false");
+  if (returnFocus) (target?.isConnected ? target : $("explanation-launcher")).focus();
+  state.explanation.returnFocus = null;
+}
+
+function resetExplanation() {
+  closeExplanation({ returnFocus: false, discard: true });
+}
+
+function renderExplanationAnswer(payload, key) {
+  const root = $("explanation-answer");
+  root.replaceChildren(node("h3", payload.title));
+  for (const paragraph of payload.paragraphs) root.append(node("p", paragraph));
+  renderExplanationContext(payload.context, payload.summary);
+  const evidence = $("explanation-panel").querySelector(".explanation-evidence");
+  const allowed = new Set(payload.evidence.filter((kind) => ["query", "source", "history"].includes(kind)));
+  for (const button of document.querySelectorAll("[data-explanation-evidence]")) button.hidden = !allowed.has(button.dataset.explanationEvidence);
+  evidence.hidden = allowed.size === 0;
+  state.explanation.answerKey = key;
+  state.explanation.retryVisible = false;
+  $("explanation-status").textContent = "고정한 조회 결과에서 규칙 기반 설명을 만들었습니다.";
+}
+
+function invalidateQueryForExplanation(message) {
+  state.queryGeneration += 1;
+  state.query = null;
+  $("query-results").hidden = true;
+  showError(message, "query-error");
+  $("explanation-answer").replaceChildren();
+  $("explanation-context").replaceChildren();
+  $("explanation-panel").querySelector(".explanation-evidence").hidden = true;
+  state.explanation.question = null;
+  state.explanation.requestKey = null;
+  state.explanation.answerKey = null;
+  state.explanation.retryVisible = false;
+  $("explanation-status").textContent = "파일 상태가 바뀌었거나 이 결과를 더 이상 확인할 수 없습니다. 파일 결과를 다시 조회해 주세요.";
+}
+
+async function requestExplanation(question) {
+  const selected = state.query;
+  const key = explanationKey(selected);
+  if (!selected || !key) {
+    $("explanation-status").textContent = "먼저 파일의 분석 가능한 결과를 조회해 주세요.";
+    updateExplanationControls();
+    return;
+  }
+  stopExplanationRequest(true);
+  const generation = state.explanation.generation;
+  const controller = new AbortController();
+  state.explanation.controller = controller;
+  state.explanation.loading = true;
+  state.explanation.question = question;
+  state.explanation.requestKey = key;
+  state.explanation.answerKey = null;
+  state.explanation.retryVisible = false;
+  $("explanation-answer").replaceChildren();
+  $("explanation-panel").querySelector(".explanation-evidence").hidden = true;
+  for (const button of document.querySelectorAll("[data-explanation-question]")) {
+    const selectedQuestion = button.dataset.explanationQuestion === question;
+    button.classList.toggle("selected", selectedQuestion);
+    button.setAttribute("aria-pressed", String(selectedQuestion));
+  }
+  renderExplanationContext(selected.result, selected.result.summary);
+  $("explanation-status").textContent = "마지막 조회 결과의 근거를 확인하는 중…";
+  updateExplanationControls();
+
+  const params = new URLSearchParams(selected.params);
+  params.set("question", question);
+  params.set("latest_attempt_id", String(selected.result.latest_attempt_id));
+  let timedOut = false;
+  state.explanation.timeout = setTimeout(() => { timedOut = true; controller.abort(); }, EXPLANATION_TIMEOUT_MS);
+  try {
+    const payload = await request(`/api/datasets/${encodeURIComponent(selected.datasetId)}/explanation?${params}`, { signal: controller.signal });
+    if (generation !== state.explanation.generation || explanationKey() !== key) return;
+    if (payload.mode !== "guided" || payload.question !== question || payload.context?.dataset_id !== selected.datasetId ||
+        payload.context?.version !== selected.result.version || payload.context?.latest_attempt_id !== selected.result.latest_attempt_id ||
+        payload.context?.equipment !== selected.result.equipment || payload.context?.tag !== selected.result.tag ||
+        JSON.stringify(payload.context?.filter) !== JSON.stringify(selected.result.filter) ||
+        typeof payload.title !== "string" || !Array.isArray(payload.paragraphs) ||
+        !payload.paragraphs.every((paragraph) => typeof paragraph === "string") || !Array.isArray(payload.evidence) ||
+        !payload.evidence.every((kind) => ["query", "source", "history"].includes(kind))) {
+      throw new Error("설명 응답이 마지막 조회 결과와 일치하지 않습니다. 결과를 다시 조회해 주세요.");
+    }
+    renderExplanationAnswer(payload, key);
+  } catch (error) {
+    if (generation !== state.explanation.generation || explanationKey() !== key) return;
+    if (timedOut) {
+      state.explanation.retryVisible = true;
+      $("explanation-status").textContent = "10초 동안 응답을 받지 못해 요청을 중단했습니다. 다시 시도할 수 있습니다.";
+    } else if ([401, 403, 404].includes(error.status) || ["INTEGRITY", "CONTEXT_CHANGED"].includes(error.code)) {
+      invalidateQueryForExplanation(error.message);
+    } else if (error.name !== "AbortError") {
+      state.explanation.retryVisible = true;
+      $("explanation-status").textContent = `${error.message || "설명을 만들지 못했습니다."} 자동으로 다시 요청하지 않았습니다.`;
+    }
+  } finally {
+    if (generation === state.explanation.generation) {
+      if (state.explanation.timeout !== null) clearTimeout(state.explanation.timeout);
+      state.explanation.timeout = null;
+      state.explanation.controller = null;
+      state.explanation.loading = false;
+      updateExplanationControls();
+    }
+  }
+}
+
+function cancelExplanation() {
+  if (!state.explanation.loading) return;
+  stopExplanationRequest(true);
+  state.explanation.retryVisible = !!state.explanation.question && state.explanation.requestKey === explanationKey();
+  $("explanation-status").textContent = "설명 요청을 취소했습니다. 필요하면 같은 조회 결과로 다시 시도하세요.";
+  updateExplanationControls();
+}
+
+function retryExplanation() {
+  if (!state.explanation.question || state.explanation.requestKey !== explanationKey()) {
+    clearExplanationContent();
+    $("explanation-status").textContent = "조회 결과가 바뀌었습니다. 현재 결과에서 질문을 다시 선택해 주세요.";
+    updateExplanationControls();
+    return;
+  }
+  requestExplanation(state.explanation.question);
+}
+
+function focusExplanationEvidence(kind) {
+  if (state.explanation.answerKey !== explanationKey()) return;
+  const target = { query: $("query-results"), source: $("source-details"), history: $("history-details") }[kind];
+  if (!target) return;
+  if (target instanceof HTMLDetailsElement) target.open = true;
+  closeExplanation({ returnFocus: false, discard: true });
+  target.tabIndex = -1;
+  target.focus({ preventScroll: true });
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function upsert(dataset) {
   const position = state.datasets.findIndex((item) => item.id === dataset.id);
   if (position < 0) state.datasets.unshift(dataset); else state.datasets[position] = dataset;
@@ -87,6 +333,7 @@ function renderList() {
     text.append(node("strong", dataset.name), node("small", `${dataset.source_kind === "sample" ? "공개 샘플" : "내 CSV"} · ${statusNames[dataset.latest?.status] || "검사 대기"}`));
     button.append(node("span", "CSV", "file-icon"), text, node("span", undefined, `dataset-dot ${dataset.latest?.status || ""}`));
     button.addEventListener("click", () => action("파일을 불러오는 중…", async () => {
+      resetExplanation();
       const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}`);
       upsert(payload.dataset);
       await selectDataset(payload.dataset.id, true);
@@ -194,6 +441,7 @@ function renderDataset(dataset, resetFilters) {
 }
 
 async function selectDataset(id, resetFilters = false) {
+  resetExplanation();
   const changed = state.active !== id;
   state.active = id;
   const dataset = currentDataset();
@@ -222,6 +470,7 @@ function selectedParameters(dataset) {
 }
 
 async function loadQuery() {
+  resetExplanation();
   const dataset = currentDataset();
   if (!dataset?.current) return;
   const generation = ++state.queryGeneration;
@@ -343,6 +592,7 @@ async function upload(file, replace) {
   if (!file.size) { showError("빈 파일입니다. CSV 내용이 있는 파일을 선택해 주세요."); return; }
   const dataset = currentDataset();
   if (replace && !dataset) return;
+  resetExplanation();
   await action(replace ? "수정 파일을 검사하는 중…" : "파일을 업로드하고 검사하는 중…", async () => {
     const path = replace ? `/api/datasets/${encodeURIComponent(dataset.id)}/replace` : "/api/datasets";
     const payload = await request(`${path}?${new URLSearchParams({ name: file.name })}`, { method: "POST", body: file, headers: { "Content-Type": "text/csv; charset=utf-8" } });
@@ -353,6 +603,7 @@ async function upload(file, replace) {
 }
 
 async function openSample() {
+  resetExplanation();
   await action("공개 샘플을 준비하고 검사하는 중…", async () => {
     const payload = await request("/api/datasets/sample", { method: "POST" });
     upsert(payload.dataset);
@@ -364,6 +615,7 @@ async function openSample() {
 async function runAttempt(route, message, resultMessage) {
   const dataset = currentDataset();
   if (!dataset) return;
+  resetExplanation();
   await action(message, async () => {
     const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}/${route}`, { method: "POST" });
     upsert(payload.dataset);
@@ -396,6 +648,38 @@ function installEvents() {
     cancelAnimationFrame(resizeFrame);
     resizeFrame = requestAnimationFrame(() => { if (state.query) renderChart(state.query.result); });
   });
+  explanationNarrow.addEventListener("change", () => { if (!$("explanation-panel").hidden) closeExplanation(); });
+  $("explanation-launcher").addEventListener("click", openExplanation);
+  $("explanation-close").addEventListener("click", () => closeExplanation());
+  $("explanation-backdrop").addEventListener("click", () => closeExplanation());
+  $("explanation-cancel").addEventListener("click", cancelExplanation);
+  $("explanation-retry").addEventListener("click", retryExplanation);
+  for (const button of document.querySelectorAll("[data-explanation-question]")) {
+    button.addEventListener("click", () => requestExplanation(button.dataset.explanationQuestion));
+  }
+  for (const button of document.querySelectorAll("[data-explanation-evidence]")) {
+    button.addEventListener("click", () => focusExplanationEvidence(button.dataset.explanationEvidence));
+  }
+  document.addEventListener("keydown", (event) => {
+    const panel = $("explanation-panel");
+    if (panel.hidden) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeExplanation();
+      return;
+    }
+    if (event.key !== "Tab" || !explanationNarrow.matches) return;
+    const focusable = [...panel.querySelectorAll("button:not(:disabled)")].filter((item) => !item.hidden && item.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !focusable.includes(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
   for (const id of ["upload-button", "welcome-upload"]) $(id).addEventListener("click", () => $("upload-input").click());
   $("replace-button").addEventListener("click", () => $("replace-input").click());
   for (const [id, replace] of [["upload-input", false], ["replace-input", true]]) $(id).addEventListener("change", (event) => { const file = event.target.files?.[0]; event.target.value = ""; upload(file, replace); });
@@ -412,6 +696,7 @@ function installEvents() {
     if ($("delete-dialog").returnValue !== "delete") return;
     const dataset = currentDataset();
     if (!dataset) return;
+    resetExplanation();
     action("파일과 검사 기록을 삭제하는 중…", async () => {
       await request(`/api/datasets/${encodeURIComponent(dataset.id)}`, { method: "DELETE" });
       state.datasets = state.datasets.filter((item) => item.id !== dataset.id);
