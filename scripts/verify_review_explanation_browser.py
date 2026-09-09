@@ -36,7 +36,7 @@ def main():
     base = args.url.rstrip("/")
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=False)
-    checks, errors, external, created, answers = [], [], [], [], []
+    checks, errors, external, created, answers, explanation_requests = [], [], [], [], [], []
     receipt = {"mode": args.mode, "started_at": datetime.now(timezone.utc).isoformat(),
                "checks": checks, "page_errors": errors, "external_requests": external}
 
@@ -56,6 +56,8 @@ def main():
         })();""")
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))
+        page.on("request", lambda req: explanation_requests.append(req.url)
+                if "/explanation?" in req.url else None)
         page.on("request", lambda req: external.append(req.url)
                 if urlparse(req.url).scheme in ("http", "https") and
                 urlparse(req.url).netloc != urlparse(base).netloc else None)
@@ -144,7 +146,10 @@ def main():
             receipt.update(browser=browser.version, health=health)
             open_panel()
             for question in ("previous_result", "handoff_limits", "gap_limits"):
-                expect(page.locator(f'[data-explanation-question="{question}"]')).to_be_disabled()
+                button = page.locator(f'[data-explanation-question="{question}"]')
+                if button.count() and button.is_visible():
+                    expect(button).to_be_disabled()
+            assert not explanation_requests, "No-result page sent an explanation request"
             checks.append("no result: instructions instead of fabricated explanation")
             close()
 
@@ -208,12 +213,15 @@ def main():
             assert math.isclose(body["summary"]["mean"], statistics.fmean(values), abs_tol=1e-10)
             close()
             page.locator("#sample-exercise summary").click()
-            mutation("/delivery-check", lambda: page.locator("#delivery-button").click())
+            failed_delivery = mutation("/delivery-check", lambda: page.locator("#delivery-button").click())
             body = ask()
             assert body["latest"]["status"] == "incomplete" and body["previous_result"]
             assert body["context"]["version"] == sample["current"]["version"]
+            after_explanation = context.request.get(base + "/api/datasets/" + sample["id"]).json()["dataset"]
+            for field in ("current", "latest", "history"):
+                assert after_explanation[field] == failed_delivery[field], f"Explanation changed {field}"
             page.screenshot(path=str(output / "02-sample-explanation-desktop.png"), full_page=True)
-            checks.append("real sample statistics and delivery failure retain original version")
+            checks.append("real sample statistics; explanation leaves retained version and attempt history unchanged")
 
             # Desktop must permit using the result; narrow presentation must actually be modal.
             page.keyboard.press("Escape")
