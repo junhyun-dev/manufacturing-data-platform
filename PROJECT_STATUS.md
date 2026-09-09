@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | DISCOVERY — MFG-10 결과 설명 도우미의 첫 역할 결정. MFG-11 문서 역할·읽는 경로·변경 책임 정비는 로컬 완료 |
-| 수용한 범위 | 2026-09-09 문서 구조와 관련 안내 테스트 정비 승인. chat 역할·Data/API·외부 전송·보관·비용 정책은 미수용 |
-| Git 기준 | `docs/mfg-09-scenario-gates`; 정비 전 `dd82b75`, 문서 통합 `ea2c6a6`과 후속 검토·종료 기록. 실제 HEAD·dirty는 Git으로 확인 |
+| 현재 작업 | WORK — MFG-12 결과 설명 preview: 마지막 조회의 버전·상태·한계를 확인하는 첫 화면 |
+| 수용한 범위 | 2026-09-09 현재 CSV 결과 설명 방향으로 계속 진행 수용. 첫 로컬 구현은 선택형 질문과 실제 서버 근거; 외부 AI·자유 대화·유료 호출·배포는 포함하지 않음 |
+| Git 기준 | `feat/review-explanation`; 정비 완료 기준 `defbacd452257ff626ffa1888005fbf7135940e9`에서 첫 설명 계약·구현 진행. 실제 HEAD·dirty는 Git으로 확인 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 마지막 확인 2026-09-08: [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED; `main@c4b3814` [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022). 이번 정비에서 원격 재조회 없음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | MFG-10 추천안의 첫 역할·대표 질문·답변 불가 경계를 작성자와 결정한다. 수용된 범위만 다음 계약·구현으로 옮긴다 |
+| 다음 한 행동 | MFG-12의 서버 근거 → 설명 패널 → 같은 결과 확인 흐름을 구현하고 HTTP·브라우저 반례로 검증한다 |
 
 ## 실행과 근거
 
@@ -35,7 +35,7 @@ make serve
 
 [MFG-10](docs/BACKLOG.md#mfg-10--context-bound-review-assistant-discovery)은 공개 조사·코드 대조까지 마쳤다.
 [추천안](docs/research/review-assistant.md)은 마지막으로 확인한 결과의 버전·구간을 설명하는 읽기 전용 도우미다.
-사용자 역할 선택 뒤 질문·근거·허용 데이터·실패 동작을 작은 계약으로 닫는다. 새 chat code·AI 호출·제품 수용은 없다.
+2026-09-09 역할 방향을 수용했다. 첫 로컬 preview는 [파일 계약](docs/FILE_REVIEW_CONTRACT.md#guided-result-explanation--first-local-preview), 실행 범위는 MFG-12가 소유한다. 자유 대화·외부 AI의 설계와 권한은 계속 미수용이다.
 
 [MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback)는 기존 `v0.1.0` Release와 독립 사용·공개 운영 경계를 소유한다.
 문서 정비나 새 기능 조사를 Release의 새 선행조건으로 만들지 않는다. 실제 업무 파일로 설명 없는 사용과 기존 도구 대비 가치는 미검증이다.
