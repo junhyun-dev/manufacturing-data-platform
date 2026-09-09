@@ -315,6 +315,7 @@ sample 실행에서 복사한 동일 bytes의 공개 샘플 화면이다. 독립
 - OPC UA: `.cache/telemetry-runs/run-s7eLULEu/readback.json`, trusted version
   `c83fd83810d4afebc783edff0de3216683d091eb52e39c6282ab59b0713529e3`.
 
-이번 source는 로컬 branch에만 있다. 새 container·remote CI·tag·Release·배포는 실행하지 않았다.
+위 검증 시점의 source는 로컬 branch에만 있었다. 이후 승인된 작업 브랜치 백업과 제품 배포를 구분한다.
+새 container·remote CI·tag·Release·배포는 이 검증에서 실행하지 않았다.
 브라우저는 loopback의 새 DB와 자기 workspace를 사용했고 생성한 파일을 지운 뒤 해당 서버를 종료했다.
 실제 AI 호출·자유 대화·공급자 보관/원가·AI 답변 품질은 이번 검사 범위 밖이다.

@@ -7,9 +7,9 @@
 |---|---|
 | 현재 작업 | LOCAL VERIFIED — MFG-12 결과 설명 preview 구현·직접 검토·HTTP/브라우저 검증 완료 |
 | 수용한 범위 | 2026-09-09 현재 CSV 결과 설명 방향으로 계속 진행 수용. 첫 로컬 구현은 선택형 질문과 실제 서버 근거; 외부 AI·자유 대화·유료 호출·배포는 포함하지 않음 |
-| Git 기준 | `feat/review-explanation`; 정비 완료 `defbacd452257ff626ffa1888005fbf7135940e9` → 계약 `e9e11c0` → 구현 통합 `5d3bcea`와 검토 보정. 최종 HEAD·dirty는 Git으로 확인; 원격 반영 없음 |
+| Git 기준 | `feat/review-explanation`; 구현·검증 완료 `092b8e6d5065136a1b1d5d4f182463b0b622ee34`. 2026-09-09 승인된 백업 대상은 기존 `origin`의 동일 작업 브랜치. 현재 HEAD·dirty와 원격 ref 일치는 Git으로 확인; main 병합과 구분 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
-| 외부 확인 | 마지막 확인 2026-09-08: [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED; `main@c4b3814` [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022). 이번 정비에서 원격 재조회 없음 |
+| 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
 | 다음 한 행동 | 공개 샘플의 전달 누락 → 결과 설명 → 같은 버전 근거 찾기를 실제 검토자 한 명에게 안내 없이 사용하게 하고, 막힌 질문 한 가지를 기록한다 |
 
