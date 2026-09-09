@@ -111,10 +111,16 @@ function clearExplanationContent() {
 }
 
 function updateExplanationControls() {
+  const focused = document.activeElement;
   const available = !!state.query && !state.busy && !state.explanation.loading;
   for (const button of document.querySelectorAll("[data-explanation-question]")) button.disabled = !available;
   $("explanation-cancel").hidden = !state.explanation.loading;
   $("explanation-retry").hidden = state.explanation.loading || !state.explanation.retryVisible;
+  const panel = $("explanation-panel");
+  if (!panel.hidden && ((focused?.matches?.("[data-explanation-question]") && focused.disabled) ||
+      (explanationNarrow.matches && !panel.contains(document.activeElement)))) {
+    $("explanation-title").focus({ preventScroll: true });
+  }
 }
 
 function contextLine(list, label, value, mono = false) {
@@ -217,6 +223,7 @@ function invalidateQueryForExplanation(message) {
 }
 
 async function requestExplanation(question) {
+  if (state.busy || state.explanation.loading) return;
   const selected = state.query;
   const key = explanationKey(selected);
   if (!selected || !key) {
@@ -247,8 +254,14 @@ async function requestExplanation(question) {
   const params = new URLSearchParams(selected.params);
   params.set("question", question);
   params.set("latest_attempt_id", String(selected.result.latest_attempt_id));
-  let timedOut = false;
-  state.explanation.timeout = setTimeout(() => { timedOut = true; controller.abort(); }, EXPLANATION_TIMEOUT_MS);
+  state.explanation.timeout = setTimeout(() => {
+    if (generation !== state.explanation.generation || explanationKey() !== key) return;
+    // A timeout must terminate UI eligibility even when transport abort is ineffective.
+    stopExplanationRequest(true);
+    state.explanation.retryVisible = true;
+    $("explanation-status").textContent = "10초 동안 응답을 받지 못해 요청을 중단했습니다. 다시 시도할 수 있습니다.";
+    updateExplanationControls();
+  }, EXPLANATION_TIMEOUT_MS);
   try {
     const payload = await request(`/api/datasets/${encodeURIComponent(selected.datasetId)}/explanation?${params}`, { signal: controller.signal });
     if (generation !== state.explanation.generation || explanationKey() !== key) return;
@@ -264,10 +277,7 @@ async function requestExplanation(question) {
     renderExplanationAnswer(payload, key);
   } catch (error) {
     if (generation !== state.explanation.generation || explanationKey() !== key) return;
-    if (timedOut) {
-      state.explanation.retryVisible = true;
-      $("explanation-status").textContent = "10초 동안 응답을 받지 못해 요청을 중단했습니다. 다시 시도할 수 있습니다.";
-    } else if ([401, 403, 404].includes(error.status) || ["INTEGRITY", "CONTEXT_CHANGED"].includes(error.code)) {
+    if ([401, 403, 404].includes(error.status) || ["INTEGRITY", "CONTEXT_CHANGED"].includes(error.code)) {
       invalidateQueryForExplanation(error.message);
     } else if (error.name !== "AbortError") {
       state.explanation.retryVisible = true;
@@ -663,6 +673,7 @@ function installEvents() {
   document.addEventListener("keydown", (event) => {
     const panel = $("explanation-panel");
     if (panel.hidden) return;
+    if (document.querySelector("dialog:modal")) return;
     if (event.key === "Escape") {
       event.preventDefault();
       closeExplanation();

@@ -274,3 +274,47 @@ current가 없는 거부 상태 설명만 보정한 diff에서 필수 검사를 
 
 이번 실행은 문서 통합과 기존 fixture의 근거다. 새 HTTP/브라우저/container·원격 CI·chat/AI·사용자 수용·공개 배포는
 확인하지 않았다. 기존 서비스 runtime의 마지막 관측은 위 2026-09-08 절과 구분한다.
+
+<a id="guided-explanation-verification"></a>
+
+## Guided explanation verification — 2026-09-09
+
+MFG-12는 실제 검토 결과에 대해 선택한 세 질문을 규칙으로 설명하는 로컬 기능이다. 계약 `e9e11c0`,
+구현 통합 `5d3bceae9a7685a671d73b0b8925f93847d88fda`에 아래 직접 검토 보정을 적용한 source에서 실행했다.
+각 receipt에 당시 HEAD·dirty와 파일 SHA-256을 남겼다. 표시된 runtime revision만으로 clean artifact라고 주장하지 않는다.
+검증 뒤의 상태·backlog·이 기록과 촬영본 추가는 runtime 변경이 아니다.
+
+| 검사 | 관측 결과와 한계 |
+|---|---|
+| `make setup` | PASS, pinned 39개 package 확인. 새 제품 의존성·AI 공급자 없음 |
+| `make test` | 255 passed / 17 skipped, 50.52초 pytest. 기존 optional runtime 17개 제외와 dependency 경고 2개를 보존 |
+| `make verify` | PASS. 기존 OPC UA fixture 5개 판정·9개 event; current → manifest → data를 실제로 읽고 세 digest 대조 |
+| `make verify-service` | PASS. 실제 HTTP·잘못된 교체·보관 입력 복구·ZIP read-back·재시작 보존. Oil_temperature 7,144개와 독립 평균 대조 |
+| 새 설명 API | 기존 snapshot/query 재사용과 숫자의 독립 기대값, 원본/버전, 조회 상태 불변, 빈 구간·이전 결과·stale latest·다른 공간·삭제/만료·손상 거부. [API 검사](../tests/test_file_review_explanation.py)가 전체 suite에 포함됨 |
+| 새 설명 브라우저 | Chromium 140.0.7339.16, full 18개 / sample 12개 시나리오 PASS. 1440/390/320px, 질문/근거 이동, 미제출 필터, inert label, 교체 실패, 다른 탭 변화, 삭제, 새로고침, 취소/시간 초과/재시도와 늦은 응답 거부 |
+| 기존 브라우저 회귀 | 같은 최종 application source에서 full 11개 / sample 7개 시나리오 PASS. 두 프로필 모두 page error·외부 HTTP 요청 0건 |
+
+직접 diff·브라우저 검토에서 질문 버튼 비활성화 시 모바일 포커스가 패널 밖으로 빠지는 결함을 보정했다.
+시간 초과는 transport abort와 별도로 요청 세대를 무효화하도록 수정했으며, abort가 실제로 작동하지 않도록 주입한
+브라우저 검사에서도 늦은 답변을 거부했다. 기존 삭제 확인창의 Escape를 먼저 처리하고, 차단된 파일은 완료된 거부 판정임을
+설명 문구에 반영했다. 반환된 구현 요약이나 같은 API 테스트 재실행만으로 수용하지 않았다.
+
+고정 패널 화면은 full-page 캡처의 위치 왜곡을 피하기 위해 실제 viewport로 촬영하고 눈으로 확인했다.
+[데스크톱](assets/file-review-explanation-desktop.png)과 [모바일](assets/file-review-explanation-mobile.png)은 아래 최종
+sample 실행에서 복사한 동일 bytes의 공개 샘플 화면이다. 독립 사용자의 이해·보조기술·모바일 실기기 검증은 아니다.
+
+로컬 원본 실행 근거:
+
+- 필수 검사: `.cache/review-explanation-final/20260909T082330536312Z/receipt.json` 및 명령별 log.
+- 설명 최종 화면/반례: `.cache/review-explanation-checks/20260909T082210446042Z/receipt.json`과
+  각 `full-explanation`/`sample-explanation`의 responses·ZIP·화면·receipt.
+- 기존 브라우저와 첫 보정 후 설명: `.cache/review-explanation-checks/20260909T081551529359Z/receipt.json`.
+  이후 application source는 동일하며 새 설명 verifier의 삭제 Escape 검사·viewport 촬영만 보완했다.
+- 최초 실패: `.cache/review-explanation-checks/20260909T081310332448Z/receipt.json`의 모바일 포커스 오류.
+- HTTP·재시작: `.cache/file-review-verification/20260909T082430582585Z/receipt.json`.
+- OPC UA: `.cache/telemetry-runs/run-s7eLULEu/readback.json`, trusted version
+  `c83fd83810d4afebc783edff0de3216683d091eb52e39c6282ab59b0713529e3`.
+
+이번 source는 로컬 branch에만 있다. 새 container·remote CI·tag·Release·배포는 실행하지 않았다.
+브라우저는 loopback의 새 DB와 자기 workspace를 사용했고 생성한 파일을 지운 뒤 해당 서버를 종료했다.
+실제 AI 호출·자유 대화·공급자 보관/원가·AI 답변 품질은 이번 검사 범위 밖이다.

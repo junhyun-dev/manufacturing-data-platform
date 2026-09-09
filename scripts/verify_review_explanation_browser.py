@@ -94,6 +94,13 @@ def main():
                 answers.append(body)
             return body
 
+        def capture_panel(name):
+            expect(panel).to_be_visible()
+            # Capture the actual viewport: full-page stitching can misplace fixed panels.
+            panel.evaluate("el => { el.scrollTop = 0; }")
+            page.screenshot(path=str(output / name))
+            expect(panel).to_be_visible()
+
         def mutation(fragment, action):
             with page.expect_response(lambda response: fragment in response.url and
                                       response.request.method == "POST") as pending:
@@ -165,7 +172,7 @@ def main():
                 assert body["context"]["source_name"] == "pressure.csv"
                 assert body["latest"]["source_name"] == "broken.csv"
                 assert body["summary"]["count"] == 2 and body["summary"]["mean"] == 15
-                page.screenshot(path=str(output / "01-previous-result-desktop.png"), full_page=True)
+                capture_panel("01-previous-result-desktop.png")
                 checks.append("failed replacement: actual retained source/version and independent mean 15")
                 body = ask("handoff_limits")
                 assert body["summary"]["quality_counts"]["unspecified"] == 2
@@ -220,10 +227,18 @@ def main():
             after_explanation = context.request.get(base + "/api/datasets/" + sample["id"]).json()["dataset"]
             for field in ("current", "latest", "history"):
                 assert after_explanation[field] == failed_delivery[field], f"Explanation changed {field}"
-            page.screenshot(path=str(output / "02-sample-explanation-desktop.png"), full_page=True)
+            capture_panel("02-sample-explanation-desktop.png")
             checks.append("real sample statistics; explanation leaves retained version and attempt history unchanged")
 
             # Desktop must permit using the result; narrow presentation must actually be modal.
+            page.locator("#delete-button").focus()
+            page.keyboard.press("Enter")
+            expect(page.locator("#delete-dialog")).to_be_visible()
+            page.keyboard.press("Escape")
+            expect(page.locator("#delete-dialog")).to_be_hidden()
+            expect(panel).to_be_visible()
+            assert context.request.get(base + "/api/datasets/" + sample["id"]).ok
+            checks.append("Escape cancels native deletion before closing the non-modal explanation")
             page.keyboard.press("Escape")
             expect(panel).to_be_hidden()
             expect(launcher).to_be_focused()
@@ -238,7 +253,7 @@ def main():
                 for _ in range(24):
                     page.keyboard.press("Tab")
                     assert page.evaluate("document.activeElement.closest('#explanation-panel') !== null")
-                page.screenshot(path=str(output / f"03-explanation-mobile-{width}.png"), full_page=True)
+                capture_panel(f"03-explanation-mobile-{width}.png")
                 page.keyboard.press("Escape")
                 expect(panel).to_be_hidden()
                 expect(launcher).to_be_focused()

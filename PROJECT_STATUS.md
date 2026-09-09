@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | WORK — MFG-12 결과 설명 preview: 마지막 조회의 버전·상태·한계를 확인하는 첫 화면 |
+| 현재 작업 | LOCAL VERIFIED — MFG-12 결과 설명 preview 구현·직접 검토·HTTP/브라우저 검증 완료 |
 | 수용한 범위 | 2026-09-09 현재 CSV 결과 설명 방향으로 계속 진행 수용. 첫 로컬 구현은 선택형 질문과 실제 서버 근거; 외부 AI·자유 대화·유료 호출·배포는 포함하지 않음 |
-| Git 기준 | `feat/review-explanation`; 정비 완료 기준 `defbacd452257ff626ffa1888005fbf7135940e9`에서 첫 설명 계약·구현 진행. 실제 HEAD·dirty는 Git으로 확인 |
+| Git 기준 | `feat/review-explanation`; 정비 완료 `defbacd452257ff626ffa1888005fbf7135940e9` → 계약 `e9e11c0` → 구현 통합 `5d3bcea`와 검토 보정. 최종 HEAD·dirty는 Git으로 확인; 원격 반영 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 마지막 확인 2026-09-08: [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED; `main@c4b3814` [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022). 이번 정비에서 원격 재조회 없음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | MFG-12의 서버 근거 → 설명 패널 → 같은 결과 확인 흐름을 구현하고 HTTP·브라우저 반례로 검증한다 |
+| 다음 한 행동 | 공개 샘플의 전달 누락 → 결과 설명 → 같은 버전 근거 찾기를 실제 검토자 한 명에게 안내 없이 사용하게 하고, 막힌 질문 한 가지를 기록한다 |
 
 ## 실행과 근거
 
@@ -26,6 +26,9 @@ make serve
 [Architecture](docs/ARCHITECTURE.md)에서 현재 서비스와 별도 OPC UA 실험의 책임 경계를 확인한다.
 
 - 기존 서비스: [2026-09-08 검사·실제 HTTP/브라우저·clean checkout·컨테이너 기록](docs/VERIFICATION.md#file-service-verification).
+- 이번 설명 기능: [MFG-12 검증](docs/VERIFICATION.md#guided-explanation-verification). 255 passed / 17 skipped,
+  실제 HTTP·재시작·ZIP과 full/sample Chromium 검증. [데스크톱](docs/assets/file-review-explanation-desktop.png) ·
+  [모바일](docs/assets/file-review-explanation-mobile.png)은 실제 공개 샘플 화면이다. 별도 API key 설정은 없다.
 - 직전 조사 반영: [2026-09-09 검사](docs/VERIFICATION.md#documentation-verification--2026-09-09).
 - 이번 문서 정비: [MFG-11 통합 검사](docs/VERIFICATION.md#source-ownership-verification). `make setup/test/verify` PASS,
   248 passed / 17 skipped와 OPC UA 5개 판정·9개 event의 hash read-back. 링크·공개 주장·코드 책임 위치를 대조했다.

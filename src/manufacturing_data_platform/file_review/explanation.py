@@ -6,7 +6,7 @@ EVIDENCE = {
     "handoff_limits": ["query", "source"],
     "gap_limits": ["query", "source"],
 }
-STATUS = {"ready": "검증 완료(ready)", "incomplete": "전달 미완료(incomplete)", "blocked": "파일 수정 필요(blocked)"}
+STATUS = {"ready": "파일 검증 완료", "incomplete": "전달 미완료", "blocked": "파일 수정 필요"}
 KIND = {"import": "파일 검사", "sample": "샘플 검사", "replace": "수정 파일 검사",
         "retry": "보관 원본 재검사", "delivery-check": "전달 누락 체험"}
 
@@ -32,7 +32,7 @@ def _previous_result(result, stored, latest):
         return (
             "유지된 결과를 표시하는 이유",
             [
-                f"최근 입력 {latest['source_name']}의 {kind} 시도는 {status} 상태로 완료되지 않았습니다. 그 시도의 관측은 새 분석 결과로 발행하지 않았습니다.",
+                f"최근 입력 {latest['source_name']}의 {kind} 결과는 ‘{status}’입니다. 그 시도의 관측은 새 분석 결과로 발행하지 않았습니다.",
                 f"현재 조회는 이전에 검증을 통과한 {source}의 버전 {version}을 사용합니다. 그래서 최근 시도와 조회 결과의 출처가 다를 수 있습니다.",
                 "최근 검사 기록에서 완료되지 않은 시도를, 파일과 검증 근거 및 선택 구간 분석에서 실제 조회에 사용한 출처와 버전을 확인하세요.",
             ],
@@ -71,7 +71,7 @@ def _handoff_limits(result, stored, latest):
             values,
             f"출처는 {stored['source_name']}, 결과 버전은 {stored['version'][:12]}, 조회 범위는 {_range(result)}이며 시각 기준은 {'시간대 미제공' if result['time_basis'] == 'unspecified' else 'UTC'}입니다.",
             f"품질이 제공되지 않은 관측값은 {_number(unspecified)}개입니다. 품질 미제공은 Good을 뜻하지 않으며 파일 검증은 센서 정확도를 인증하지 않습니다.",
-            f"이 설명은 최근 시도 {latest['id']}의 상태 {latest['status']}를 함께 고정한 조회 결과입니다. 선택 구간 분석과 파일 근거를 같이 전달하세요.",
+            f"최근 검사 결과는 ‘{STATUS[latest['status']]}’입니다. 평균은 선택한 관측값의 표본 평균이며 시간 가중이나 보간 통계가 아닙니다. 분석 구간과 파일 근거를 같이 전달하세요.",
         ],
     )
 

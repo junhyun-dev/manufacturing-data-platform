@@ -1,7 +1,17 @@
 # Changelog
 
-This repository has no published release yet. Entries describe the candidate on the current branch;
+This repository has no published release yet. Entries describe local changes and the release candidate;
 a date and immutable Git tag are added only after remote CI and release verification succeed.
+
+## Local guided explanation preview — version unassigned
+
+- Added three selected questions about the currently reviewed source/version, handoff limits and
+  descriptive time gaps, using authorized server query results with evidence navigation.
+- Added a desktop side panel and narrow-screen dialog, with context invalidation, cancellation,
+  timeout/retry and keyboard handling. No provider, free-text AI conversation or stored chat history.
+- Verified API tests, actual HTTP/export/restart and Chromium full/sample behavior; see
+  [dated evidence](docs/VERIFICATION.md#guided-explanation-verification).
+- This local feature is not a published release or an added prerequisite for the existing `0.1.0` candidate.
 
 ## Unreleased — `0.1.0` candidate
 
