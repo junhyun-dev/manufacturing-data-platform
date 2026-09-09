@@ -224,6 +224,8 @@ def main():
                 ask("handoff_limits")
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                 assert panel.evaluate("el => el.matches(':modal') || el.getAttribute('aria-modal') === 'true'")
+                page.locator("#query-button").evaluate("el => el.focus()")
+                assert page.evaluate("document.activeElement.closest('#explanation-panel') !== null"), "Modal background accepted focus"
                 # Cycle through enough stops to cross the end of this small dialog twice.
                 for _ in range(24):
                     page.keyboard.press("Tab")
