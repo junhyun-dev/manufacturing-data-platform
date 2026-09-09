@@ -6,15 +6,18 @@
 
 ## MFG-11 — Product source ownership and navigation
 
-**진행 중 — 2026-09-09 작성자가 문서·작업 기준 정비를 승인.** 변경 기준은 `dd82b75`이며 기존 문서 작업을 보존한다.
+**로컬 완료 — 2026-09-09 작성자가 승인한 문서·작업 기준 정비.** 변경 기준 `dd82b75`와 기존 문서 작업을 보존했다.
 
 - 사용자 결과: 새 독자가 현재 CSV 서비스와 보존 실험을 구분하고, 시나리오·계약·화면·API·데이터·검증을 어디서 읽고 바꾸는지 찾는다.
 - 범위: 기존 README·AGENTS·Architecture의 연결과 변경/폐기 책임, 현재 상태·backlog·조사·검증 기록의 역할 정리.
   연구 근거는 `docs/research/`, 작업과 수용 gate는 이 backlog, 현재 한 행동은 PROJECT_STATUS가 소유한다.
 - 보존: 기존 제품/권한/데이터 계약, source·런타임 설정, 보존된 보고서 artifact, 기존 MFG ID와 조회·복구 의미.
 - 반례: 수용된 약속을 미구현이라고 제안으로 되돌리거나, 과거 OPC UA 결과를 현재 웹 서비스/배포 성과로 읽거나, 이동한 근거를 찾을 수 없다.
-- 완료: 실제 diff와 링크/소비자 대조, 기존 reader-facing claim 검사의 의미 보존, 필수 통합 검사, cold reader의 owner·미결정·다음 행동 복원.
+- 완료: 실제 diff와 링크/소비자 대조, 기존 reader-facing claim 검사의 의미 보존, 필수 통합 검사, 독자 입구에서 owner·미결정·다음 행동까지 연결 확인.
   로컬 정비이며 chat 구현·제품 Release·배포 승인이 아니다.
+- 결과: README는 현재 CSV 서비스의 입구, Architecture는 실제 code·runtime 책임 지도, 두 조사 문서는 제안의 근거가 됐다.
+  Dockerfile/Compose의 강제 지점을 실제 설정에 맞게 보정했다. [통합 검증](VERIFICATION.md#source-ownership-verification)은
+  248 passed / 17 skipped와 fixture hash read-back을 포함한다. 새 독자의 사용 성공은 아직 관찰하지 않았다.
 
 ## MFG-08 — Product value and source reality
 

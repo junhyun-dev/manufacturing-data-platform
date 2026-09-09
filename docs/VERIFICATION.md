@@ -249,3 +249,28 @@ Uncertain 변형은 평균이 정상이더라도 거부해야 한다. 기본 검
 `make verify`를 통과했다. 기존 OPC UA fixture의 5개 판정과 9개 event의 current → manifest → data read-back이다.
 명령·시간·출력은 `.cache/chat-discovery-checks/20260909/receipt.json`, read-back은
 `.cache/telemetry-runs/run-szNw37UW/readback.json`이다. chat 구현·AI 품질의 검증이 아니며 브라우저/컨테이너를 재실행하지 않았다.
+
+<a id="source-ownership-verification"></a>
+
+## Source ownership verification — 2026-09-09
+
+문서 통합 기준 `ea2c6a6016df6b47e44b42f8b4afa29ae74be0e8`에 Architecture의 Dockerfile/Compose 책임 위치와
+current가 없는 거부 상태 설명만 보정한 diff에서 필수 검사를 실행했다. 이후 PROJECT_STATUS·Backlog와 이 절에 종료 결과를 기록했다.
+정비 전 `dd82b751df7bc8b2ecfe1953d3778610518ca65f` 대비 변경은 문서 8개와 기존 안내 테스트 1개다.
+제품 계약·application code·runtime 설정·보존된 공개 report/JSON/PNG는 동일하다.
+
+| 검사 | 관측 결과와 한계 |
+|---|---|
+| `make setup` | PASS. 기존 pinned environment의 39개 package 확인 |
+| `make test` | 248 passed / 17 skipped, 2개 dependency deprecation warning. 제외된 optional runtime을 성공으로 세지 않음 |
+| `make verify` | PASS. OPC UA fixture의 5개 판정과 9개 event; current → manifest → data digest chain 일치 |
+| 문서 직접 검토 | 현재 CSV 흐름 → 계약 → app/model/store/query/static → 테스트·날짜별 근거를 추적. Dockerfile/Compose 책임 오기 1건 수정, 이전 current가 없을 때의 결과 없음 명시 |
+| 이동·독자 경계 | 상대 링크·문서 fragment 확인, 기존 조사 출처·hash 보존, 공개 주장·라이선스·보존 artifact 접근 검사 유지. 새로운 독립 독자의 이해·실사용 성공을 검증한 것은 아님 |
+
+통합 전 별도 변경분에서 연구 문서 두 개가 없어 실패한 상대 링크 검사는 통합한 전체 suite에서 통과했다.
+필수 검사는 통합 뒤 한 번 실행했다. 명령·시각·원본 출력은 `.cache/doc-ownership-checks/20260909/receipt.json`,
+실제 read-back은 `.cache/telemetry-runs/run-Nv0Rti14/readback.json`에 보존했다. trusted version은
+`14f9517711ca8a9becab147ca74670a2451dadbcc59b2f181e2254c4df59ff82`다.
+
+이번 실행은 문서 통합과 기존 fixture의 근거다. 새 HTTP/브라우저/container·원격 CI·chat/AI·사용자 수용·공개 배포는
+확인하지 않았다. 기존 서비스 runtime의 마지막 관측은 위 2026-09-08 절과 구분한다.

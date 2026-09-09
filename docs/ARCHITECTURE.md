@@ -13,7 +13,7 @@ flowchart LR
   version --> select["equipment / tag / time range"]
   select --> view["통계 + 실제 관측"]
   select --> export["version-pinned CSV + manifest"]
-  attempt -- refused --> previous["명시적인 last-good 결과"]
+  attempt -- refused --> previous["기존 last-good / 결과 없음"]
 ```
 
 사용자는 [브라우저 client](../src/manufacturing_data_platform/file_review/static/index.html)에서 파일을 올리거나
@@ -52,16 +52,17 @@ flowchart LR
 - 원본 bytes와 normalized version은 immutable identity로 보관하고 읽을 때 hash와 연결을 재검증합니다.
   손상된 current는 분석·export에서 거부하지만 해당 dataset 관리와 다른 정상 dataset 접근은 유지합니다.
 - latest attempt와 current version은 별도 상태입니다. ready 결과만 current를 전진시키므로 잘못된 교체·불완전 전달·
-  transaction 실패는 last-good을 바꾸지 않습니다. 화면과 export는 사용한 version과 이전 결과 여부를 드러냅니다.
+  transaction 실패는 last-good을 바꾸지 않습니다. 기존 current가 없으면 조회할 결과도 없습니다.
+  화면과 export는 사용한 version과 이전 결과 여부를 드러냅니다.
 - client는 CSV 전체를 자체 판정하지 않습니다. server의 검증·snapshot·집계 결과를 표시하며, export도 같은
   server-side version과 query를 사용합니다.
 
 ### runtime 경계
 
 기본 entrypoint는 한 [FastAPI process](../src/manufacturing_data_platform/file_review/app.py)와 한 SQLite file입니다.
-[Compose](../docker-compose.yml)는 현재 Telemetry Review를 기본 service로 실행하고, 과거 MongoDB는
-`historical` profile에서만 엽니다. [Dockerfile](../Dockerfile)은 고정된 runtime dependency, non-root user,
-read-only root filesystem, writable data volume과 health check를 구성합니다.
+[Dockerfile](../Dockerfile)은 고정된 runtime dependency, non-root user와 health check를 구성합니다.
+[Compose](../docker-compose.yml)는 Telemetry Review를 기본 service로 실행하며 read-only root filesystem,
+writable SQLite data volume과 크기를 제한한 임시 공간을 설정합니다. 과거 MongoDB는 `historical` profile에서만 엽니다.
 
 이 repository가 검증한 runtime은 단일 process·단일 database의 로컬 release candidate입니다. 공개 host의 TLS,
 request 제한, monitoring, backup이나 multi-replica coordination은 구현된 현재 Architecture로 간주하지 않습니다.
