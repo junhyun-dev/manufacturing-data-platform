@@ -5,16 +5,16 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 단계 | MERGED TO MAIN — bounded `v0.1.0` candidate와 main CI 4/4 PASS; Release 결정 gate |
+| 단계 | DISCOVERY — 제품 내 결과 설명 채팅 후보 조사 완료·역할 선택 대기. 기존 bounded `v0.1.0` candidate는 main 병합·CI 통과 기록 유지; Release 별도 gate |
 | 사용자 결정 | 2026-09-08 Apache-2.0 경계, branch push, PR 공개·원격 CI와 squash merge를 승인. tag·GitHub Release·배포는 아직 승인하지 않음 |
 | Integration target | `main`; 제품 merge commit `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 구현 시작점 | `6a7c71e` — 기존 로컬 환경·source 조사·제품 방향 정비 위에서 시작 |
 | 검증한 서비스 revision | `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` — merged service + sample-only release runtime + Apache-2.0 image label |
-| 현재 branch | `main`; `feat/telemetry-file-review`는 PR #1에 보존 |
+| 현재 branch | `docs/mfg-09-scenario-gates`; 조사 시작 기준 `dab635cf6a9bd0730e6154fe3d46a76aa5c19842` 위의 `PROJECT_STATUS.md`·`docs/BACKLOG.md` 문서 변경. 코드 변경 없음; `feat/telemetry-file-review`는 PR #1에 보존 |
 | 현재 결과 | `full`: 자기 CSV 검토·분석·근거 ZIP·교체. `sample`: 임의 업로드 거부·공개 기록 분석·전달 실패/복구 |
 | Candidate 확인 | clean `1f1a8c1` local container receipt + merged `2e8e58c` [main run 34187959052](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34187959052) 4/4 PASS |
-| 외부 상태 | [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED; public `main@2e8e58c` CI PASS. NOT TAGGED / NOT RELEASED / NOT DEPLOYED |
-| 다음 한 행동 | 준비된 `v0.1.0` release notes와 tag 대상을 확인받고 GitHub Release 여부를 결정한다 |
+| 외부 상태 | 마지막 확인(2026-09-08): [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED, `main@c4b3814` [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022). 이번 조사에서 원격 상태 재조회는 하지 않음. NOT TAGGED / NOT RELEASED / NOT DEPLOYED |
+| 다음 한 행동 | [MFG-10](docs/BACKLOG.md#mfg-10--context-bound-review-assistant-discovery)의 현재 검토 결과 설명형 추천을 작성자와 선택한다. 수용 후 대표 질문·근거·허용 데이터·실패 동작을 첫 구현 계약으로 닫는다 |
 
 ## 실행과 이어가기
 
@@ -31,8 +31,8 @@ docker compose --env-file .env.example up --build
 Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verify-service`, `make verify-container`가 검증 입구다.
 기존 OPC UA 실험은 `make verify`로 별도 실행한다.
 
-새 세션은 `AGENTS.md → 이 파일 → File Review Contract → MFG-09` 순서로 복원한다. 환경 정비나 Discovery를
-처음부터 반복하지 않는다. 첫 파일 계약은 수용·구현됐고, 다음은 실제 파일 사용에서 드러난 한 문제를 검증하는 일이다.
+새 세션은 `AGENTS.md → 이 파일 → File Review Contract → MFG-10` 순서로 복원한다. 환경 정비나 완료한 조사를
+처음부터 반복하지 않는다. 첫 파일 계약은 수용·구현됐고, 새 채팅은 아직 제안이다. 기존 Release·독립 사용 경계는 MFG-09가 소유한다.
 로컬 판단·구현·검증·독립 검토·closeout을 같은 흐름으로 진행한다. 특정 모델이나 private 문서에 의존하지 않는다.
 
 ## 구현한 범위와 중요한 선택
@@ -81,6 +81,19 @@ Spark나 작성자의 원본 cache 없이 동작한다. `make test`, `make verif
 이번 서비스 결과와 합쳐 과거에 제품 사용까지 검증한 것처럼 쓰지 않는다. 과거 간헐 collection timeout은
 [MFG-07](docs/BACKLOG.md#mfg-07--intermittent-local-collection-timeout)에 남아 있다. 이번 replay 성공은 원인 해결이 아니다.
 웹 서비스는 해당 OPC UA 수집 경로를 사용하지 않는다.
+
+## 2026-09-09 조사 결과
+
+[MFG-10](docs/BACKLOG.md#mfg-10--context-bound-review-assistant-discovery)에 실제 사용자 질문 후보, 공식 제품 문서·화면 비교,
+현재 code/API 경계, 하단 진입·우측 패널·모바일 화면 추천과 다음 작은 검증을 남겼다.
+설명할 수 있는 집계·이전 결과와 근거 없는 설비 진단·미구현 버전 비교를 구분했다.
+필터 입력 초안과 마지막 확인한 분석 결과가 다를 수 있어 답변 맥락을 마지막 결과에 고정하는 안을 추가했다.
+새 역할·Data/API·권한·보관·비용 정책은 수용 전이다. chat 구현·AI 실호출·사용자 검증은 수행하지 않았다.
+
+문서 통합 뒤 저장소 필수 검사 `make setup`, `make test`(248 passed / 17 skipped), `make verify`를 통과했다.
+마지막 검사는 기존 OPC UA fixture의 5개 판정과 9개 event의 current → manifest → data read-back이며 chat 검증이 아니다.
+명령·시간·출력은 `.cache/chat-discovery-checks/20260909/receipt.json`, read-back은
+`.cache/telemetry-runs/run-szNw37UW/readback.json`에 있다. 코드·UI 변경이 없어 별도 브라우저/컨테이너 검증은 반복하지 않았다.
 
 ## 다음 제품 gate와 Portfolio 경계
 
