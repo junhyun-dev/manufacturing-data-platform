@@ -30,6 +30,9 @@ docker compose --env-file .env.example up --build
 품질 미제공을 Good으로 바꾸거나, 값을 보간하거나, 물리적 고장을 추정하지 않습니다. ZIP에는 선택한 전체
 관측 CSV와 원본 hash·결과 version·조회 조건·품질 한계를 기록한 manifest가 들어갑니다.
 
+**이 결과에 질문**에서는 지금 보는 결과의 버전·전달 시 적을 한계·시간 공백을 선택 질문으로 확인합니다.
+실제 검토 데이터에 따른 규칙 기반 설명이며 AI 자유 대화는 아닙니다. [설명 사용법](docs/FILE_REVIEW_GUIDE.md#결과-설명으로-근거-확인하기)을 참고하세요.
+
 파일은 실행 서버의 임시 작업 공간에 저장됩니다. 입력·보관·삭제 한도와 정확한 동작은
 [파일 계약](docs/FILE_REVIEW_CONTRACT.md#state-identity-and-recovery)이 소유합니다.
 
@@ -45,7 +48,7 @@ docker compose --env-file .env.example up --build
 | 지금 진행 중인 한 작업과 다음 gate는 무엇인가? | [Project Status](PROJECT_STATUS.md) | 해당 revision·검증·외부 상태 |
 | 닫힌 범위의 후속 작업과 완료 조건은 무엇인가? | [Backlog](docs/BACKLOG.md) | 기존 MFG 항목과 anchor |
 | 파일 검토 업무·대안·사용자 검증 근거는 무엇인가? | [File review workflow research](docs/research/file-review-workflow.md) | 조사 근거이며 수용된 계약은 File Review Contract로 연결 |
-| 검토 assistant의 benchmark·화면·설계안은 무엇인가? | [Review assistant research](docs/research/review-assistant.md) | **제안**이며 현재 제품 계약·구현이 아님 |
+| 검토 assistant의 benchmark·화면·설계안은 무엇인가? | [Review assistant research](docs/research/review-assistant.md) | 후속 자유 대화·외부 AI 설계는 **제안**이며 현재 제품 계약·구현이 아님 |
 | 어떤 명령을 어느 환경·revision에서 확인했는가? | [Verification](docs/VERIFICATION.md) | test·HTTP·browser·container·OPC UA의 dated evidence와 한계 |
 | 후보 release와 실제 공개 상태를 어떻게 구분하는가? | [Unreleased notes](CHANGELOG.md), Git commit·tag·Release | 후보 설명과 source revision은 배포 artifact·환경·runtime read-back을 대신하지 않음 |
 

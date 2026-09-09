@@ -30,6 +30,7 @@ flowchart LR
 | CSV 검증과 content identity | [`model.py`](../src/manufacturing_data_platform/file_review/model.py) | CSV normalization, timestamp·quality·unit·duplicate 판정, source/version에 들어갈 canonical payload |
 | workspace state와 last-good | [`store.py`](../src/manufacturing_data_platform/file_review/store.py) | workspace 소유권, SQLite transaction, source/version/attempt/current, integrity read-back, retention·삭제 |
 | 조회와 전달 artifact | [`query.py`](../src/manufacturing_data_platform/file_review/query.py) | integrity-checked snapshot의 SQL 집계·실제 point 선택, 전체 선택 CSV와 manifest export |
+| 선택 질문의 결과 설명 | [`explanation.py`](../src/manufacturing_data_platform/file_review/explanation.py), [`app.py`](../src/manufacturing_data_platform/file_review/app.py), [`static/app.js`](../src/manufacturing_data_platform/file_review/static/app.js) | 마지막 조회의 version·latest attempt 고정, 같은 snapshot/query의 사실로 규칙 기반 설명, 맥락 변화·취소·실패 시 답변 무효화 |
 | 계약·실패 반례 | [API tests](../tests/test_file_review_api.py), [integrity tests](../tests/test_file_review_integrity.py) | 정상/거부/교체, cross-workspace 접근, 변조·transaction 실패, version-pinned export |
 | 실제 실행 read-back | [HTTP verifier](../scripts/verify_file_review.py), [browser verifier](../scripts/verify_file_review_browser.py), [container verifier](../scripts/verify_release_container.py) | API·화면·container에서 관측한 결과; exact 실행 범위는 [Verification](VERIFICATION.md) 소유 |
 
@@ -56,6 +57,11 @@ flowchart LR
   화면과 export는 사용한 version과 이전 결과 여부를 드러냅니다.
 - client는 CSV 전체를 자체 판정하지 않습니다. server의 검증·snapshot·집계 결과를 표시하며, export도 같은
   server-side version과 query를 사용합니다.
+
+결과 설명도 이 snapshot/query 경계를 재사용합니다. 새 query 응답의 latest attempt ID와 명시적 version으로
+설명 대상을 고정하고, 다음 요청에서 최근 검사가 달라지면 답변을 거부합니다. 설명용 별도 데이터 저장소·SQL·LLM은 없습니다.
+첫 preview의 선택 질문·응답·UI lifecycle은 [File Review Contract](FILE_REVIEW_CONTRACT.md#guided-result-explanation--first-local-preview),
+후속 자유 대화·외부 공급자 설계 후보는 [조사 근거](research/review-assistant.md)가 소유합니다.
 
 ### runtime 경계
 
