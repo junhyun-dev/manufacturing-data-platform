@@ -12,6 +12,25 @@ The repository must be sufficient for a new session. Product facts and commands 
 not depend on a private workspace, chat transcript, a particular model, or installed skills.
 Use [Architecture](docs/ARCHITECTURE.md) to locate code; historical pipelines are separate evidence.
 
+## Product sources and change lifecycle
+
+- Keep the README as the front door and link each question to one living owner. Research and design
+  proposals stay in the existing research or Backlog location until the product owner accepts them;
+  they do not become current behavior because they are newer or more detailed.
+- Accepted promises remain in the relevant Contract even when implementation is incomplete. Treat that
+  mismatch as an implementation or release gap. Change an accepted rule together with its Contract,
+  implementation, affected browser and API consumers, and meaningful tests.
+- Architecture maps current responsibility; PROJECT_STATUS points to one current change; Backlog owns
+  bounded future work; Verification records commands, revisions, observed results and limits. A release
+  note or source commit is a candidate claim. Actual deployment requires the built artifact, environment,
+  activation state and runtime read-back.
+- When sources conflict, compare the same scope and version against accepted meaning and actual behavior.
+  Classify the result as a code defect, documentation gap or proposed policy change instead of automatically
+  choosing the newest prose or the code.
+- Before moving or removing a source, inspect inbound links, generated consumers, supported versions and
+  the exact Git recovery point. Keep one owner for current meaning, update the former entry to point to it,
+  and preserve historical evidence when readers still need its original claim boundary.
+
 ## Work and verification
 
 - Keep one implementation change active. The selected backlog item owns its outcome,

@@ -43,6 +43,13 @@ FIRST_30_LIMIT = 30
 
 TRUST_DIR = REPO_ROOT / "docs" / "portfolio" / "industrial-telemetry-trust"
 TRUST_WALKTHROUGH = TRUST_DIR / "README.md"
+FILE_REVIEW_CONTRACT = REPO_ROOT / "docs" / "FILE_REVIEW_CONTRACT.md"
+FILE_REVIEW_GUIDE = REPO_ROOT / "docs" / "FILE_REVIEW_GUIDE.md"
+ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
+OPC_UA_CONTRACT = REPO_ROOT / "docs" / "CONTRACT.md"
+HISTORICAL_EVIDENCE = REPO_ROOT / "docs" / "HISTORICAL-EVIDENCE.md"
+VERIFICATION = REPO_ROOT / "docs" / "VERIFICATION.md"
+CHANGELOG = REPO_ROOT / "CHANGELOG.md"
 
 
 def _load_builder():
@@ -242,6 +249,7 @@ def test_root_readme_preserves_access_to_the_published_lab_evidence():
     text = ROOT_README.read_text(encoding="utf-8")
     for target in (
         "docs/portfolio/industrial-telemetry-trust/README.md",
+        "industrial-telemetry-trust/report.html",
         "industrial-telemetry-trust/evidence/runtime-evidence.json",
         "01-operator-decisions.png",
     ):
@@ -270,10 +278,15 @@ def test_public_license_boundary_links_code_and_dataset_terms():
         assert target in text
 
 
-def test_root_readme_places_the_simulation_boundary_before_the_headline_result():
-    """A reader who stops at the result table must already have seen what is not verified."""
+def test_root_readme_scopes_the_retained_lab_before_linking_its_results():
+    """A reader reaches the laboratory evidence only after its simulation boundary."""
     text = ROOT_README.read_text(encoding="utf-8")
-    assert text.index("production OPC UA") < text.index("## 한눈에 보는 결과")
+    lab_start = text.index("## 보존된 OPC UA 수집·발행 laboratory")
+    report_link = text.index("docs/portfolio/industrial-telemetry-trust/README.md")
+    assert lab_start < report_link
+    boundary = text[lab_start:report_link].lower()
+    for term in ("actual record", "local opc ua", "fault injection", "실제 공장", "production opc ua"):
+        assert term in boundary
 
 
 def test_root_readme_links_directly_into_the_review_trace_section():
@@ -293,32 +306,60 @@ def test_root_readme_links_directly_into_the_review_trace_section():
     )
 
 
-def test_root_readme_states_actual_record_replay_and_live_boundary():
-    text = ROOT_README.read_text(encoding="utf-8")
-    lowered = text.lower()
-    assert "actual record" in lowered
+def test_root_readme_and_linked_owners_keep_actual_replay_and_not_production_distinct():
+    root = ROOT_README.read_text(encoding="utf-8")
+    lowered = root.lower()
     assert "historical_record_replay" not in lowered  # reader-facing prose, not raw enum
-    assert "local opc ua" in lowered
-    assert "실제 공장" in text
-    assert "synthetic" in lowered
-    for absent_claim in ("physical plc", "production opc ua", "continuous kafka"):
-        assert absent_claim in lowered
+    for term in ("actual record", "local opc ua", "fault injection", "physical plc",
+                 "production opc ua", "continuous kafka", "synthetic"):
+        assert term in lowered
+    assert "실제 공장" in root
+
+    contract = OPC_UA_CONTRACT.read_text(encoding="utf-8").lower()
+    history = HISTORICAL_EVIDENCE.read_text(encoding="utf-8").lower()
+    assert "not live factory ingestion" in contract
+    assert "continuous kafka" in history
+    assert "runtime에 연결된 extension이 아니라" in history
 
 
-def test_root_readme_names_commands_evidence_and_claim_boundary():
+def test_root_readme_routes_current_questions_to_living_owners_and_code():
     text = ROOT_README.read_text(encoding="utf-8")
     required = (
-        "PYTHONPATH=src python -m pytest -q",
-        "scripts/verify_industrial_source_contract.sh",
-        "scripts/verify_event_time_trust.sh",
+        "docs/FILE_REVIEW_GUIDE.md",
+        "docs/FILE_REVIEW_CONTRACT.md",
         "docs/ARCHITECTURE.md",
+        "PROJECT_STATUS.md",
+        "docs/BACKLOG.md",
+        "docs/research/file-review-workflow.md",
+        "docs/research/review-assistant.md",
         "docs/VERIFICATION.md",
         "docs/HISTORICAL-EVIDENCE.md",
-        "## 검증 범위와 한계",
-        "badge는 해당 commit의 CI 실행 범위만 증명",
+        "CHANGELOG.md",
+        "src/manufacturing_data_platform/file_review/app.py",
+        "src/manufacturing_data_platform/file_review/model.py",
+        "src/manufacturing_data_platform/file_review/store.py",
+        "src/manufacturing_data_platform/file_review/query.py",
+        "src/manufacturing_data_platform/file_review/static/app.js",
     )
     for value in required:
         assert value in text
+
+    assert "**제안**이며 현재 제품 계약·구현이 아님" in text
+    assert "후보 설명과 source revision은 배포 artifact·환경·runtime read-back을 대신하지 않음" in text
+
+    contract = FILE_REVIEW_CONTRACT.read_text(encoding="utf-8")
+    for section in ("## Input and calculation rules", "## State, identity and recovery",
+                    "## HTTP interface for the first client"):
+        assert section in contract
+    assert "## 첫 사용 흐름" in FILE_REVIEW_GUIDE.read_text(encoding="utf-8")
+
+    architecture = ARCHITECTURE.read_text(encoding="utf-8")
+    for owner in ("static/app.js", "app.py", "model.py", "store.py", "query.py"):
+        assert owner in architecture
+    verification = VERIFICATION.read_text(encoding="utf-8")
+    for command in ("make test", "make verify-service", "make verify"):
+        assert command in verification
+    assert "no published release yet" in CHANGELOG.read_text(encoding="utf-8")
 
 
 def test_root_readme_is_korean_first():

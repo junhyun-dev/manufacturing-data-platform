@@ -1,141 +1,108 @@
-# Architecture — Telemetry Review and the retained collection laboratory
+# Architecture — Telemetry Review와 보존된 수집 laboratory
 
-## Current user flow: file review
+## 현재 제품: CSV file review service
 
-```mermaid
-flowchart LR
-  file["User CSV / pinned public sample"] --> check["File contract validation"]
-  check --> attempt["Latest attempt + issues"]
-  check -- valid --> version["Immutable checked version"]
-  version --> sql["One equipment/tag/time range"]
-  sql --> browser["Statistics + actual observations"]
-  sql --> zip["CSV + source/version manifest"]
-  attempt -- refused --> previous["Explicit previous result"]
-```
-
-`file_review/app.py` serves a static browser client and same-origin HTTP endpoints. `model.py` owns
-CSV normalization and content identities; `store.py` owns browser workspace isolation and SQLite
-transactions over sources, versions, attempts and current; `query.py` reads a verified snapshot into
-SQL and produces the pinned export. The client lives in `file_review/static/`; a hash-pinned public
-sample and attribution live in `file_review/sample/`.
-
-One process and one local SQLite file suffice. No legacy MongoDB path, OPC UA connection, external
-URL fetching, queue or warehouse is mounted. The [File Review Contract](FILE_REVIEW_CONTRACT.md)
-owns this file workflow. The original source bytes and normalized version are checked on read;
-publication failure rolls back the attempt/version/current transaction. A refused file cannot replace
-the previous result. Source gaps and missing source sensor quality remain visible.
-
-### Runtime boundary
+### 사용자 journey
 
 ```mermaid
 flowchart LR
-  browser["Anonymous browser workspace"] --> app["One FastAPI process\nfull or sample mode"]
-  app --> db["One SQLite volume\nsources · versions · attempts · current"]
-  probe["/healthz"] --> app
-  app --> identity["contract · release · revision · mode"]
+  file["사용자 CSV / 고정된 공개 sample"] --> api["same-origin API"]
+  api --> validate["file contract 검증"]
+  validate --> attempt["latest attempt + issues"]
+  validate -- ready --> version["immutable checked version"]
+  version --> select["equipment / tag / time range"]
+  select --> view["통계 + 실제 관측"]
+  select --> export["version-pinned CSV + manifest"]
+  attempt -- refused --> previous["명시적인 last-good 결과"]
 ```
 
-The default Compose entry point now starts this service; the retained MongoDB laboratory is available only through the
-`historical` profile. The container runs as a fixed non-root user with a read-only root filesystem and one writable data
-volume. `sample` mode refuses arbitrary uploads at the API boundary. It remains a single-process candidate: a reverse
-proxy, TLS, rate limits, monitoring and multi-replica coordination are not part of this repository's verified runtime.
+사용자는 [브라우저 client](../src/manufacturing_data_platform/file_review/static/index.html)에서 파일을 올리거나
+공개 sample을 열고, 검사 결과를 확인한 뒤 한 설비·측정 항목·시간 구간을 조회해 근거 ZIP을 내려받습니다.
+입력·시간·품질·state·HTTP 의미와 한도는 [File Review Contract](FILE_REVIEW_CONTRACT.md)가 소유합니다.
+[사용과 실행](FILE_REVIEW_GUIDE.md)은 이 journey와 실패 복구 방법을 독자에게 설명합니다.
 
-## Retained OPC UA laboratory
+### 책임 지도
 
-## 한 문장
-
-> 제조 데이터 플랫폼 운영자가 telemetry 수집 결과의 완전성·품질·시간·출처를 검증하고,
-> downstream 분석·ML에 `PUBLISH / BLOCK / REPROCESS`할지 결정한다.
-
-이 문서는 현재 제품의 Golden Flow와 component 책임만 설명한다. 과거 synthetic
-catalog/lakehouse/Kafka/Spark 경로는 [Historical Evidence](HISTORICAL-EVIDENCE.md)이며 현재
-runtime 흐름으로 연결됐다고 주장하지 않는다. identity·시간·판정의 정확한 의미와
-재수집·단일 writer 한계는 [Contract](CONTRACT.md)가 소유한다.
-
-## Golden Flow
-
-```mermaid
-flowchart LR
-  record["MetroPT-3 actual historical record"]
-  replay["Local OPC UA replay"]
-  collect["Subscription collector"]
-  seal["Sealed collection evidence\nexpected / observed"]
-  evaluate["Trust evaluation\nidentity · unit · quality · event time"]
-  decision{"Operator decision"}
-  current["Versioned trusted dataset\nmanifest + current"]
-  blocked["Blocked / incomplete evidence"]
-  report["Industrial Telemetry Trust Report"]
-
-  record --> replay --> collect --> seal --> evaluate --> decision
-  decision -- PUBLISH --> current --> report
-  decision -- BLOCK / REPROCESS --> blocked --> report
-```
-
-여기서 실제인 것은 MetroPT-3 historical value다. OPC UA server와 collector는 local replay이며,
-Uncertain·Bad StatusCode와 collector 중단은 fault injection이다.
-
-## Component Map
-
-| 책임 | 현재 component | 입력 | 출력·상태 |
-|---|---|---|---|
-| observation 계약 | `industrial_source/contracts.py` | equipment/tag/value/time/status/provenance | canonical telemetry observation |
-| actual record replay | `industrial_source/source.py`, `opcua_runtime.py` | MetroPT-3 fixture와 tag mapping | local OPC UA subscription value |
-| collection·봉인 | `industrial_source/spool.py` | expected identity와 observed value | immutable spool, seal, coverage |
-| source 판정 | `industrial_source/verification.py`, `report.py` | coverage·quality·mapping | complete / blocked_quality / incomplete |
-| event-time 판정 | `event_time_trust/core.py` | canonical telemetry + arrival envelope | accepted set, duplicate/late/gap evidence |
-| engine parity | `event_time_trust/spark_parity.py` | 동일한 bounded input | local Spark identity parity evidence |
-| visible result | `scripts/build_industrial_trust_report.py` | accepted runtime evidence | static report, JSON, screenshots |
-
-## 핵심 상태
-
-```text
-source record
-  → collection open
-  → collection sealed
-  → complete / blocked_quality / incomplete
-  → publishable / reprocess_required
-  → versioned dataset + current  OR  blocked evidence
-```
-
-- `expected`와 `observed` identity 집합이 같지 않으면 complete로 만들지 않는다.
-- Uncertain·Bad observation이 있으면 row 수가 맞아도 publish하지 않는다.
-- duplicate·out-of-order는 정책 안에서 수렴시킬 수 있지만 too-late·missing은 reprocess 또는
-  incomplete로 남긴다.
-- 새 trusted version을 만들기 전에 기존 `current → manifest → data` digest chain을 검증한다.
-- 실패한 시도는 last-good current를 전진시키지 않는다.
-
-## 경계와 실패 책임
-
-| 경계 | 조용히 성공시키지 않는 실패 | 보존하는 evidence |
+| 경계 | 구현 owner | 책임과 연결된 evidence |
 |---|---|---|
-| record → replay | source checksum·row·mapping 불일치 | source identity와 provenance |
-| replay → collector | missing value, bad status, collector interruption | source/server/collection time, status |
-| collector → seal | expected identity 미관측, duplicate conflict | expected/observed/missing set |
-| seal → trust | too-late, gap, quality failure | accepted/rejected identity와 reason |
-| trust → current | 기존 current 손상, 동일 content 재실행 | manifest/data digest, reused version |
-| evidence → report | source/evidence hash 불일치 | build refusal; 임의 재계산 금지 |
+| browser 화면과 현재 선택 | [`static/index.html`](../src/manufacturing_data_platform/file_review/static/index.html), [`static/app.js`](../src/manufacturing_data_platform/file_review/static/app.js) | dataset·latest/current 표시, version을 고정한 조회·download, 이전 결과와 오류 표시 |
+| HTTP·browser security boundary | [`app.py`](../src/manufacturing_data_platform/file_review/app.py) | static client와 same-origin route, workspace cookie·CSRF·origin/host 확인, mode별 upload 허용, health identity |
+| CSV 검증과 content identity | [`model.py`](../src/manufacturing_data_platform/file_review/model.py) | CSV normalization, timestamp·quality·unit·duplicate 판정, source/version에 들어갈 canonical payload |
+| workspace state와 last-good | [`store.py`](../src/manufacturing_data_platform/file_review/store.py) | workspace 소유권, SQLite transaction, source/version/attempt/current, integrity read-back, retention·삭제 |
+| 조회와 전달 artifact | [`query.py`](../src/manufacturing_data_platform/file_review/query.py) | integrity-checked snapshot의 SQL 집계·실제 point 선택, 전체 선택 CSV와 manifest export |
+| 계약·실패 반례 | [API tests](../tests/test_file_review_api.py), [integrity tests](../tests/test_file_review_integrity.py) | 정상/거부/교체, cross-workspace 접근, 변조·transaction 실패, version-pinned export |
+| 실제 실행 read-back | [HTTP verifier](../scripts/verify_file_review.py), [browser verifier](../scripts/verify_file_review_browser.py), [container verifier](../scripts/verify_release_container.py) | API·화면·container에서 관측한 결과; exact 실행 범위는 [Verification](VERIFICATION.md) 소유 |
 
-## 가장 짧은 진입점
+이 표는 책임 위치를 찾는 지도입니다. 필드·status·route·수치 한도를 복제하지 않으며, 그 의미를 바꿀 때는
+File Review Contract와 영향받는 server/client/test를 함께 검토합니다.
 
-```bash
-make setup
-make test
-make verify
+### state와 신뢰 경계
+
+```mermaid
+flowchart LR
+  browser["anonymous browser workspace"] --> boundary["FastAPI browser/API boundary"]
+  boundary --> store["SQLite\nsources · versions · attempts · current"]
+  store --> snapshot["owner-checked + hash-checked snapshot"]
+  snapshot --> query["query / export"]
+  probe["/healthz"] --> boundary
 ```
 
-실행 환경과 claim 경계는 [Verification](VERIFICATION.md)을 따른다.
+- dataset id만으로 다른 workspace의 파일을 읽을 수 없습니다. mutation은 workspace cookie와 CSRF를 요구하고,
+  모든 dataset read/write는 server에서 소유권을 다시 확인합니다.
+- 원본 bytes와 normalized version은 immutable identity로 보관하고 읽을 때 hash와 연결을 재검증합니다.
+  손상된 current는 분석·export에서 거부하지만 해당 dataset 관리와 다른 정상 dataset 접근은 유지합니다.
+- latest attempt와 current version은 별도 상태입니다. ready 결과만 current를 전진시키므로 잘못된 교체·불완전 전달·
+  transaction 실패는 last-good을 바꾸지 않습니다. 화면과 export는 사용한 version과 이전 결과 여부를 드러냅니다.
+- client는 CSV 전체를 자체 판정하지 않습니다. server의 검증·snapshot·집계 결과를 표시하며, export도 같은
+  server-side version과 query를 사용합니다.
 
-## 확장 규칙
+### runtime 경계
 
-다음 기능은 기술 이름이 아니라 같은 사용자와 같은 판정 흐름을 강화할 때만 이 프로젝트에 붙인다.
+기본 entrypoint는 한 [FastAPI process](../src/manufacturing_data_platform/file_review/app.py)와 한 SQLite file입니다.
+[Compose](../docker-compose.yml)는 현재 Telemetry Review를 기본 service로 실행하고, 과거 MongoDB는
+`historical` profile에서만 엽니다. [Dockerfile](../Dockerfile)은 고정된 runtime dependency, non-root user,
+read-only root filesystem, writable data volume과 health check를 구성합니다.
 
-```text
-같은 운영자가 telemetry publish/block/reprocess를 더 정확히 결정한다
-  → 같은 프로젝트의 후보 Slice
+이 repository가 검증한 runtime은 단일 process·단일 database의 로컬 release candidate입니다. 공개 host의 TLS,
+request 제한, monitoring, backup이나 multi-replica coordination은 구현된 현재 Architecture로 간주하지 않습니다.
+후보 설정과 실제 검증 상태는 [Project Status](../PROJECT_STATUS.md)와 [Verification](VERIFICATION.md)을 구분해 읽습니다.
 
-다른 사용자·다른 업무 결정·다른 실패 owner가 중심이다
-  → 별도 프로젝트 검토
+## 보존된 OPC UA 수집·발행 laboratory
 
-Kafka·Flink·Iceberg·ML이라는 기술 이름만 추가된다
-  → 활성화하지 않음
+아래 경로는 실제 MetroPT-3 historical record를 local OPC UA로 replay해 수집·발행 판단을 시험한 보존 evidence입니다.
+현재 CSV service와 계약·storage·runtime이 다르며, `file_review` application에 mount되거나 일반 upload에 provenance를
+부여하지 않습니다.
+
+### laboratory 흐름
+
+```mermaid
+flowchart LR
+  record["MetroPT-3\nactual historical record"] --> replay["local OPC UA replay"]
+  replay --> collect["subscription collection"]
+  faults["fault injection"] --> collect
+  collect --> seal["expected / observed seal"]
+  seal --> trust["quality · completeness · event-time"]
+  trust --> decision{"PUBLISH / BLOCK / REPROCESS"}
+  decision --> evidence["versioned local result + report"]
 ```
+
+실제인 것은 공개 historical value입니다. OPC UA server와 collector는 local replay이고,
+Uncertain·Bad StatusCode와 collector 중단은 fault injection입니다. physical PLC·실제 공장 network·production OPC UA
+운영이나 현재 CSV 사용자의 live ingestion은 이 evidence로 검증하지 않았습니다.
+
+### laboratory 책임과 근거
+
+| 책임 | 구현 owner | 출력·판정 |
+|---|---|---|
+| observation 의미·identity | [`industrial_source/contracts.py`](../src/manufacturing_data_platform/industrial_source/contracts.py) | equipment/tag/value/time/status/provenance를 가진 canonical observation |
+| actual record와 replay | [`industrial_source/source.py`](../src/manufacturing_data_platform/industrial_source/source.py), [`opcua_runtime.py`](../src/manufacturing_data_platform/industrial_source/opcua_runtime.py) | checksum-checked fixture와 local subscription value |
+| collection·봉인 | [`industrial_source/spool.py`](../src/manufacturing_data_platform/industrial_source/spool.py) | expected/observed identity, immutable spool과 seal |
+| source 판정 | [`industrial_source/verification.py`](../src/manufacturing_data_platform/industrial_source/verification.py), [`report.py`](../src/manufacturing_data_platform/industrial_source/report.py) | complete / blocked_quality / incomplete |
+| event-time 판정 | [`event_time_trust/core.py`](../src/manufacturing_data_platform/event_time_trust/core.py) | accepted/rejected identity와 publishable/reprocess evidence |
+| 공개 결과 build | [`build_industrial_trust_report.py`](../scripts/build_industrial_trust_report.py) | committed evidence를 대조한 static report·JSON·screens |
+
+정확한 identity·시간·판정·single-writer 한계는 [OPC UA laboratory Contract](CONTRACT.md)가 소유합니다.
+실행과 read-back은 [Verification](VERIFICATION.md), 보존된 결과와 review trace는
+[Industrial Telemetry Trust Report](portfolio/industrial-telemetry-trust/README.md)가 소유합니다.
+그보다 앞선 synthetic Kafka·Spark·Iceberg 실험은 현재 runtime 연결이 아닌
+[Historical Evidence](HISTORICAL-EVIDENCE.md)로 분류합니다.
