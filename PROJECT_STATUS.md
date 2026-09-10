@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-13 탐색 UI LOCAL VERIFIED — 넓게 보기·지원 환경 전체화면·항목 이름 검색. 전체 검사 gate는 기존 OPC UA 시각 오류로 OPEN. 실제 사용자 수용은 미검증 |
+| 현재 작업 | MFG-13 지도 canvas 의도 정정·공식 조사/설계 제안 완료, 첫 로컬 범위 선택 대기. 기존 넓게 보기·전체화면·검색은 LOCAL VERIFIED인 부분 결과. 전체 검사 gate OPEN·실제 사용자 수용 미검증 |
 | 수용한 범위 | 설비 선택 → 한 파일 버전의 항목 지도 → 관측·출처·같은 버전 ZIP. 여기에 [넓게 보기·전체화면·이름 검색](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 추가. 기존 8개 지도/전체 목록·CSV·이전 결과·설명 유지. 줌/이동·물리 관계/건강 추정·외부 AI·공개 배포는 포함하지 않음 |
 | Git 기준 | `feat/review-navigation`, 구현 `743bebd`(수용 계약 `3686f5d` 이후 정적 UI 3파일·browser oracle·관련 문서/화면). 검증한 UI digest는 [실행 근거](docs/VERIFICATION.md#review-navigation-verification). 기존 조사 3문서는 `51b66ad` 보존. 정확한 HEAD·dirty는 실제 Git에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | [MFG-02](docs/BACKLOG.md#mfg-02--recovery-and-replay-identity)의 기존 OPC UA 시각 순서 실패를 분리 조사해 전체 검사 gate를 닫을 근거를 정한다. 새 구현/정책 변경은 이번 범위에 포함하지 않음. 기존 MFG-09/12 사용자 과제 관찰은 별도로 남음 |
+| 다음 한 행동 | [탐색형 지도 canvas 제안](docs/research/file-review-workflow.md#map-canvas-intent-correction)의 줌/이동·그룹 펼치기와 8개 고정 표시 대체를 첫 로컬 범위로 수용할지 결정한다. 제안은 미구현. MFG-02 시각 실패 조사와 MFG-09/12 사용자 관찰은 남은 작업으로 보존 |
 
 ## 실행과 근거
 
@@ -52,9 +52,14 @@ make serve
 
 ## 유지하는 후속 판단
 
-지도 탐색 UX는 [MFG-13 후속 검토](docs/research/file-review-workflow.md#map-navigation-review)에 추천을 정리했다.
+2026-09-10 작성자는 복잡한 지도 자체를 UiPath처럼 확대·이동하는 작업면을 의도했다고 정정했다.
+[최신 공식 조사·화면 구상·추천](docs/research/file-review-workflow.md#map-canvas-intent-correction)은 접고 펼치는
+그래프 캔버스와 연결된 상세다. 기존 8개 상한은 이전 설계 선택이며 새 필요성을 부정하는 근거로 쓰지 않는다.
+이번에는 조사 문서·backlog·이 현재 포인터만 갱신했다. 새 계약·UI 구현·Worker 작업·실행 환경 변경은 없다.
+
+이전 지도 탐색 UX는 [MFG-13 후속 검토](docs/research/file-review-workflow.md#map-navigation-review)에 근거를 보존했다.
 `45512b6`의 구현·보존 화면과 공식 문서를 대조한 뒤 수용한 **넓게 보기·선택적 전체화면 + 전체 항목 이름 검색**은 로컬 UI 검증을 마쳤다.
-[탐색 계약](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 따른다. 확대/이동/맞춤은 별도 후속 후보다.
+[탐색 계약](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 따른다. 이 부분 결과와 최신 canvas 제안의 수용 여부를 구분한다.
 작성자의 긍정적 첫 인상을 과제 수행 성공으로 기록하지 않는다. 기존 사용자 관찰은 유지하며 Release의 새 선행조건이 아니다.
 
 [MFG-10](docs/BACKLOG.md#mfg-10--context-bound-review-assistant-discovery)은 공개 조사·코드 대조까지 마쳤다.
