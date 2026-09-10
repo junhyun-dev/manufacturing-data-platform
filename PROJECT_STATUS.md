@@ -44,6 +44,11 @@ make serve
 
 ## 유지하는 후속 판단
 
+지도 탐색 UX는 [MFG-13 후속 검토](docs/research/file-review-workflow.md#map-navigation-review)에 추천을 정리했다.
+`45512b6`의 구현·보존 화면과 공식 문서를 대조했으며 **넓게 보기·선택적 전체화면 + 전체 항목 이름 검색**이 첫 후보다.
+확대/이동/맞춤은 별도 후속 후보이며 구현은 아직 미수용이다. 작성자의 긍정적 첫 인상을 과제 수행 성공으로 기록하지 않는다.
+현재 로컬 기능·서버와 위 다음 사용자 관찰을 유지하며, 이 검토는 Release의 새 선행조건이 아니다.
+
 [MFG-10](docs/BACKLOG.md#mfg-10--context-bound-review-assistant-discovery)은 공개 조사·코드 대조까지 마쳤다.
 [추천안](docs/research/review-assistant.md)은 마지막으로 확인한 결과의 버전·구간을 설명하는 읽기 전용 도우미다.
 2026-09-09 역할 방향을 수용했다. 첫 로컬 preview는 [파일 계약](docs/FILE_REVIEW_CONTRACT.md#guided-result-explanation--first-local-preview), 실행 범위는 MFG-12가 소유한다. 자유 대화·외부 AI의 설계와 권한은 계속 미수용이다.
