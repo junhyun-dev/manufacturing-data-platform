@@ -610,3 +610,80 @@ UNKNOWN이다. 모델별 비용/속도 우월성이나 분담의 순수 시간 �
 아니다(MFG-02 OPEN). MFG-09/12의 독립 사용자 과제도 그대로 미완료다. 합성 200항목에서는 선이 많이 겹치고
 전체 맞춤은 이름을 읽는 화면이 아니다. 검색·목록·선택 위치가 실제 사용자에게 유용한지, 표시 예산을 바꿔야
 하는지는 실제 과제로 확인한다. 현장 topology·설비 건강·사용성 향상·Production 용량·공개 제공을 주장하지 않는다.
+
+
+<a id="opcua-time-order-investigation"></a>
+## OPC UA time order — 2026-09-10 investigation
+
+**LOCAL VERIFIED — diagnostic correction; clock/host repair remains unverified. NOT RELEASED.** Baseline `5d2428243b62707daea33717d9657982b81d9f32`,
+local branch `fix/opcua-time-order`, source `a86195b33f37391d2c04ff43b74642f65bdae5d2`, Worker preservation `87a9548`. This maintenance is separate from the CSV/map preview and MFG-09/12 human observation.
+The accepted boundary is the existing strict `collected_at >= server_timestamp` check; source timestamps, arrival order,
+canonical observation bytes and replay identity are unchanged. The bounded correction improves diagnostics without accepting previously refused observations.
+
+Evidence root: `.cache/time-order-checks/20260910T141713020479Z/`. `baseline.json` and `investigation-summary.json` retain
+source/dependency hashes and the SHA-256 of the earlier `make-test-serial.log`; that earlier log contains no failed clock pair.
+The unchanged dependencies are Python 3.10.12 and asyncua 2.0.1. `probe.py` observes runtime clock calls and delegates to
+the original spool/validator unchanged. It writes only fresh fixture evidence; no system clock, service or database settings change.
+
+| Observation | Evidence and interpretation |
+|---|---|
+| Original two tests, three bounded runs | `probe.log`, `second.log`, `third.log`: **2 passed** each, 42 collected observations per run, 20.97/20.16/19.44 seconds respectively. These passes do not erase the earlier failure. |
+| Execution clocks | `observed.json`, `second/observed.json`, `third/observed.json`: wall time changed by roughly -0.48 to -0.51 s relative to monotonic elapsed intervals. The readings are observations, not an OS/WSL diagnosis. |
+| One longer normal replay | `stress.log`, `stress/{observed,summary}.json`: a **synthetic 600-row repeated-value fixture**, not additional real plant data. The unmodified collector failed at row 32: 94 accepted, two refused. No seal or last-good report was created. |
+| Exact failure boundary | Runtime wall time changed from `14:20:48.087203` to `14:20:42.225999` while monotonic time advanced 17.288569 ms. Refused server/collection pairs were `14:20:48.083669Z` / `14:20:42.225999Z` and `.083830Z` / `.226190Z` on 2026-09-10. |
+
+The reproduced failure is an actual backward execution-clock reading across delivery. It is not a guessed CSV timezone,
+lexicographic comparison or serialization-rounding error. The validator parses aware datetimes; the installed asyncua
+FILETIME conversion uses integer microseconds, and the server can replace ServerTimestamp with its own wall-clock read.
+The four captured timestamps also round-trip exactly through the installed asyncua binary DateTime codec
+(`serialization.json`). The historical two failures have the same error path, but their missing timestamp values prevent
+attribution of each past occurrence. The source of the host clock jumps remains UNKNOWN and is outside this task's environment permissions.
+
+The narrow correction retains exact validated server/collection timestamps and a signed integer microsecond difference
+in the existing error, plus deterministic regression cases. It must keep equality valid and refuse even a 1 μs inversion;
+it must not manufacture UTC from monotonic time, clamp values, widen tolerances or skip a failing case.
+The independent read-only investigation identified the non-monotonic execution clock as a hazard. Main distinguishes this
+from a defective validator: refusal is correct for the accepted raw timestamp contract. A monotonic-derived replacement UTC
+would change observation meaning and is not accepted. The raw clock regression is reproduced; host synchronization behavior
+and a host repair are not investigated here.
+
+Main's `baseline-readback.json` rechecks the retained real 3-row replay's five decisions, 9 trusted events and current →
+manifest → data hashes. Two captured invalid events are refused at the downstream arrival boundary as well; all 37 retained
+files remain byte-identical. This is a read-only integrity check, not a new collection success or a recovery implementation.
+Main reviewed the frozen two-file diff directly and integrated identical bytes (`worker-final.patch`, `integration.json`).
+The source change is only the existing rejection message in `industrial_source/contracts.py`; integer timedelta arithmetic
+adds `delta_microseconds` with the original timestamp strings. The strict comparison, producer, schema, serializer and
+successful observation bytes are unchanged. The prior negative test is replaced by stronger -1 μs and captured-pair cases.
+
+| Integrated verification | Result |
+|---|---|
+| Worker deterministic regressions | Reported RED on original code: 4 failed / 4 passed; GREEN: 8 passed. Its wider non-network selection: 17 passed / 2 deselected. These are Worker-reported execution results; Main reviewed the actual test oracles. |
+| Main affected modules | `integrated-tests.log`: **37 passed in 32.78 s**, including both original real-loopback scenarios, exact diagnostic cases, actual callback refusal and existing spool failure propagation. Fresh fixture root `integrated-tests/`. |
+| Main independent captured-pair and read-back | `integrated-readback.json`: both invalid arrivals remain refused with exact -5,857,670 / -5,857,640 μs diagnostics; all 37 retained files and 9-event trusted chain match `baseline-readback.json`. |
+| Documentation and scope | Reader checks: **43 passed in 0.08 s** (`reader.log`); changed-link targets, source diff and whitespace checked. No web service, UI, dependency, preview process or user database changes. |
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -B -m pytest -q -p no:cacheprovider \
+  --basetemp .cache/time-order-checks/20260910T141713020479Z/integrated-tests \
+  tests/test_industrial_source_contract.py tests/test_event_time_trust.py
+```
+
+The command above records the executed directory; use a fresh `--basetemp` for another run so pytest cannot remove this
+retained evidence. No whole repository, browser, setup/install or extra replay loop was required for an error-message-only
+change. The real clock remains capable of producing valid refusal: a passing bounded replay is not a clock repair or a
+closed historical whole-suite gate. Future failures now expose the operands; deciding why a clock moved still requires
+separate observed clock evidence. No routine monotonic telemetry or new raw-data logging was added to the product.
+
+Collaboration record: Worker read-only investigation reported 14:17:16–14:24:52 UTC, addendum completed 14:28:11, and
+bounded implementation 14:30:12–14:34:59. Clarification and implementation rework were 0. Main independently captured the
+real failure, adjudicated timestamp meaning, reviewed the diff and verified the integration. Three queued task/evidence
+messages were processed sequentially; the useful technical work overlapped, but intermediate returns added handoff waiting.
+Recommendation: send the completed reproducer with one bounded implementation request when available, keeping a separate
+read-only review only when it adds a different counterexample. This is a local recommendation, not a common-method change.
+Main's first retained checkpoint is 14:17:13 UTC; `closeout.json` records the end. UTC moved backwards during this work,
+so their wall-time difference is not a reliable active-work duration. Pytest durations above are command measurements;
+model token/compute usage and monetary cost are UNKNOWN. Existing session/model settings were preserved.
+
+Remaining decision: host clock diagnosis/repair needs a separately authorized environment task. This result does not alter
+MFG-02 source-recollection identity, MFG-07's earlier timeout investigation, or MFG-09/12 independent user observation.
+No Docker/WSL/system settings, other project services, remote Git, public release or deployment were changed.

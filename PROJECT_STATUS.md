@@ -5,16 +5,20 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-13 지도 전용 전체화면 / LOCAL VERIFIED, 2026-09-10. 로컬 미리보기 갱신·read-back 완료. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
-| 수용한 범위 | [지도 전용 전체화면](docs/FILE_REVIEW_CONTRACT.md#dedicated-map-fullscreen): 지도 도구 안 진입/복귀, 실제 화면 점유, 미지원 대체와 상세/근거 복귀. 기존 canvas·카메라·선택·버전·조회·동일 ZIP·모달 경계를 유지하는 표시 개선이며 새 API/DB/graph 의미 없음 |
-| Git 기준 | `feat/map-fullscreen`, source `d33ed90b33b10c5c222f00e8dc20a499f304c440`, 수용 계약 `aa4469e`, Worker 보존 `ee38485`. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
+| 현재 작업 | MFG-02 실행 시계 역행 재현·오류 진단 보강 / LOCAL VERIFIED, 2026-09-10. 관련 검사 37개·기존 발행 근거 read-back PASS. 호스트 교정·과거 두 실패의 소급 원인 확정·MFG-09/12는 미완료 |
+| 수용한 범위 | [MFG-02](docs/BACKLOG.md#mfg-02--recovery-and-replay-identity)의 보존 실패 → 원본 코드/검사 → 격리 loopback 재현. 확인한 결함만 국소 교정하고 시간 의미·validator를 완화하지 않는다. 미리보기·사용자 DB·시스템 설정은 변경하지 않는다 |
+| Git 기준 | `fix/opcua-time-order`, source `a86195b33f37391d2c04ff43b74642f65bdae5d2`, 조사 기준 `5d24282`, Worker 보존 `87a9548`. 기존 지도 source `d33ed90` 유지. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 실제 검토자가 지도 전체화면에서 온도 항목을 찾고 관측·같은 버전 근거로 돌아가는 과제를 관찰한다. 작성자의 화면 검수와 MFG-09/12의 독립 사용 관찰을 구분하며 새 구현은 자동 개시하지 않는다 |
+| 다음 한 행동 | 호스트 시계 조사·교정의 별도 환경 범위를 결정한다. 이번에는 환경 변경 없이 진단 보강까지만 닫았다. 지도 전체화면의 실제 검토자 과제는 MFG-09/12에 별도 미완료로 유지한다 |
 
 ## 실행과 근거
 
+- 시각 실패 조사·진단 보강: [MFG-02 실행 근거와 한계](docs/VERIFICATION.md#opcua-time-order-investigation).
+  실제 UTC가 약 5.86초 역행한 수집 실패를 재현했다. 기존 순서 검증은 유지하고 오류에 두 시각·정수 μs 차이를 추가했다.
+  통합 후 industrial-source/event-time 검사 **37 passed**(32.78초), 기존 발행 파일 37개·9개 event의 hash read-back은 동일하다.
+  전체 저장소/브라우저 재검사를 반복하지 않았으며 과거 두 실패의 정확한 시각·호스트 근본 원인은 미확인이다.
 - 로컬 샘플 미리보기 **http://127.0.0.1:8000**. 새로고침 후 지도 안의 **지도 전체화면**을 누른다.
   2026-09-10 12:43 UTC 실제 health가 `sample`/source `d33ed90`이며 네 UI 파일의 commit bytes·지도 전용 화면,
   출처 복귀·온도 7,144개·평균 55.74811730123181·동일 ZIP을 확인했다. 기존 preview DB를 유지했다.

@@ -173,13 +173,16 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
   source identity, attempt identity, dataset version을 각각 설명할 수 있어야 한다.
 - 이 결과 전에는 원본 재수집의 멱등성, 자동 historical correction, end-to-end exactly-once를 주장하지 않는다.
 
-- 2026-09-10 전체 검사에서 **기존 OPC UA 시각 순서의 간헐 실패**가 드러났다.
-  `collected_at must not precede server_timestamp`로 representative verification와 three-scenario 검사가 실패했고,
-  단독 전체 실행에서도 재현됐다. 대상 하나의 후속 진단 실행은 통과했으나 원인은 미확인이다.
-  [실패/통과 구분과 로그](VERIFICATION.md#review-navigation-verification)를 따른다. 이번에는 laboratory source/tests와 CSV backend를 변경하지 않았다.
-  다음은 실패 event의 server/collection 시각과 직렬화·실행 시계 근거를 보존해 원인을 분리하는 조사다.
-  시간을 임의 보정하거나 validator를 완화하지 않는다. 수정이 필요하면 laboratory 계약 영향과 반례를 닫은 별도 범위로 진행한다.
-  종료 근거는 원인 재현, 필요한 변경의 수용 범위, 관련 검사와 전체 검사 결과다. 재시도 한 번의 PASS로 해결을 선언하지 않는다.
+- 2026-09-10 **시각 실패 재현·진단 보강 LOCAL VERIFIED** (`a86195b`): [과거 두 검사 실패](VERIFICATION.md#review-navigation-verification)는
+  실패한 시각 쌍이 없어 소급 확정할 수 없다. 후속 격리 실험에서 원래 두 검사를 세 차례 실행해 모두 통과했지만,
+  실행 UTC와 monotonic 경과 시간의 차이가 매번 뒤로 이동했다. 별도 합성 600행의 한 연속 수집에서는 실제 UTC가
+  약 5.86초 뒤로 가는 순간 동일 validator 오류를 재현했다(시계·sleep·허용오차 조작 없음).
+  정상 수집 94개 뒤 2개를 거부하고 seal/report를 만들지 않았다. 새 재현의 직접 원인은 실행 시계 역행이며
+  과거 두 실패가 반드시 같은 원인인지는 미확인이다. 정확한 시각·signed delta를 오류에 남기는 국소 보강과
+  결정적 회귀 검사를 반영했다. 관련 두 모듈 **37 passed**(32.78초), 기존 발행 파일 37개·9개 event의 hash read-back 동일을 확인했다. 원본 시각·엄격한 순서·last-good 보호는 유지한다.
+  [조사·검증](VERIFICATION.md#opcua-time-order-investigation)이 근거를 소유한다. 호스트 시계의 근본 원인·교정은
+  이번 제품 범위 밖이며 시스템/WSL 설정을 변경하지 않는다. 시간 보정·validator 완화·skip·통과할 때까지 재시도로 닫지 않는다.
+  제품 시간 의미를 바꿀 필요가 생길 때만 별도 수용을 받는다. MFG-02 전체 복구 계약과 MFG-09/12 사용자 관찰은 계속 OPEN이다.
 
 ## MFG-03 — Public report reproduction without the author's cache
 
