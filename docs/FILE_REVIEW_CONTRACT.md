@@ -448,6 +448,42 @@ source and independent CSV/ZIP identity, previous-result/delivery/recovery, tran
 empty results, deleted/expired/cross-workspace/integrity refusal, hostile long labels, 1440/390/320px, keyboard,
 click-only navigation, pointer cancellation, minimap, real wide/fullscreen entry/exit and existing modal coexistence.
 Reuse unaffected HTTP oracles; update earlier browser expectations only where this accepted presentation changed.
+
+### Dedicated map fullscreen
+
+Accepted on 2026-09-10 after the author asked for the equipment map itself to occupy the screen. This extends
+the display layout only; the preceding camera/data/query/evidence and modal safety rules remain unchanged.
+
+- Place `map-fullscreen-toggle` (지도 전체화면 / 지도 보기 나가기), `map-fullscreen-status`, and
+  `map-review-link` (관측·근거로 돌아가기) in the map's reachable controls. Keep a compact selected item/status
+  and existing source link. The canvas fills remaining viewport width/height after these compact controls;
+  sidebar, chart, table and verbose context do not consume the dedicated map area. Use the existing map DOM,
+  not a clone, so handlers, camera, selected item and pending query remain the same.
+- A `map-fullscreen-layer` inside the application shell may temporarily host the existing map section;
+  restore it to its original location on exit. Make covered background content non-interactive/unfocusable
+  while preserving pre-existing inert values. Existing explanation and native delete dialog retain ownership;
+  neither may be hidden behind the map or closed as a side effect of an application Escape handler.
+- Native fullscreen still targets the document root so existing dialogs remain in its fullscreen subtree.
+  Enter map-focused layout first; when unsupported/denied keep a clearly labelled browser-area fallback.
+  Status follows actual fullscreen state, not a requested boolean. Serialize pending entry/exit, avoid duplicate
+  requests, and retain a visible exit on failure. Entering from an existing review fullscreen must not request
+  another native entry. A map exit restores the prior base/wide layout and narrow map expansion; exit only
+  native fullscreen acquired by this map entry. Browser/system fullscreen exit also leaves the dedicated map.
+- Fallback Escape leaves the map unless a dialog/explanation owns it; Escape used to end an active map drag
+  must not additionally close another layer. Exit and evidence navigation restore visible valid focus and scroll.
+  The existing source link or guided-answer evidence first returns to normal review before focusing its target;
+  `map-review-link` focuses the successful analysis, or query controls when a new selection needs a query.
+- View entry/exit and evidence navigation launch no query and change no file/version/latest-attempt pins,
+  draft or submitted range, successful result, explanation answer, ZIP or map selection. Normal explicit item
+  selection still uses existing invalidation. Context loss/deletion must not strand exit controls in a hidden
+  ancestor; restore the underlying error/empty view safely, with the normal native exit still reachable.
+- Verify actual map bounds, not only a fullscreen attribute: at 1440×900 the map viewport should occupy at
+  least 85% of viewport width and 65% of viewport height; at 390×844 and 320×844 at least 90% width and 50%
+  height. Shorter/zoomed screens may scroll compact controls, while exit remains reachable. Check zoom/pan,
+  fit/minimap and selected position on real sample and a labelled synthetic 200-item fixture; preserve query
+  and matching ZIP across entry/exit and a held response. Test real native entry/exit separately from injected
+  rejection/unsupported/exit-failure cases, and verify keyboard focus plus explanation/delete-dialog coexistence.
+  Reuse unaffected data oracles; this narrow display change does not require a new full repository run.
 The existing OPC UA timestamp failures and missing independent user task observations remain separate open work.
 
 ## Completion and public-release boundary

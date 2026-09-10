@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-13 탐색형 graph canvas 첫 로컬 구현·검증·preview read-back 완료 / LOCAL VERIFIED, 2026-09-10. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
+| 현재 작업 | MFG-13 지도 자체의 전용 전체화면 표시 개선 / WORK, 2026-09-10. 기존 canvas는 LOCAL VERIFIED. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
 | 수용한 범위 | [Graph canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration): 한 파일 버전의 설비 그룹–항목 접기/펼치기, 8개 고정 표시 대체, 줌/이동·맞춤·선택 위치·미니맵. 기존 선택·조회·출처/같은 버전 ZIP·검색/전체 목록 유지. 물리 관계·건강·편집/실행·외부 AI·공개 배포 제외 |
-| Git 기준 | `feat/map-canvas`, 구현·검사 source `b18366bb37a34e0c7fdc03e21cc30ac5bb11f1c3`. 수용 계약 `2214e5b`, 의도 정정 `c6e3b5e`, Worker 보존 `c6cf793`. 이 뒤 closeout은 문서만 변경하며 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
+| Git 기준 | `feat/map-fullscreen`, 직전 closeout `32295ec`, canvas source `b18366b`. 이번 [전용 전체화면 계약](docs/FILE_REVIEW_CONTRACT.md#dedicated-map-fullscreen)에서 구현한다. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 실제 검토자가 공개 샘플의 지도에서 Oil_temperature를 찾아 관측값과 같은 버전 ZIP으로 이어가는 과제 한 건을 관찰한다. 복잡한 합성 지도의 효용·MFG-02 시각 실패·MFG-09/12 기존 사용자 과제는 별도 미완료로 보존 |
+| 다음 한 행동 | 전용 지도 fullscreen을 구현하고 실제 viewport 점유·조작·결과/근거 유지·안전한 복귀를 직접 검증한다. 기존 사용자 과제·MFG-02 간헐 실패는 별도 미완료로 보존 |
 
 ## 실행과 근거
 
