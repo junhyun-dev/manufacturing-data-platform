@@ -31,6 +31,14 @@ replay and deliberate faults exercise the collection boundary. This is not live 
 An event exactly on that boundary is accepted; one before it is too late. This is a fixture policy,
 not a measured source SLA. Arrival sequence orders evaluation; received-at time does not prove completeness.
 
+The existing observation validator requires `collected_at >= server_timestamp` (equality is valid).
+Both values remain observed UTC wall-clock readings; replay transport does not make that clock monotonic.
+If the execution clock moves backward across a notification, the collector refuses the observation and
+surfaces the callback error. It does not clamp timestamps, add tolerance or retry until the clock catches up.
+A successful local replay therefore requires clock readings that satisfy this order. The
+[clock-regression investigation](VERIFICATION.md#opcua-time-order-investigation) records the observed failure
+and its limits; it does not establish a host-clock repair or change the source-time lateness policy.
+
 Expected-set coverage describes delivery of the selected file observations. It does not establish
 continuous acquisition from the physical equipment or explain gaps already present in the source CSV.
 The [source audit](BACKLOG.md#mfg-08--product-value-and-source-reality) records this distinction;

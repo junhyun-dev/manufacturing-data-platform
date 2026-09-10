@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import json
-from datetime import timezone
+from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -12,6 +14,7 @@ import pytest
 # collection when the local replay dependency is absent.
 pytest.importorskip("asyncua")
 
+from manufacturing_data_platform.industrial_source import opcua_runtime
 from manufacturing_data_platform.industrial_source.contracts import (
     REPLAY_MODE,
     SCHEMA_VERSION,
@@ -193,15 +196,6 @@ def test_telemetry_contract_keeps_time_identity_unit_and_quality_strict(selectio
         validate_telemetry(
             _event(selection, source_timestamp="2020-02-01T00:00:01Z")
         )
-    with pytest.raises(TelemetryContractError, match="must not precede"):
-        validate_telemetry(
-            _event(
-                selection,
-                server_timestamp="2026-07-29T00:00:02Z",
-                collected_at="2026-07-29T00:00:01Z",
-            )
-        )
-
     bad = _event(
         selection,
         status_code=2_157_641_728,
@@ -213,6 +207,157 @@ def test_telemetry_contract_keeps_time_identity_unit_and_quality_strict(selectio
     assert validate_telemetry(bad)["value"] is None
     with pytest.raises(TelemetryContractError, match="Bad status requires"):
         validate_telemetry({**bad, "value": 1.0})
+
+
+@pytest.mark.parametrize(
+    ("server_timestamp", "collected_at"),
+    [
+        ("2026-07-29T00:00:00Z", "2026-07-29T00:00:00Z"),
+        ("2026-07-29T00:00:00Z", "2026-07-29T00:00:01Z"),
+        ("2026-07-29T00:00:00.123456Z", "2026-07-29T00:00:00.123457Z"),
+        (
+            "2026-07-29T09:00:00.123456+09:00",
+            "2026-07-29T00:00:00.123457Z",
+        ),
+    ],
+    ids=("equal", "positive", "fractional", "offset"),
+)
+def test_telemetry_time_order_accepts_equal_and_later_collection(
+    selection, server_timestamp, collected_at
+):
+    validated = validate_telemetry(
+        _event(
+            selection,
+            server_timestamp=server_timestamp,
+            collected_at=collected_at,
+        )
+    )
+
+    assert validated["server_timestamp"] == server_timestamp
+    assert validated["collected_at"] == collected_at
+
+
+@pytest.mark.parametrize(
+    ("server_timestamp", "collected_at", "delta_microseconds"),
+    [
+        (
+            "2026-07-29T00:00:00.000001Z",
+            "2026-07-29T00:00:00.000000Z",
+            -1,
+        ),
+        (
+            "2026-09-10T14:20:48.083669Z",
+            "2026-09-10T14:20:42.225999Z",
+            -5_857_670,
+        ),
+        (
+            "2026-09-10T14:20:48.083830Z",
+            "2026-09-10T14:20:42.226190Z",
+            -5_857_640,
+        ),
+    ],
+    ids=("negative-one-microsecond", "observed-oil", "observed-motor"),
+)
+def test_telemetry_time_order_rejection_identifies_exact_pair_and_delta(
+    selection, server_timestamp, collected_at, delta_microseconds
+):
+    with pytest.raises(TelemetryContractError) as caught:
+        validate_telemetry(
+            _event(
+                selection,
+                server_timestamp=server_timestamp,
+                collected_at=collected_at,
+            )
+        )
+
+    assert str(caught.value) == (
+        "collected_at must not precede server_timestamp: "
+        f"server_timestamp={server_timestamp} "
+        f"collected_at={collected_at} "
+        f"delta_microseconds={delta_microseconds}"
+    )
+
+
+def test_collector_rejects_observed_clock_regression_without_changing_spool(
+    selection, tmp_path, monkeypatch
+):
+    from asyncua import ua
+
+    spool = TelemetrySpool(tmp_path / "spool", "clock-regression")
+    valid_event = _event(
+        selection,
+        row_index=0,
+        tag_index=0,
+        replay_session_id="clock-regression",
+    )
+    valid_result = spool.append(valid_event)
+    valid_bytes = valid_result.path.read_bytes()
+    existing_paths = tuple(sorted(spool.events_dir.glob("*.json")))
+
+    row = selection.rows[1]
+    tag = selection.tags[1]
+    runtime_node_id = f"ns=2;s={tag.opcua_identifier}"
+    handler = opcua_runtime._CollectorHandler(
+        selection=selection,
+        replay_session_id="clock-regression",
+        spool=spool,
+        runtime_nodes={
+            runtime_node_id: (
+                tag,
+                OPCUA_NAMESPACE_URI,
+                tag.engineering_unit.as_dict(),
+            )
+        },
+        fault_event_ids=set(),
+    )
+    observed_collected = datetime.fromisoformat("2026-09-10T14:20:42.225999+00:00")
+
+    class FixedCollectorDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return observed_collected.replace(tzinfo=None)
+            return observed_collected.astimezone(tz)
+
+    monkeypatch.setattr(opcua_runtime, "datetime", FixedCollectorDateTime)
+    data_value = ua.DataValue(
+        ua.Variant(row.values[tag.tag_id], ua.VariantType.Double),
+        StatusCode=ua.StatusCode(ua.StatusCodes.Good),
+        SourceTimestamp=row.replay_timestamp,
+        ServerTimestamp=datetime.fromisoformat("2026-09-10T14:20:48.083669+00:00"),
+    )
+    node = SimpleNamespace(nodeid=ua.NodeId(tag.opcua_identifier, 2))
+    data = SimpleNamespace(monitored_item=SimpleNamespace(Value=data_value))
+
+    handler.datachange_notification(node, row.values[tag.tag_id], data)
+
+    expected_cause = (
+        "TelemetryContractError: collected_at must not precede server_timestamp: "
+        "server_timestamp=2026-09-10T14:20:48.083669Z "
+        "collected_at=2026-09-10T14:20:42.225999Z "
+        "delta_microseconds=-5857670"
+    )
+    assert handler.accepted_count == 0
+    assert handler.errors == [expected_cause]
+    assert tuple(sorted(spool.events_dir.glob("*.json"))) == existing_paths
+    assert valid_result.path.read_bytes() == valid_bytes
+    assert spool.load_events() == (validate_telemetry(valid_event),)
+
+    collector = opcua_runtime.SubscriptionCollector(
+        endpoint="opc.tcp://unused.invalid/",
+        selection=selection,
+        replay_session_id="clock-regression",
+        spool=spool,
+        fault_event_ids=set(),
+    )
+    collector.handler = handler
+    with pytest.raises(IndustrialSourceRuntimeError) as caught:
+        asyncio.run(collector.wait_for_accepted(1))
+
+    assert str(caught.value) == (
+        f"collector callback failed: {expected_cause}; "
+        "session=clock-regression accepted=0 waiting=0 unknown_mapping=0"
+    )
 
 
 def test_engineering_unit_mismatch_is_rejected_before_subscription_acceptance():

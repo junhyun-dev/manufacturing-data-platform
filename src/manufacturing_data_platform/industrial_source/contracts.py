@@ -175,7 +175,18 @@ def validate_telemetry(event: Mapping[str, Any]) -> dict[str, Any]:
             "source_timestamp must match the declared replay-only wall-clock encoding"
         )
     if parsed_collected < parsed_server:
-        raise TelemetryContractError("collected_at must not precede server_timestamp")
+        delta = parsed_collected - parsed_server
+        delta_microseconds = (
+            delta.days * 86_400_000_000
+            + delta.seconds * 1_000_000
+            + delta.microseconds
+        )
+        raise TelemetryContractError(
+            "collected_at must not precede server_timestamp: "
+            f"server_timestamp={result['server_timestamp']} "
+            f"collected_at={result['collected_at']} "
+            f"delta_microseconds={delta_microseconds}"
+        )
 
     source_sha = result["source_file_sha256"]
     if len(source_sha) != 64 or any(char not in "0123456789abcdef" for char in source_sha):
