@@ -5,20 +5,25 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-13 지도 자체의 전용 전체화면 표시 개선 / WORK, 2026-09-10. 기존 canvas는 LOCAL VERIFIED. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
-| 수용한 범위 | [Graph canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration): 한 파일 버전의 설비 그룹–항목 접기/펼치기, 8개 고정 표시 대체, 줌/이동·맞춤·선택 위치·미니맵. 기존 선택·조회·출처/같은 버전 ZIP·검색/전체 목록 유지. 물리 관계·건강·편집/실행·외부 AI·공개 배포 제외 |
-| Git 기준 | `feat/map-fullscreen`, 직전 closeout `32295ec`, canvas source `b18366b`. 이번 [전용 전체화면 계약](docs/FILE_REVIEW_CONTRACT.md#dedicated-map-fullscreen)에서 구현한다. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
+| 현재 작업 | MFG-13 지도 전용 전체화면 / LOCAL VERIFIED, 2026-09-10. 로컬 미리보기 갱신·read-back 완료. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
+| 수용한 범위 | [지도 전용 전체화면](docs/FILE_REVIEW_CONTRACT.md#dedicated-map-fullscreen): 지도 도구 안 진입/복귀, 실제 화면 점유, 미지원 대체와 상세/근거 복귀. 기존 canvas·카메라·선택·버전·조회·동일 ZIP·모달 경계를 유지하는 표시 개선이며 새 API/DB/graph 의미 없음 |
+| Git 기준 | `feat/map-fullscreen`, source `d33ed90b33b10c5c222f00e8dc20a499f304c440`, 수용 계약 `aa4469e`, Worker 보존 `ee38485`. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 전용 지도 fullscreen을 구현하고 실제 viewport 점유·조작·결과/근거 유지·안전한 복귀를 직접 검증한다. 기존 사용자 과제·MFG-02 간헐 실패는 별도 미완료로 보존 |
+| 다음 한 행동 | 실제 검토자가 지도 전체화면에서 온도 항목을 찾고 관측·같은 버전 근거로 돌아가는 과제를 관찰한다. 작성자의 화면 검수와 MFG-09/12의 독립 사용 관찰을 구분하며 새 구현은 자동 개시하지 않는다 |
 
 ## 실행과 근거
 
-- 로컬 샘플 미리보기 **http://127.0.0.1:8000**. 기존 탭은 새로고침한다. 2026-09-10 08:00 UTC 실제 health가
-  `sample`/source `b18366b`이며 네 UI 파일의 SHA-256·지도 조작·온도 7,144개·평균 55.74811730123181·동일 ZIP을 확인했다.
-  기존 preview DB를 유지했다. 실행/검수 기록은 `.cache/graph-canvas-preview/20260910T075938407126Z/server.json`과
+- 로컬 샘플 미리보기 **http://127.0.0.1:8000**. 새로고침 후 지도 안의 **지도 전체화면**을 누른다.
+  2026-09-10 12:43 UTC 실제 health가 `sample`/source `d33ed90`이며 네 UI 파일의 commit bytes·지도 전용 화면,
+  출처 복귀·온도 7,144개·평균 55.74811730123181·동일 ZIP을 확인했다. 기존 preview DB를 유지했다.
+  실행/검수 기록은 `.cache/map-fullscreen-preview/20260910T124229287203Z/server.json`과
   `readback.json`. 이 주소는 로컬 프로세스이며 PC/환경 재시작 뒤 자동 복구를 보장하지 않는다.
+- 지도 전용 전체화면: [검증·직접 보완·분담 관찰](docs/VERIFICATION.md#map-fullscreen-verification).
+  full/sample **9/7개 묶음 PASS**. 실제 지도 폭은 1440px에서 97.4%, 스크롤바가 있는 320px에서도 90.9%다.
+  실제 native Esc·200% 확대와 종료 클릭, 설명/삭제 dialog, 지연 응답·진입 실패·동일 버전 ZIP을 확인했다.
+  [공개 샘플 전체화면](docs/assets/file-review-map-fullscreen-desktop.png) · [390px](docs/assets/file-review-map-fullscreen-mobile.png).
 - 새 graph canvas: [검증·분담 관찰·한계](docs/VERIFICATION.md#graph-canvas-verification).
   canvas full/sample 9/6, navigation 13/10, map 14/11, explanation 18/12, file browser 11/7개 묶음 PASS.
   실제 3항목 샘플과 합성 50/200/205항목·25묶음을 구분했다. 모바일/키보드·native Esc·200% browser zoom,
@@ -28,9 +33,10 @@
 - 새 탐색: [수용 범위·검증과 한계](docs/VERIFICATION.md#review-navigation-verification). full/sample 13/10개 묶음,
   기존 지도 14/11·설명 18/12·파일 화면 11/7 PASS. 실제 browser Esc·200% 확대·모바일/키보드·동일 ZIP 확인.
   [넓게 보는 화면](docs/assets/file-review-navigation-desktop.png) · [390px 검색/목록](docs/assets/file-review-navigation-mobile.png).
-- 전체 검사: 이번 단독 `make test`는 **255 passed / 17 skipped**. 실제 HTTP·재시작 및 OPC UA 한 replay도 PASS.
+- 전체 검사: 직전 canvas의 단독 `make test`는 **255 passed / 17 skipped**. 당시 실제 HTTP·재시작 및 OPC UA 한 replay도 PASS.
   이전 navigation의 2 failed / 253 passed / 17 skipped는 간헐 시각 문제의 원인이 밝혀지지 않아 MFG-02 OPEN으로 유지한다.
-  이번 한 실행의 성공을 과거 실패 해결이나 전체 Release gate 종료로 바꾸지 않는다.
+  그 한 실행의 성공을 과거 실패 해결이나 전체 Release gate 종료로 바꾸지 않는다. 이번 표시 개선에서는 영향 범위의
+  브라우저·정적·문서 검사를 수행했으며 전체 저장소 검사를 반복하지 않았다.
 - 이전 지도 구현(`45512b6`) 기록: [MFG-13](docs/BACKLOG.md#mfg-13--equipment-data-map-discovery), [당시 지도 검증](docs/VERIFICATION.md#equipment-map-verification).
   당시 필수 검사 PASS, 255 passed / 17 skipped, 지도 full/sample 14/11개 묶음·기존 설명 18/12·기존 화면 11/7 PASS.
   실제 [데스크톱](docs/assets/file-review-equipment-map-desktop.png) · [모바일](docs/assets/file-review-equipment-map-mobile.png).

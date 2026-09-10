@@ -41,6 +41,9 @@ docker compose --env-file .env.example up --build
 선은 물리 연결이나 설비 건강을 뜻하지 않습니다. [지도 탐색 사용법](docs/FILE_REVIEW_GUIDE.md#복잡한-지도-확대이동하기) ·
 [로컬 검증과 한계](docs/VERIFICATION.md#graph-canvas-verification)
 
+지도 안의 **지도 전체화면**은 지도 자체를 화면 대부분으로 펼칩니다. 상단에서 나가거나 기존 관측·근거로 돌아갈 수 있습니다.
+[실제 공개 샘플 전체화면](docs/assets/file-review-map-fullscreen-desktop.png) · [전환·모바일·근거 유지 검증](docs/VERIFICATION.md#map-fullscreen-verification)
+
 **넓게 보기·전체화면·항목 이름 찾기**로 같은 결과를 더 넓게 읽고 현재 설비의 전체 항목에서 검색할 수 있습니다.
 화면 전환과 검색만으로 조회·버전·ZIP은 바뀌지 않습니다. [탐색 사용법](docs/FILE_REVIEW_GUIDE.md#넓게-보기전체화면항목-이름-찾기) ·
 [검증과 남은 전체 검사 문제](docs/VERIFICATION.md#review-navigation-verification)

@@ -47,9 +47,10 @@
   다음 근거는 사용자가 복잡한 지도에서 목표 항목과 같은 버전 근거를 찾는 실제 과제다. 200항목의 선 겹침,
   축소 개요에서 이름을 읽기 어려운 점, 검색/선택 위치와 목록 중 어느 경로가 빠른지는 관찰 과제로 남긴다.
   현 표시 예산을 production 처리량으로 주장하지 않으며 MFG-02의 과거 간헐 실패·MFG-09/12 사용자 관찰은 닫지 않는다.
-- 지도 전용 전체화면 — **로컬 표시 개선 수용 / WORK, 2026-09-10**: 지도 자체가 가용 화면 대부분을 차지하도록 한다.
+- 지도 전용 전체화면 — **로컬 구현·직접 검증 완료, 2026-09-10**, source `d33ed90`: 지도 자체가 가용 화면 대부분을 차지한다.
   [수용 계약](FILE_REVIEW_CONTRACT.md#dedicated-map-fullscreen)이 전용 진입/복귀·화면 점유·선택/결과 유지·모달/실패 경계를 소유한다.
-  기존 화면 전체 fullscreen과 구분하며 실제 지도 bounds와 조작, 브라우저 미지원 대체, 근거로 돌아가기만 집중 검증한다.
+  기존 화면 전체 fullscreen과 구분하며 실제 지도 bounds와 조작, 브라우저 미지원 대체, 근거로 돌아가기를 집중 검증했다.
+  [full/sample 9/7개 검사와 화면 보완](VERIFICATION.md#map-fullscreen-verification), 실제 샘플 preview read-back을 남겼다.
   새 데이터/API/graph 의미는 없고 MFG-02·MFG-09/12 미완료도 유지한다.
 
 ## MFG-12 — Guided result explanation preview

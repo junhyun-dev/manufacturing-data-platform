@@ -483,6 +483,64 @@ sample 실행에서 복사한 동일 bytes의 공개 샘플 화면이다. 독립
 브라우저는 loopback의 새 DB와 자기 workspace를 사용했고 생성한 파일을 지운 뒤 해당 서버를 종료했다.
 실제 AI 호출·자유 대화·공급자 보관/원가·AI 답변 품질은 이번 검사 범위 밖이다.
 
+<a id="map-fullscreen-verification"></a>
+## Dedicated map fullscreen — 2026-09-10
+
+**LOCAL VERIFIED / NOT RELEASED.** Source `d33ed90b33b10c5c222f00e8dc20a499f304c440`, accepted scope
+`aa4469e`, Worker preservation `ee38485`. [Contract](FILE_REVIEW_CONTRACT.md#dedicated-map-fullscreen) owns
+the display rules. Main reviewed the actual diff and corrected browser findings before the final runs.
+No API/schema/dependency or graph meaning changed; no push, Release or deployment was performed.
+
+Evidence root: `.cache/map-fullscreen-checks/20260910T085310661532Z/`. The final
+`full-native-final4/receipt.json` and `sample-final2/receipt.json` verify the four served static files against
+the integrated source bytes. `final-checks.json` links these results; earlier failed runs remain visible.
+
+| Actual check | Result |
+|---|---|
+| Dedicated map browser, full / sample | **9 / 7 groups PASS**, Chromium 140.0.7339.16; independent public CSV count/mean and same-version ZIP/digests |
+| Real map viewport, 1440×900 | **1402×627px**, 97.4% width / 69.7% height; previous document fullscreen was only 38.7% width |
+| Real map viewport with desktop scrollbars, 390×844 / 320×844 | **361×464 / 291×464px**, 92.6% / 90.9% width, both 55.0% height; ordinary headless view has more usable width |
+| Native window | Actual entry/button exit/system Esc, prior wide/native state, open explanation answer/focus, 200% browser zoom and actual exit click PASS |
+| Static boundary | Both JS syntax checks, whitespace, 127 unique DOM IDs / 94 literal app references and safe text rendering PASS |
+| Documentation | Reader tests **43 passed / 0.07s**; relative file targets and added private-path/secret-pattern checks PASS |
+
+The browser oracle is [verify_map_fullscreen_browser.py](../scripts/verify_map_fullscreen_browser.py).
+Run it against an owned full or sample loopback server with `python3 -B scripts/verify_map_fullscreen_browser.py
+--url http://127.0.0.1:8000 --output .cache/map-fullscreen-check-<fresh-name>`. The optional native run uses
+`MFG_NAV_X11_TEST=1 xvfb-run -a -s '-screen 0 1920x1080x24'` before that command and adds `--native-desktop`.
+It needs the existing Playwright/Chromium, Xvfb/XTest and Pillow test environment, not an application dependency.
+Native window bounds were set explicitly; Xvfb has no window manager, so automatic OS sizing and all real devices
+remain unverified. At 200%, the final oracle captures the settled owned display before browser surface capture,
+which could crop/repaint the frame. `native-map-200-percent-display.png` shows the reachable exit and evidence actions.
+
+The same map and question-launcher DOM return to their original parents. Camera/mode actions preserve draft and
+submitted ranges, result/version and ZIP without an API request. Tests hold a genuine query while entering/exiting;
+inject unsupported/denied/exit-failure and delayed entry; check modal Escape, guided/source focus, and delete only
+their own fixture through the actual confirmation handler while an entry is pending. A late Promise cannot leave
+the map or transition lock behind. Actual 3-item MetroPT data and synthetic 200-item/128-character labels are distinct.
+
+Main's browser findings were a covered skip link, a scrolled-away exit, clipped 320px canvas, and a floating question
+button blocking the review return. The fixes hide the covered shortcut, keep the header sticky, account for scrollbars,
+and place the same question launcher in the map header. Oracle corrections addressed function injection, the existing
+delete-button ID and CSP-safe wait predicates; none relaxed data identity or the viewport thresholds.
+The earlier full repository/OPC UA checks were not repeated for this display-only change. MFG-02's historical
+intermittent failures and MFG-09/12's independent human task observations remain OPEN.
+
+Collaboration evidence: Worker ran 08:53:07–09:27:55 UTC (34m48s), then returned the bounded pre-review fixes by
+09:33:04. Main owned the contract, independent browser checks and integration. Static CSS arithmetic did not expose
+scrollbar/focus/overlay defects; direct browser review added different evidence. Main verification spans the morning
+and a 12:30 UTC resumption; the former fixture processes were no longer running and were replaced with owned local
+servers. The cause and pure working time are unmeasured; elapsed wall time includes waiting and cannot be treated as
+execution time or a speed comparison. Token/cost usage is UNKNOWN. A useful next trial is an earlier frozen UI return
+followed by one batched browser review, to reduce waiting and handoff retries; the common method is unchanged.
+
+Final preview read-back at **12:43:33 UTC** uses the preserved sample database and source `d33ed90` at
+`http://127.0.0.1:8000`. `.cache/map-fullscreen-preview/20260910T124229287203Z/readback.json` verifies health,
+commit/served bytes, map bounds, source focus and the independent 7,144-value Oil_temperature ZIP. Only the check's
+own workspace fixture was deleted. [Desktop](assets/file-review-map-fullscreen-desktop.png) and
+[390px](assets/file-review-map-fullscreen-mobile.png) are actual public-sample captures; [Project Status](../PROJECT_STATUS.md)
+owns the current pointer. Local process survival after a PC/environment restart is not guaranteed.
+
 <a id="graph-canvas-verification"></a>
 ## Graph canvas local verification — 2026-09-10
 
