@@ -482,3 +482,65 @@ sample 실행에서 복사한 동일 bytes의 공개 샘플 화면이다. 독립
 새 container·remote CI·tag·Release·배포는 이 검증에서 실행하지 않았다.
 브라우저는 loopback의 새 DB와 자기 workspace를 사용했고 생성한 파일을 지운 뒤 해당 서버를 종료했다.
 실제 AI 호출·자유 대화·공급자 보관/원가·AI 답변 품질은 이번 검사 범위 밖이다.
+
+<a id="graph-canvas-verification"></a>
+## Graph canvas local verification — 2026-09-10
+
+**LOCAL VERIFIED / NOT RELEASED.** 수용 계약 `2214e5b`, 의도 정정 보존 `c6e3b5e`, 이전 UI
+`743bebd`/closeout `984d875`에서 이어졌다. Worker의 네 정적 파일을 `c6cf793`에 보존한 뒤 Main이
+직접 diff·화면·반례를 검토하고 통합했다. 최종 source revision과 preview read-back은
+[현재 작업](../PROJECT_STATUS.md)이 연결한다. 원격 push/merge/Release/배포는 하지 않았다.
+
+검증 루트는 `.cache/graph-canvas-checks/20260910T070532326883Z/`다. 아래 이름은 그 하위 경로이며
+브라우저별 `receipt.json`과 스크린샷을 보존한다. `browser-matrix.json`은 실제 PASS 영수증을 읽고
+제공된 정적 파일의 SHA-256을 최종 checkout bytes와 대조한 결과다. 당시 HEAD는 `2214e5b` + dirty였다.
+
+| 실제 실행 | 결과·근거 |
+|---|---|
+| `make setup` | PASS, 기존 lock 기준 39 packages 확인; 새 그래프 dependency 없음 |
+| `make test` | **255 passed / 17 skipped**, 45.21s. optional runtime 건너뜀과 기존 deprecation warning 2개 유지 |
+| `make verify-service` | PASS, 실제 HTTP·독립 CSV/ZIP·전달 누락/복구·재시작; `.cache/file-review-verification/20260910T075214618604Z/receipt.json` |
+| `make verify` | PASS, `.cache/telemetry-runs/run-S99AS9qQ/`; 5개 판정과 current → manifest → 9개 event의 세 파일 digest를 직접 재계산 |
+| 새 canvas full/sample | **9/6개 묶음 PASS**, `canvas-full-final3/`, `canvas-sample-final2/` |
+| 기존 navigation full/sample | **13/10개 묶음 PASS**, `navigation-full-final/`, `navigation-sample/` |
+| 기존 map full/sample | **14/11개 묶음 PASS**, `map-full-final3/`, `map-sample/` |
+| 기존 explanation full/sample | **18/12개 묶음 PASS**, `explanation-full/`, `explanation-sample/` |
+| 기존 file browser full/sample | **11/7개 묶음 PASS**, `file-full/`, `file-sample/` |
+| 정적·문서 경계 | 두 JS의 `node --check`, diff 공백 검사, 최종 링크/공개 경계 점검. 문서만 바꾼 뒤 필요한 reader checks 별도 실행 |
+
+[Canvas oracle](../scripts/verify_graph_canvas_browser.py)은 1440/390/320px·가로 화면, 실제 키보드 선택,
+배경 drag/Escape/pointercancel, 미니맵 실제 click 좌표, 최대 확대 후 선택 위치, 전체 맞춤, 접고 펼치기와
+그룹/항목 페이지를 확인한다. 늦게 도착한 실제 query를 보류했다가 반환해도 카메라·그룹·검색 조작은 그 결과를
+취소하거나 다른 요청을 만들지 않는다. 같은 이름의 다른 설비 선택과 내부 group key 충돌 문자열도 대조했다.
+
+실제 MetroPT 샘플은 1묶음/3항목·21,432행이며 Oil_temperature 7,144개의 평균·극값·source hash와 ZIP을
+독립 CSV에서 재계산했다. 합성 8/11/50/200/205항목, 25묶음, 128자/markup 이름은 별도 업로드다.
+최대 200개 노드 표시와 페이지 전체 접근을 확인했으며, 이는 production 처리량·실제 공장 규모가 아니다.
+실제 공개 샘플의 전달 누락/복구·기존 버전 보호와 실제 workspace 권한 거부를 확인했다. 주입한 503/무결성
+응답은 영수증에서 주입 사례로 표시하며 실제 서버 장애가 발생한 것으로 기록하지 않는다.
+
+navigation의 별도 Xvfb 창에서는 Chromium 140의 native fullscreen/Escape, 설명·삭제 dialog 포커스와 inert,
+실제 browser zoom 200%를 확인했다. 창 크기는 CDP로 명시 조정했다. 창 관리자가 없는 Xvfb이므로 OS의 자동
+전체화면 크기 조정이나 모든 브라우저·모바일 기기의 동작까지 검증했다고 주장하지 않는다.
+
+직접 화면 검토 후 선택 복귀는 기본 100%로 읽게 했고, 320px에서 이전 200% 배율 때문에 노드가 잘리면
+그 노드가 들어오는 배율로 낮춘다. 미니맵의 SVG 영역과 버튼 border를 분리해 좌표를 맞췄으며 작은 3항목은
+세로로 배치했다. [공개 샘플](assets/file-review-canvas-desktop.png) · [390px](assets/file-review-canvas-mobile.png) ·
+[합성 200항목 확대](assets/file-review-canvas-synthetic-200.png)는 실제 로컬 캡처다. 마지막 그림은 별도 합성
+400행/200항목 파일이며 `temperature-042`의 두 값 24.2/26.2, 평균 25.2를 보여준다. `screens/receipt.json`에 경계를 남겼다.
+
+검증 도중 oracle 자체의 프레임 간 좌표 혼합, float의 완전 일치 비교, route callback 인자, 반응형 접힘 대기와
+MouseEvent 좌표 반올림을 수정했다. 실제 DOM의 같은 프레임/전달된 click을 기준으로 판정하고 독립 CSV 값,
+오차 허용과 거부 조건은 유지했다. 실패 영수증은 같은 루트에 보존하며 마지막 PASS로 과거 실패를 지우지 않는다.
+
+분담 관찰: Worker는 별도 checkout의 네 파일만 작성했고 Main은 계약·독립 oracle·직접 통합을 맡았다.
+Worker 실행은 UTC 06:55:57–07:27:48이며 쓰기 동결 후 통합했다. Main의 pre-review는 key 충돌, drag 취소,
+페이지 끝 포커스와 같은 설비의 검색 유지 보완으로 이어졌다. Main 브라우저 검토는 좁은 화면의 선택 크기와
+미니맵 좌표를 추가로 보완했다. 이 방식은 소유 경계를 분명히 했지만 oracle 조정·화면 재검토 시간이 들었다.
+총 작업 시간의 시작 계측·정확한 token/금액 사용량은 UNKNOWN이며, 모델별 비용/속도 우월성이나 분담의 순수
+시간 절감을 입증하는 비교 실험은 아니다. 공통 방법을 변경하지 않고 이번 구체적 검토 근거만 보존한다.
+
+**남은 한계:** 이번 전체 검사 성공은 과거 OPC UA timestamp-order 검사 2건의 간헐 실패 원인을 해결한 것이
+아니다(MFG-02 OPEN). MFG-09/12의 독립 사용자 과제도 그대로 미완료다. 합성 200항목에서는 선이 많이 겹치고
+전체 맞춤은 이름을 읽는 화면이 아니다. 검색·목록·선택 위치가 실제 사용자에게 유용한지, 표시 예산을 바꿔야
+하는지는 실제 과제로 확인한다. 현장 topology·설비 건강·사용성 향상·Production 용량·공개 제공을 주장하지 않는다.

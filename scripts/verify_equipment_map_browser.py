@@ -102,6 +102,7 @@ def main():
             return nodes.evaluate_all("els => els.map(el => el.dataset.mapTag)")
 
         def graph_visible():
+            page.wait_for_function("document.getElementById('map-view-toggle').hidden === (innerWidth > 850)")
             if not page.locator("#equipment-map").is_visible():
                 page.locator("#map-view-toggle").click()
             expect(page.locator("#equipment-map")).to_be_visible()
@@ -181,22 +182,26 @@ def main():
             page.screenshot(path=str(output / name))
 
         def usable_buttons():
+            graph_visible()
+            # Canvas clipping is intentional. The selected node must be readable
+            # and in view; other displayed nodes remain reachable by camera/list.
+            page.locator("#map-focus-selection").click()
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
-            # Include the selected outline so a geometrically clickable node is also visually legible.
-            boxes = nodes.evaluate_all("els => els.map(el => {const r=el.getBoundingClientRect();const p=el.getAttribute('aria-pressed')==='true'?5:0;return {x:r.x-p,y:r.y-p,w:r.width+2*p,h:r.height+2*p}})")
-            root_box = page.locator("#equipment-map").bounding_box()
-            assert root_box is not None
-            assert all(box["w"] >= 24 and box["h"] >= 24 for box in boxes)
-            for box in boxes:
-                assert (box["x"] >= root_box["x"] - 1 and box["y"] >= root_box["y"] - 1 and
-                        box["x"] + box["w"] <= root_box["x"] + root_box["width"] + 1 and
-                        box["y"] + box["h"] <= root_box["y"] + root_box["height"] + 1), "Measurement button clipped by map boundary"
+            selected = page.locator('#equipment-map [data-map-tag][aria-pressed="true"]')
+            expect(selected).to_have_count(1)
+            page.wait_for_function("""() => {
+              const node = document.querySelector('#equipment-map [data-map-tag][aria-pressed="true"]');
+              if (!node) return false;
+              const box = node.getBoundingClientRect();
+              const root = document.getElementById('equipment-map').getBoundingClientRect();
+              return box.width >= 24 && box.height >= 24 && box.x >= root.x - 1 && box.y >= root.y - 1
+                && box.right <= root.right + 1 && box.bottom <= root.bottom + 1;
+            }""", timeout=2000)
+            boxes = page.locator('#map-world [data-map-tag], #map-world [data-map-toggle]').evaluate_all(
+                "els=>els.map(el=>{const r=el.getBoundingClientRect();return [r.x,r.y,r.right,r.bottom]})")
             for i, a in enumerate(boxes):
-                center = page.locator(".map-center").bounding_box()
-                center_box = {"x": center["x"], "y": center["y"], "w": center["width"], "h": center["height"]}
-                for b in boxes[i + 1:] + [center_box]:
-                    assert not (a["x"] < b["x"] + b["w"] and b["x"] < a["x"] + a["w"] and
-                                a["y"] < b["y"] + b["h"] and b["y"] < a["y"] + a["h"]), "Overlapping map nodes"
+                for b in boxes[i + 1:]:
+                    assert not (a[0]<b[2]-.5 and b[0]<a[2]-.5 and a[1]<b[3]-.5 and b[1]<a[3]-.5), "Overlapping graph nodes"
 
         try:
             page.goto(base)
@@ -205,7 +210,7 @@ def main():
             assert health["mode"] == args.mode
             receipt.update(browser=browser.version, health=health)
             assets = {}
-            for endpoint, filename in [("/", "index.html"), ("/app.js", "app.js"), ("/styles.css", "styles.css")]:
+            for endpoint, filename in [("/", "index.html"), ("/app.js", "app.js"), ("/styles.css", "styles.css"), ("/map-canvas.js", "map-canvas.js")]:
                 served = context.request.get(base + endpoint)
                 assert served.ok
                 content = (ROOT / "src/manufacturing_data_platform/file_review/static" / filename).read_bytes()
@@ -314,15 +319,15 @@ def main():
                 assert set(page.locator("#equipment-filter option").evaluate_all("els => els.map(el => el.value)")) == {"Fixture-Motor", "Fixture-Pump"}
                 page.locator("#equipment-filter").select_option("Fixture-Pump")
                 expect(results).to_be_hidden()
-                assert nodes.count() == 8
+                assert nodes.evaluate_all("els=>els.filter(el=>el.dataset.mapEquipment==='Fixture-Pump').length") == 11
                 assert page.locator("#tag-filter option").count() == 11
                 expect(page.locator("#map-overflow")).to_be_visible()
                 page.locator("#tag-filter").select_option("series-09")
-                assert "series-09" in tags() and nodes.count() == 8
+                assert "series-09" in tags() and 11 <= nodes.count() <= 12
                 result = submit()
                 oracle(raw, result, "Fixture-Pump", "series-09")
                 page.locator("#tag-filter").select_option(hostile)
-                assert hostile in tags() and nodes.count() == 8
+                assert hostile in tags() and 11 <= nodes.count() <= 12
                 submit()
                 assert page.locator("#equipment-map img").count() == 0
                 assert page.evaluate("window.mapInjected || 0") == 0
@@ -332,7 +337,7 @@ def main():
                     usable_buttons()
                 capture("04-synthetic-long-labels-mobile.png")
                 page.set_viewport_size({"width": 1440, "height": 1100})
-                checks.append("synthetic two-equipment/11-item input: native full list, 8-node bound includes selected overflow item; hostile long labels inert")
+                checks.append("synthetic two-equipment/11-item input: native full list and expanded 11-item group; selected-position camera and hostile long labels inert")
 
                 other, _ = synthetic_csv(offset=100)
                 second = upload(other, "same-name-different-file.csv")

@@ -3,11 +3,23 @@
 This repository has no published release yet. Entries describe local changes and the release candidate;
 a date and immutable Git tag are added only after remote CI and release verification succeed.
 
+## Local graph canvas — version unassigned
+
+- Replaced the fixed eight-item map with collapsible equipment groups, a zoomable/pannable DOM/SVG world,
+  fit/selected-position controls and a minimap. The native lists and current-equipment name search remain.
+- Group pages show up to 20 equipment headers and share a 200-measurement display budget, with explicit
+  item paging. These are presentation bounds, not source limits or verified production capacity.
+- Camera and group exploration preserve confirmed query/source/version/ZIP. Selecting another item uses
+  the existing invalidation path; identical names in another equipment group remain separate.
+- See [dated local checks and limits](docs/VERIFICATION.md#graph-canvas-verification). The actual sample
+  has three items; larger inputs are labelled synthetic. User benefit and the existing OPC UA timestamp
+  investigation remain open. No new API, graph database, inferred physical relation or public release.
+
 ## Local review navigation — version unassigned
 
 - Added a wider connected review layout, optional document-root fullscreen and measurement-name search
   within the current equipment/file version. Search pages contain at most 20 matches; the complete native
-  selector and eight-node map remain available.
+  selector remained available alongside the then-current eight-node map (extended by the graph canvas above).
 - View changes and passive search preserve confirmed results, explanation and matching ZIP parameters.
   Fullscreen failures retain exit controls; narrow explanation/delete-dialog focus ownership survives resize.
 - Actual full/sample browser checks passed, including native Escape, 200% browser zoom and synthetic

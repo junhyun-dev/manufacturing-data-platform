@@ -66,6 +66,13 @@ authorized series metadata만 필터링합니다. 검색어/페이지/화면 전
 무효화 경로로 이어집니다. [탐색 계약](FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)과
 [browser oracle](../scripts/verify_review_navigation_browser.py)이 상태 보존과 fullscreen 실패/이탈·접근성 반례를 연결합니다.
 
+탐색형 지도는 [map-canvas.js](../src/manufacturing_data_platform/file_review/static/map-canvas.js)가 그룹별 표시 예산·페이지,
+배치 좌표와 카메라를 맡고, 기존 app.js가 dataset/version/latest와 설비·항목 선택·query를 소유하도록 분리합니다.
+카메라/그룹 조작은 데이터 요청 없이 동작하며, 명시적인 항목 선택만 기존 무효화 경로로 전달합니다. DOM 버튼과
+SVG 선은 같은 world transform을 사용하고, 미니맵은 표시된 world와 현재 viewport를 연결합니다. 별도 관계 저장소,
+외부 renderer/CDN, 새로운 집계 경로는 없습니다. [canvas 계약](FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration)과
+[독립 browser oracle](../scripts/verify_graph_canvas_browser.py)이 부분 표시·카메라·선택 보존의 경계를 소유합니다.
+
 설비 지도는 같은 current의 `series`를 표현하는 browser view입니다. 별도 관계 저장소나 계산 API는 없습니다.
 새 조회의 version·latest attempt와 지도 기준이 다르면 오래된 지도와 결과를 지우고 파일 상태 새로고침을 요구합니다.
 권한·삭제·무결성 오류도 이 경계를 무효화합니다. 날짜만 편집하면 기존 제출 구간을 유지하지만 설비/항목을 바꾸면

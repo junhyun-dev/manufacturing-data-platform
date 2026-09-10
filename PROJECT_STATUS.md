@@ -5,24 +5,30 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-13 탐색형 graph canvas 첫 로컬 구현 수용 / WORK. 기존 넓게 보기·전체화면·검색은 LOCAL VERIFIED. 전체 검사 gate OPEN·실제 사용자 수용 미검증 |
+| 현재 작업 | MFG-13 탐색형 graph canvas 첫 로컬 구현·검증 완료 / LOCAL VERIFIED. preview 재기동·read-back 마무리 중. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
 | 수용한 범위 | [Graph canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration): 한 파일 버전의 설비 그룹–항목 접기/펼치기, 8개 고정 표시 대체, 줌/이동·맞춤·선택 위치·미니맵. 기존 선택·조회·출처/같은 버전 ZIP·검색/전체 목록 유지. 물리 관계·건강·편집/실행·외부 AI·공개 배포 제외 |
-| Git 기준 | `feat/map-canvas`, 직전 구현 `743bebd`/closeout `984d875`, 기존 의도 정정 3문서 `c6e3b5e` 보존. 이번 계약·구현의 정확한 HEAD/dirty는 실제 Git에서 확인. 로컬 작업이며 push/merge/Release/배포 없음 |
+| Git 기준 | `feat/map-canvas`, 수용 계약 `2214e5b`, 의도 정정 `c6e3b5e`와 Worker 보존 `c6cf793`에서 통합. 실제 HEAD/dirty와 아래 source bytes·검증을 대조한다. 로컬 작업이며 push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 기존 Worker의 한정된 지도 UI 구현을 실제 diff와 sample/full 브라우저·CSV/ZIP 근거로 통합 검토한다. MFG-02 시각 실패 조사와 MFG-09/12 사용자 관찰은 별도 미완료로 보존 |
+| 다음 한 행동 | 보존된 preview DB로 샘플 서버를 다시 열고 source revision·UI bytes·온도/동일 ZIP을 read-back한다. MFG-02 시각 실패와 MFG-09/12 사용자 관찰은 별도 미완료로 보존 |
 
 ## 실행과 근거
 
-- 로컬 샘플 미리보기: **http://127.0.0.1:8000**. 기존 탭은 새로고침한다. 2026-09-10 실제 health/source revision
-  `743bebd0baaabdd1006ca3607bc11963c430185b`, 제공된 UI bytes·이름 검색·넓게 보기·온도 7,144개와 같은 버전 ZIP을 확인했다.
-  기존 preview DB를 유지했다. 로컬 실행 기록은 `.cache/review-navigation-preview/20260910T035019572965Z/server.json`과 `readback.json`.
+- 로컬 샘플 미리보기 **http://127.0.0.1:8000**는 통합 중 기존 제품 프로세스를 멈춘 상태이며 재기동한다.
+  기존 preview DB는 보존했다. 이전 revision `743bebd`의 기록은 `.cache/review-navigation-preview/20260910T035019572965Z/`다.
+- 새 graph canvas: [검증·분담 관찰·한계](docs/VERIFICATION.md#graph-canvas-verification).
+  canvas full/sample 9/6, navigation 13/10, map 14/11, explanation 18/12, file browser 11/7개 묶음 PASS.
+  실제 3항목 샘플과 합성 50/200/205항목·25묶음을 구분했다. 모바일/키보드·native Esc·200% browser zoom,
+  선택/버전/제출 구간/동일 ZIP과 실패 경로를 확인했다.
+  [공개 샘플 화면](docs/assets/file-review-canvas-desktop.png) · [390px](docs/assets/file-review-canvas-mobile.png) ·
+  [합성 200항목 확대](docs/assets/file-review-canvas-synthetic-200.png).
 - 새 탐색: [수용 범위·검증과 한계](docs/VERIFICATION.md#review-navigation-verification). full/sample 13/10개 묶음,
   기존 지도 14/11·설명 18/12·파일 화면 11/7 PASS. 실제 browser Esc·200% 확대·모바일/키보드·동일 ZIP 확인.
   [넓게 보는 화면](docs/assets/file-review-navigation-desktop.png) · [390px 검색/목록](docs/assets/file-review-navigation-mobile.png).
-- 전체 검사: 초기 255 passed / 17 skipped 뒤, 마지막 단독 전체는 기존 laboratory 시각 검사 2 failed / 253 passed / 17 skipped.
-  원인 미확인으로 전체 PASS를 주장하지 않는다. 웹 HTTP·browser 결과와 기존 OPC UA 한 실행의 성공 근거를 구분한다.
+- 전체 검사: 이번 단독 `make test`는 **255 passed / 17 skipped**. 실제 HTTP·재시작 및 OPC UA 한 replay도 PASS.
+  이전 navigation의 2 failed / 253 passed / 17 skipped는 간헐 시각 문제의 원인이 밝혀지지 않아 MFG-02 OPEN으로 유지한다.
+  이번 한 실행의 성공을 과거 실패 해결이나 전체 Release gate 종료로 바꾸지 않는다.
 - 이전 지도 구현(`45512b6`) 기록: [MFG-13](docs/BACKLOG.md#mfg-13--equipment-data-map-discovery), [당시 지도 검증](docs/VERIFICATION.md#equipment-map-verification).
   당시 필수 검사 PASS, 255 passed / 17 skipped, 지도 full/sample 14/11개 묶음·기존 설명 18/12·기존 화면 11/7 PASS.
   실제 [데스크톱](docs/assets/file-review-equipment-map-desktop.png) · [모바일](docs/assets/file-review-equipment-map-mobile.png).
@@ -55,11 +61,11 @@ make serve
 2026-09-10 작성자는 복잡한 지도 자체를 UiPath처럼 확대·이동하는 작업면을 의도했다고 정정했다.
 [최신 공식 조사·화면 구상·추천](docs/research/file-review-workflow.md#map-canvas-intent-correction)은 접고 펼치는
 그래프 캔버스와 연결된 상세다. 기존 8개 상한은 이전 설계 선택이며 새 필요성을 부정하는 근거로 쓰지 않는다.
-이후 작성자가 이 탐색형 canvas 첫 로컬 구현을 수용했다. 현행 [canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration)에 반영하고 기존 Main/Worker 분담으로 진행한다.
+이후 작성자가 이 탐색형 canvas 첫 로컬 구현을 수용했다. 현행 [canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration)에 반영했고 기존 Main/Worker 분담으로 구현·직접 검증했다.
 
 이전 지도 탐색 UX는 [MFG-13 후속 검토](docs/research/file-review-workflow.md#map-navigation-review)에 근거를 보존했다.
 `45512b6`의 구현·보존 화면과 공식 문서를 대조한 뒤 수용한 **넓게 보기·선택적 전체화면 + 전체 항목 이름 검색**은 로컬 UI 검증을 마쳤다.
-[탐색 계약](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 따른다. 이 부분 결과와 최신 canvas 제안의 수용 여부를 구분한다.
+[탐색 계약](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 따른다. 이 부분 결과와 최신 canvas 검증의 범위를 구분한다.
 작성자의 긍정적 첫 인상을 과제 수행 성공으로 기록하지 않는다. 기존 사용자 관찰은 유지하며 Release의 새 선행조건이 아니다.
 
 [MFG-10](docs/BACKLOG.md#mfg-10--context-bound-review-assistant-discovery)은 공개 조사·코드 대조까지 마쳤다.

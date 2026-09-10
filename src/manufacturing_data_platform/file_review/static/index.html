@@ -6,6 +6,7 @@
   <meta name="description" content="설비 CSV의 상태를 확인하고, 필요한 구간을 조회해 검토 근거와 함께 내려받으세요.">
   <title>Telemetry Review · 설비 데이터 검토</title>
   <link rel="stylesheet" href="/styles.css">
+  <script src="/map-canvas.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -73,8 +74,35 @@
             <section id="equipment-map-section" class="equipment-map-section" aria-labelledby="equipment-map-title">
               <header class="map-heading"><div><p class="eyebrow">ONE FILE VERSION</p><h2 id="equipment-map-title">설비 데이터 지도</h2></div><div class="map-heading-actions"><button id="map-view-toggle" class="text-button" type="button" aria-controls="equipment-map-body" aria-expanded="false">지도 펼치기</button><button id="map-refresh" class="text-button" type="button">파일 상태 새로고침</button></div></header>
               <div id="equipment-map-body">
-                <p class="map-relation-note">선은 같은 파일 결과에 기록된 설비와 측정 항목의 소속만 나타내며, 물리 연결이나 설비 상태를 뜻하지 않습니다.</p>
-                <div id="equipment-map" class="equipment-map" role="group" aria-label="선택한 설비에 기록된 측정 항목"></div>
+                <p id="map-relation-note" class="map-relation-note">선은 이 파일 버전에서 설비 이름별로 묶인 측정 항목의 소속만 나타냅니다. 물리 연결이나 설비 상태를 뜻하지 않습니다.</p>
+                <div class="map-camera-toolbar" aria-label="지도 보기 조절">
+                  <div class="map-camera-primary" role="group" aria-label="지도 확대와 위치">
+                    <button id="map-zoom-out" class="map-tool-button" type="button" aria-label="지도 축소">−</button>
+                    <output id="map-zoom-level" aria-label="지도 배율">100%</output>
+                    <button id="map-zoom-in" class="map-tool-button" type="button" aria-label="지도 확대">＋</button>
+                    <button id="map-fit" class="map-tool-button labelled" type="button">전체 맞춤</button>
+                    <button id="map-focus-selection" class="map-tool-button labelled" type="button">선택 위치</button>
+                    <button id="map-pan-toggle" class="map-tool-button labelled" type="button" aria-pressed="false">지도 이동 끔</button>
+                  </div>
+                  <div class="map-pan-buttons" role="group" aria-label="지도 방향 이동">
+                    <button id="map-pan-left" class="map-tool-button" type="button" aria-label="지도를 왼쪽으로 이동">←</button>
+                    <button id="map-pan-up" class="map-tool-button" type="button" aria-label="지도를 위로 이동">↑</button>
+                    <button id="map-pan-down" class="map-tool-button" type="button" aria-label="지도를 아래로 이동">↓</button>
+                    <button id="map-pan-right" class="map-tool-button" type="button" aria-label="지도를 오른쪽으로 이동">→</button>
+                  </div>
+                </div>
+                <p id="map-camera-status" class="map-camera-status" role="status" aria-live="polite">표시된 설비 묶음에 지도를 맞춥니다.</p>
+                <div class="map-groups-pagination" aria-label="설비 묶음 페이지">
+                  <button id="map-groups-prev" class="button secondary small" type="button">이전 설비</button>
+                  <span id="map-groups-status" role="status" aria-live="polite" tabindex="-1"></span>
+                  <button id="map-groups-next" class="button secondary small" type="button">다음 설비</button>
+                </div>
+                <div class="map-stage">
+                  <div id="equipment-map" class="equipment-map" role="group" tabindex="0" aria-label="파일 버전의 설비별 측정 항목 지도" aria-describedby="map-relation-note map-camera-status map-overflow">
+                    <div id="map-world" class="map-world"></div>
+                  </div>
+                  <button id="map-minimap" class="map-minimap" type="button" aria-label="표시된 지도 미니맵. 클릭한 위치로 이동하고 키보드로 누르면 전체에 맞춥니다."></button>
+                </div>
                 <p id="map-overflow" class="map-overflow"></p>
                 <article class="map-selection-card">
                   <p class="map-selection-label">선택한 측정 항목</p>

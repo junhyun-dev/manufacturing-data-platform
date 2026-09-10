@@ -19,6 +19,7 @@ const number = (value) => value === null || value === undefined || !Number.isFin
 const shortHash = (value) => value ? value.slice(0, 12) : "—";
 const node = (tag, text, className) => { const item = document.createElement(tag); if (text !== undefined) item.textContent = text; if (className) item.className = className; return item; };
 let toastTimer;
+let mapCanvas;
 
 function showToast(message) {
   $("toast").textContent = message;
@@ -44,6 +45,7 @@ function setBusy(busy, message = "처리 중…") {
   $("tag-filter").disabled = busy;
   $("map-refresh").disabled = busy;
   $("map-source-link").disabled = busy || !!state.map.unavailable || !currentDataset()?.current;
+  mapCanvas?.setBusy(busy);
   $("main").setAttribute("aria-busy", String(busy));
   updateQueryControls();
   updateExplanationControls();
@@ -103,7 +105,10 @@ function modalOwnsFocus() {
 }
 
 function redrawReviewChart() {
-  requestAnimationFrame(() => { if (state.query) renderChart(state.query.result); });
+  requestAnimationFrame(() => {
+    if (state.query) renderChart(state.query.result);
+    mapCanvas?.resize();
+  });
 }
 
 function updateReviewViewControls() {
@@ -360,20 +365,11 @@ function applyMapVisibility() {
   $("equipment-map-body").hidden = narrow && !state.map.expanded;
   toggle.setAttribute("aria-expanded", String(!narrow || state.map.expanded));
   toggle.textContent = state.map.expanded ? "지도 접기" : "지도 펼치기";
-}
-
-function visibleMapSeries(series, selected) {
-  const visible = series.slice(0, 8);
-  if (selected && !visible.includes(selected)) visible[visible.length - 1] = selected;
-  return visible;
+  requestAnimationFrame(() => mapCanvas?.resize());
 }
 
 function renderMapUnavailable(message) {
-  const root = $("equipment-map");
-  root.replaceChildren();
-  const unavailable = node("div", undefined, "map-unavailable");
-  unavailable.append(node("strong", "지도 근거를 확인할 수 없습니다."), node("p", message));
-  root.append(unavailable);
+  mapCanvas?.clear(message);
   $("map-overflow").textContent = "오래된 항목 관계나 통계를 표시하지 않습니다.";
   $("map-selected-item").textContent = "—";
   $("map-selection-status").textContent = "파일 상태를 새로고침해 주세요.";
@@ -384,7 +380,20 @@ function renderMapUnavailable(message) {
   applyMapVisibility();
 }
 
-function renderEquipmentMap() {
+function mapContextKey(dataset) {
+  return JSON.stringify([dataset.id, dataset.current?.version, dataset.latest?.id]);
+}
+
+function mapGroups(current) {
+  const groups = new Map();
+  for (const item of current.series || []) {
+    if (!groups.has(item.equipment)) groups.set(item.equipment, []);
+    groups.get(item.equipment).push(item);
+  }
+  return [...groups].map(([equipment, items]) => ({ equipment, items }));
+}
+
+function renderEquipmentMap({ resetContext = false, revealSelection = false, focusSelection = false } = {}) {
   const dataset = currentDataset();
   const current = dataset?.current;
   if (!dataset || !current) return;
@@ -401,43 +410,12 @@ function renderEquipmentMap() {
     tag = selected.tag;
     $("tag-filter").value = tag;
   }
-  const visible = visibleMapSeries(series, selected);
-  const root = $("equipment-map");
-  const dense = visible.length > 3;
-  root.classList.toggle("map-dense", dense);
-  root.replaceChildren();
-  const lines = svgElement("svg", { class: "map-lines", viewBox: "0 0 100 100", preserveAspectRatio: "none", "aria-hidden": "true", focusable: "false" });
-  const slots = dense ? [
-    { x: 24, y: 13 }, { x: 76, y: 13 }, { x: 76, y: 36 }, { x: 76, y: 64 },
-    { x: 76, y: 87 }, { x: 24, y: 87 }, { x: 24, y: 64 }, { x: 24, y: 36 }
-  ] : [
-    { x: 50, y: 15 }, { x: 78, y: 15 }, { x: 78, y: 50 }, { x: 78, y: 85 },
-    { x: 50, y: 85 }, { x: 22, y: 85 }, { x: 22, y: 50 }, { x: 22, y: 15 }
-  ];
-  const positions = visible.map((_, index) => slots[Math.round(index * slots.length / Math.max(visible.length, 1)) % slots.length]);
-  for (const position of positions) lines.append(svgElement("line", { x1: 50, y1: 50, x2: position.x, y2: position.y }));
-  root.append(lines);
-  const center = node("div", undefined, "map-center");
-  center.append(node("span", "파일 안 설비"), node("strong", equipment));
-  root.append(center);
-  visible.forEach((item, index) => {
-    const button = node("button", undefined, "map-node");
-    button.type = "button";
-    button.dataset.mapTag = item.tag;
-    button.style.setProperty("--map-x", `${positions[index].x}%`);
-    button.style.setProperty("--map-y", `${positions[index].y}%`);
-    button.setAttribute("aria-pressed", String(item.tag === tag));
-    button.setAttribute("aria-label", `${item.tag}, ${item.unit || "단위 없음"}, 파일 전체 ${number(item.count)}개 관측`);
-    button.title = item.tag;
-    button.disabled = state.busy;
-    button.append(node("span", item.tag, "map-node-name"), node("small", `${item.unit || "단위 없음"} · 전체 ${number(item.count)}`));
-    button.addEventListener("click", () => selectMapTag(item.tag));
-    root.append(button);
-  });
-  const remainder = Math.max(0, series.length - visible.length);
-  $("map-overflow").textContent = remainder
-    ? `전체 ${number(series.length)}개 중 ${number(visible.length)}개 표시 · 나머지 ${number(remainder)}개는 위 측정 항목 목록에서 선택할 수 있습니다.`
-    : `이 설비의 측정 항목 ${number(series.length)}개를 모두 표시합니다.`;
+  mapCanvas?.setContext({
+    key: mapContextKey(dataset),
+    groups: mapGroups(current),
+    selected: selected ? { equipment, tag: selected.tag } : null,
+    busy: state.busy
+  }, { forceReset: resetContext, revealSelection, focusSelection });
   $("map-selected-item").textContent = selected ? `${selected.tag} · ${selected.unit || "단위 없음"}` : "—";
   updateMapSelectionStatus();
   const context = $("map-context");
@@ -483,25 +461,41 @@ function suspendMapAndQuery(message) {
   }
 }
 
-function focusSelectedTag(tag) {
-  const mapButton = [...document.querySelectorAll("[data-map-tag]")].find((button) => button.dataset.mapTag === tag);
+function focusSelectedTag(equipment, tag) {
+  const mapButton = [...document.querySelectorAll("[data-map-tag]")].find((button) => button.dataset.mapEquipment === equipment && button.dataset.mapTag === tag);
   const mapVisible = mapButton && !$("equipment-map-body").hidden && mapButton.offsetParent !== null;
   const target = mapVisible ? mapButton : $("tag-filter");
   target.focus({ preventScroll: true });
   target.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-function selectMapTag(tag) {
-  if ($("tag-filter").value === tag) {
+function selectMapItem(equipment, tag) {
+  const dataset = currentDataset();
+  const item = dataset?.current?.series.find((series) => series.equipment === equipment && series.tag === tag);
+  if (!item) return;
+  const same = $("equipment-filter").value === equipment && $("tag-filter").value === tag;
+  if (same) {
+    renderEquipmentMap({ revealSelection: true });
     renderTagSearch();
-    focusSelectedTag(tag);
+    focusSelectedTag(equipment, tag);
     return;
   }
-  $("tag-filter").value = tag;
+  const equipmentChanged = $("equipment-filter").value !== equipment;
+  if (equipmentChanged) {
+    $("equipment-filter").value = equipment;
+    populateTags(dataset, tag);
+  } else {
+    $("tag-filter").value = tag;
+  }
   clearQueryForDraft();
-  renderEquipmentMap();
+  if (equipmentChanged) resetTagSearch();
+  renderEquipmentMap({ revealSelection: true });
   renderTagSearch();
-  focusSelectedTag(tag);
+  focusSelectedTag(equipment, tag);
+}
+
+function selectMapTag(tag) {
+  selectMapItem($("equipment-filter").value, tag);
 }
 
 function explanationKey(selected = state.query) {
@@ -881,10 +875,10 @@ function renderDataset(dataset, resetFilters) {
     $("start-filter").title = `원본 첫 시각: ${start}`;
     $("end-filter").title = `원본 마지막 시각: ${end}. 종료 시각과 같은 관측값은 포함하지 않습니다.`;
     resetTagSearch();
-    renderEquipmentMap();
+    renderEquipmentMap({ resetContext: true });
   } else {
     $("equipment-map-section").hidden = true;
-    $("equipment-map").replaceChildren();
+    mapCanvas?.clear();
     $("map-overflow").textContent = "";
     $("map-selected-item").textContent = "";
     $("map-selection-status").textContent = "";
@@ -910,7 +904,7 @@ async function selectDataset(id, resetFilters = false, loadResult = true) {
     state.query = null;
     state.map.unavailable = null;
     $("equipment-map-section").hidden = true;
-    $("equipment-map").replaceChildren();
+    mapCanvas?.clear();
     $("workspace").hidden = true;
     $("welcome").hidden = false;
     document.title = "Telemetry Review · 설비 데이터 검토";
@@ -1261,11 +1255,11 @@ function installEvents() {
     populateTags(dataset);
     clearQueryForDraft();
     resetTagSearch();
-    renderEquipmentMap();
+    renderEquipmentMap({ revealSelection: true });
   });
   $("tag-filter").addEventListener("change", () => {
     clearQueryForDraft();
-    renderEquipmentMap();
+    renderEquipmentMap({ revealSelection: true });
     renderTagSearch();
   });
   $("query-form").addEventListener("submit", (event) => { event.preventDefault(); action("선택 구간을 분석하는 중…", loadQuery); });
@@ -1309,6 +1303,15 @@ function installEvents() {
 }
 
 async function initialize() {
+  mapCanvas = window.createFileReviewMapCanvas({
+    formatNumber: number,
+    isInteractionBlocked: () => Boolean(document.querySelector("dialog:modal")) || $("application-shell").inert,
+    onSelect: ({ key, equipment, tag }) => {
+      const dataset = currentDataset();
+      if (!dataset?.current || key !== mapContextKey(dataset)) return;
+      selectMapItem(equipment, tag);
+    }
+  });
   installEvents();
   await action("작업 공간을 불러오는 중…", async () => {
     const session = await request("/api/session");

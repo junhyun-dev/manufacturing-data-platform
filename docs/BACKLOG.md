@@ -34,14 +34,19 @@
   Main은 계약·직접 diff/화면·독립 browser oracle·통합을, 기존 Worker는 한정된 정적 UI 구현을 맡는다.
   [실제 결과](VERIFICATION.md#review-navigation-verification): 탐색 full/sample 13/10, 기존 지도·설명·파일 화면 회귀 PASS.
   화면/검색만으로 선택·버전·제출 구간·ZIP은 바뀌지 않는다. 좁은 화면에서 삭제 취소 후 설명 포커스 복귀를 보정했다.
-  전체 검사 gate는 아래 MFG-02의 기존 시각 실패로 열려 있다. 줌/이동/맞춤은 계속 후속 후보이며,
+  전체 검사 gate는 아래 MFG-02의 기존 시각 실패로 열려 있다. 당시 후속 후보였던 줌/이동/맞춤은 아래 canvas로 이어졌으며,
   MFG-09/12 사용자 과제와 Release를 이 구현 승인으로 완료 처리하지 않는다.
-- 지도 canvas 의도 정정 — **첫 로컬 구현 수용 / WORK, 2026-09-10**: 작성자는 UiPath처럼 복잡한 지도 자체를 확대·이동하며
+- 지도 canvas 의도 정정 — **첫 로컬 구현·검증 완료 / 사용자 과제 미검증, 2026-09-10**: 작성자는 UiPath처럼 복잡한 지도 자체를 확대·이동하며
   탐색하는 작업면을 뜻했다고 명확히 했다. 완료한 넓게 보기/검색만으로 그 의도를 충족했다고 기록하지 않는다.
   [공식 조사·화면 구상·비교·수용 기준](research/file-review-workflow.md#map-canvas-intent-correction)을 새 판단 근거로 둔다.
   추천은 한 파일 버전의 설비 그룹–항목을 접고 펼치는 지도, 줌/이동·맞춤·선택 위치·미니맵과 연결된 상세다.
   8개 고정 표시를 명시적 펼치기/표시 예산으로 대체하는 첫 로컬 구현을 수용했다. 물리 연결·건강·편집/실행은 추가하지 않는다.
-  실행 범위·반례는 [canvas 계약](FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration)이 소유한다. 다음은 실제 UI·브라우저·근거 검토이며 사용자 관찰·전체 검사 공백을 보존한다.
+  실행 범위·반례는 [canvas 계약](FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration)이 소유한다.
+  [실제 검증](VERIFICATION.md#graph-canvas-verification): canvas full/sample 9/6개 묶음과 기존 탐색·지도·설명·파일 회귀 PASS.
+  실제 3항목 샘플, 합성 50/200항목, 205항목·25묶음 페이지 접근, 선택·구간·ZIP 유지와 모바일/키보드를 구분해 확인했다.
+  다음 근거는 사용자가 복잡한 지도에서 목표 항목과 같은 버전 근거를 찾는 실제 과제다. 200항목의 선 겹침,
+  축소 개요에서 이름을 읽기 어려운 점, 검색/선택 위치와 목록 중 어느 경로가 빠른지는 관찰 과제로 남긴다.
+  현 표시 예산을 production 처리량으로 주장하지 않으며 MFG-02의 과거 간헐 실패·MFG-09/12 사용자 관찰은 닫지 않는다.
 
 ## MFG-12 — Guided result explanation preview
 

@@ -399,7 +399,8 @@ verification status are recorded in PROJECT_STATUS and Verification; acceptance 
 - Provide stable controls `map-zoom-in`, `map-zoom-out`, `map-zoom-level`, `map-fit`, `map-focus-selection`,
   `map-pan-toggle`, `map-pan-left`, `map-pan-right`, `map-pan-up`, `map-pan-down`, `map-camera-status`, and
   `map-minimap`. Keep `equipment-map` as the clipped viewport and use `map-world` for transformed content.
-  Group controls expose `data-map-equipment` and `data-map-toggle`; item buttons retain `data-map-tag` and
+  Group controls expose `data-map-equipment` and `data-map-toggle`; group item paging uses `data-map-items-prev`,
+  `data-map-items-next`, `data-map-items-status` with the equipment label as value. Item buttons retain `data-map-tag` and
   additionally identify their equipment. Use `map-groups-prev`, `map-groups-next`, `map-groups-status` for paging.
 - Zoom changes the map camera only. Initial technical range is 1%–200%; very small scale is an overview, not
   a readable-name claim. Fit computes bounds of the currently displayed nodes with padding; it does not expand

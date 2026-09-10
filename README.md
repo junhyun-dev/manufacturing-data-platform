@@ -36,15 +36,16 @@ docker compose --env-file .env.example up --build
 파일은 실행 서버의 임시 작업 공간에 저장됩니다. 입력·보관·삭제 한도와 정확한 동작은
 [파일 계약](docs/FILE_REVIEW_CONTRACT.md#state-identity-and-recovery)이 소유합니다.
 
-**설비 데이터 지도**에서 파일 안 설비와 측정 항목의 소속을 보고 항목을 선택할 수 있습니다. 기존 목록 선택도 유지합니다.
-선은 물리 연결이나 설비 건강을 뜻하지 않습니다. [지도 사용법](docs/FILE_REVIEW_GUIDE.md#설비-데이터-지도로-항목-찾기) ·
-[로컬 검증과 한계](docs/VERIFICATION.md#equipment-map-verification)
+**설비 데이터 지도**에서 파일 안 설비 묶음을 접고 펼치며 항목을 선택합니다. 지도를 확대·이동하고,
+전체 맞춤·선택 위치·미니맵으로 탐색할 수 있습니다. 검색과 전체 목록도 유지합니다.
+선은 물리 연결이나 설비 건강을 뜻하지 않습니다. [지도 탐색 사용법](docs/FILE_REVIEW_GUIDE.md#복잡한-지도-확대이동하기) ·
+[로컬 검증과 한계](docs/VERIFICATION.md#graph-canvas-verification)
 
 **넓게 보기·전체화면·항목 이름 찾기**로 같은 결과를 더 넓게 읽고 현재 설비의 전체 항목에서 검색할 수 있습니다.
 화면 전환과 검색만으로 조회·버전·ZIP은 바뀌지 않습니다. [탐색 사용법](docs/FILE_REVIEW_GUIDE.md#넓게-보기전체화면항목-이름-찾기) ·
 [검증과 남은 전체 검사 문제](docs/VERIFICATION.md#review-navigation-verification)
 
-![공개 샘플의 항목 검색과 지도·온도 관측·같은 버전 근거를 넓게 보는 실제 로컬 화면](docs/assets/file-review-navigation-desktop.png)
+![실제 공개 샘플의 설비 묶음·측정 항목 지도와 온도 관측을 함께 보는 로컬 화면](docs/assets/file-review-canvas-desktop.png)
 
 ## 무엇을 어디서 확인하는가
 
