@@ -315,6 +315,9 @@ MFG-09/MFG-12의 미완료 사용성 검증은 유지한다. 현재 화면에서
 <a id="map-canvas-intent-correction"></a>
 #### 지도 자체를 확대·이동하는 작업면 — 의도 정정과 추천
 
+**후속 수용:** 작성자는 이 탐색형 canvas 첫 로컬 구현을 2026-09-10 수용했다. 아래 조사는 당시 근거로 보존하고
+현재 약속은 [Graph canvas 계약](../FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration), 진행은 PROJECT_STATUS를 따른다.
+
 2026-09-10 작성자는 설비 데이터 지도가 복잡해질 때 다이어그램/흐름표나 UiPath RPA처럼 확대·축소하며
 탐색하는 canvas를 원했다고 정정했다. 앞선 판단은 검토 페이지의 넓이와 이름 검색으로 너무 좁게 해석했다.
 `feat/review-navigation@984d8752a0f129cdf225e0a46ae49cbb4e16f1e6` clean에서 정본과 실제 source를 다시 읽었다.

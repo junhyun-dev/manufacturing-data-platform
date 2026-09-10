@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-13 지도 canvas 의도 정정·공식 조사/설계 제안 완료, 첫 로컬 범위 선택 대기. 기존 넓게 보기·전체화면·검색은 LOCAL VERIFIED인 부분 결과. 전체 검사 gate OPEN·실제 사용자 수용 미검증 |
-| 수용한 범위 | 설비 선택 → 한 파일 버전의 항목 지도 → 관측·출처·같은 버전 ZIP. 여기에 [넓게 보기·전체화면·이름 검색](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 추가. 기존 8개 지도/전체 목록·CSV·이전 결과·설명 유지. 줌/이동·물리 관계/건강 추정·외부 AI·공개 배포는 포함하지 않음 |
-| Git 기준 | `feat/review-navigation`, 구현 `743bebd`(수용 계약 `3686f5d` 이후 정적 UI 3파일·browser oracle·관련 문서/화면). 검증한 UI digest는 [실행 근거](docs/VERIFICATION.md#review-navigation-verification). 기존 조사 3문서는 `51b66ad` 보존. 정확한 HEAD·dirty는 실제 Git에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
+| 현재 작업 | MFG-13 탐색형 graph canvas 첫 로컬 구현 수용 / WORK. 기존 넓게 보기·전체화면·검색은 LOCAL VERIFIED. 전체 검사 gate OPEN·실제 사용자 수용 미검증 |
+| 수용한 범위 | [Graph canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration): 한 파일 버전의 설비 그룹–항목 접기/펼치기, 8개 고정 표시 대체, 줌/이동·맞춤·선택 위치·미니맵. 기존 선택·조회·출처/같은 버전 ZIP·검색/전체 목록 유지. 물리 관계·건강·편집/실행·외부 AI·공개 배포 제외 |
+| Git 기준 | `feat/map-canvas`, 직전 구현 `743bebd`/closeout `984d875`, 기존 의도 정정 3문서 `c6e3b5e` 보존. 이번 계약·구현의 정확한 HEAD/dirty는 실제 Git에서 확인. 로컬 작업이며 push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | [탐색형 지도 canvas 제안](docs/research/file-review-workflow.md#map-canvas-intent-correction)의 줌/이동·그룹 펼치기와 8개 고정 표시 대체를 첫 로컬 범위로 수용할지 결정한다. 제안은 미구현. MFG-02 시각 실패 조사와 MFG-09/12 사용자 관찰은 남은 작업으로 보존 |
+| 다음 한 행동 | 기존 Worker의 한정된 지도 UI 구현을 실제 diff와 sample/full 브라우저·CSV/ZIP 근거로 통합 검토한다. MFG-02 시각 실패 조사와 MFG-09/12 사용자 관찰은 별도 미완료로 보존 |
 
 ## 실행과 근거
 
@@ -55,7 +55,7 @@ make serve
 2026-09-10 작성자는 복잡한 지도 자체를 UiPath처럼 확대·이동하는 작업면을 의도했다고 정정했다.
 [최신 공식 조사·화면 구상·추천](docs/research/file-review-workflow.md#map-canvas-intent-correction)은 접고 펼치는
 그래프 캔버스와 연결된 상세다. 기존 8개 상한은 이전 설계 선택이며 새 필요성을 부정하는 근거로 쓰지 않는다.
-이번에는 조사 문서·backlog·이 현재 포인터만 갱신했다. 새 계약·UI 구현·Worker 작업·실행 환경 변경은 없다.
+이후 작성자가 이 탐색형 canvas 첫 로컬 구현을 수용했다. 현행 [canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration)에 반영하고 기존 Main/Worker 분담으로 진행한다.
 
 이전 지도 탐색 UX는 [MFG-13 후속 검토](docs/research/file-review-workflow.md#map-navigation-review)에 근거를 보존했다.
 `45512b6`의 구현·보존 화면과 공식 문서를 대조한 뒤 수용한 **넓게 보기·선택적 전체화면 + 전체 항목 이름 검색**은 로컬 UI 검증을 마쳤다.

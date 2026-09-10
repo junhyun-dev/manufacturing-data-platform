@@ -231,8 +231,9 @@ external data/AI, public release and deployment are not part of this acceptance.
 
 ### Meaning and data authority
 
-- The map represents membership in one authorized, integrity-checked dataset version. Its center is the
-  selected CSV equipment label; surrounding items come only from that version's `current.series`.
+- The map represents membership in one authorized, integrity-checked dataset version. The first view used the
+  selected CSV equipment label as its center; the accepted Graph canvas section below extends presentation to
+  file-local groups. All groups and items come only from that version's `current.series`.
   Display identity includes dataset ID, version, equipment, tag and unit. Identical names in another file
   or workspace never create a link. A label is not a verified global asset identifier.
 - Lines mean `이 파일 버전에 기록된 측정 항목`. They have no direction, flow, causal, correlation or physical
@@ -264,10 +265,10 @@ external data/AI, public release and deployment are not part of this acceptance.
   control may default to collapsed on narrow screens. Both map buttons and native selectors must work by keyboard.
   Use ordinary buttons with accessible names and pressed state; decorative SVG lines are hidden from assistive
   technology. No drag, hover, color or animation is the only way to discover a relation, select an item or read evidence.
-- Render at most eight measurement nodes plus the center. Always include the selected item, even if it is outside
-  the first eight. Show displayed/total item counts and an explicit remainder notice; the native list includes all
-  items. A native equipment selector includes all file groups. Never silently imply the visible subset is complete.
-  Long/untrusted labels remain inert text, readable from the complete list/detail without page overflow.
+- The first local view used at most eight measurement nodes. The Graph canvas section below replaces that
+  presentation bound with explicit group expansion and bounded pages. Keep complete native equipment/item
+  selectors and honest displayed/total counts. Long/untrusted labels remain inert text, readable from the complete
+  list/detail without page overflow.
 - Stable acceptance targets: `equipment-map-section`, `equipment-map`, `map-selection-status`, `map-refresh`,
   `map-source-link`, `map-view-toggle`, `map-overflow`, and measurement buttons with `data-map-tag`.
   Existing query, chart, source/history, export and explanation IDs remain available.
@@ -302,8 +303,9 @@ advantage over the existing selectors and independent user task success remain u
 Accepted on 2026-09-10 for local implementation. The equipment-map contract above remains in force.
 The outcome is finding a measurement by its full name and reading its observations, source and matching ZIP
 in a wider connected workspace. This is presentation/metadata navigation, not a new analysis or identity model.
-No zoom/pan camera, change to the eight-node bound, physical relation/health inference, Canvas renderer,
-graph store, new API, dependency, persistence or external call is included.
+That initial navigation acceptance covered layout and search. The later Graph canvas section below adds map
+zoom/pan and replaces the eight-node presentation bound. Physical relation/health inference, graph editing or
+execution, a graph store, new data API, persistence or external call remain outside the accepted scope.
 
 ### Wide view and fullscreen lifecycle
 
@@ -333,7 +335,7 @@ graph store, new API, dependency, persistence or external call is included.
 - Search all `current.series` items for the currently selected equipment in the authorized dataset/version.
   Match tag name by trimmed, case-insensitive plain substring (no regex, fuzzy alias or cross-file search).
   Render names and units as inert text. Expose full names, match/total counts, an explicit no-match state and clear.
-  Keep the original complete native equipment/tag selectors and the map's selected-item-in-eight rule.
+  Keep the original complete native equipment/tag selectors. The Graph canvas section owns revealing the selected item.
 - Typing, clearing, paging or focusing results makes no HTTP request and changes no draft selection, submitted
   result, explanation or export. A selection outside the search results is explicitly still the current selection.
   Empty search shows an instruction/total count and uses the existing full list; it need not duplicate every item.
@@ -361,6 +363,91 @@ names. Include zero matches, selection beyond the first eight/page, another equi
 empty results, refused replacement/retained current, changed latest attempt, transient failure, integrity/deleted/
 expired/cross-workspace refusal and delayed query across view/selection changes. Reuse existing server oracles.
 Record measured fixture behavior without claiming production capacity, independent user success or release.
+
+## Graph canvas — file-local membership exploration
+
+Accepted for first local implementation on 2026-09-10 after the author clarified the diagram-workspace intent.
+This section replaces the first map's eight-item presentation limit. Existing validation, ownership, last-good,
+query, export, guided explanation and wide/fullscreen promises remain in force. Implementation and browser
+verification status are recorded in PROJECT_STATUS and Verification; acceptance alone is not a passing runtime.
+
+### Outcome and rendering boundary
+
+- Explore equipment-label groups and their measurement membership in one authorized dataset/current version,
+  expand/collapse groups, pan/zoom the map, find the displayed overview or selected item, and inspect the existing
+  observation/source/same-version ZIP detail. No inter-equipment physical, health, causal or execution edges.
+- Group expansion is view state, not equipment selection. Multiple groups can be open. A measurement button
+  identifies both equipment and tag; identical tags in different groups never select the wrong series. Keep
+  equal measurement-node dimensions, inert full names/units in detail and selection text plus outline.
+- Initial rendering budget: at most 20 equipment groups per group page and 200 measurement buttons in total.
+  Start with the selected group open. Divide the measurement budget among open groups; a group uses explicit
+  previous/next item pages if it exceeds its share. When only one group is open, all its first 200 items can be
+  drawn together. Budget changes on expansion must retain valid group page offsets and provide honest counts.
+  This is a view budget, not a CSV acceptance limit or measured production capacity. Main may adjust it downward
+  only after recording measured browser evidence and preserving access to all accepted input items.
+- Group pages and per-group item pages show ranges/counts and labelled previous/next actions. Complete native
+  equipment/tag selectors and current-equipment name search remain available. No node is silently lost because
+  of a render budget. Group paging/collapse may hide a selected node; its selected detail/query remains valid.
+  A selected-position action reveals its group/page and puts the node in view. Ordinary native or search item
+  selection also reveals that item; group-page changes alone never select another equipment.
+- Use deterministic, non-overlapping group/measurement layout and a shared world coordinate system for DOM
+  buttons and decorative SVG membership lines. No user graph editing, draggable node placement or saved layout.
+  A small public sample remains historical 1-group/3-item data. Multi-group/50/200-item examples are synthetic.
+
+### Camera and input
+
+- Provide stable controls `map-zoom-in`, `map-zoom-out`, `map-zoom-level`, `map-fit`, `map-focus-selection`,
+  `map-pan-toggle`, `map-pan-left`, `map-pan-right`, `map-pan-up`, `map-pan-down`, `map-camera-status`, and
+  `map-minimap`. Keep `equipment-map` as the clipped viewport and use `map-world` for transformed content.
+  Group controls expose `data-map-equipment` and `data-map-toggle`; item buttons retain `data-map-tag` and
+  additionally identify their equipment. Use `map-groups-prev`, `map-groups-next`, `map-groups-status` for paging.
+- Zoom changes the map camera only. Initial technical range is 1%–200%; very small scale is an overview, not
+  a readable-name claim. Fit computes bounds of the currently displayed nodes with padding; it does not expand
+  hidden data. Selected-position reveals the selected node at a readable scale (at least 75%) and centers it.
+  Focus entering a node keeps that node visible at a readable scale without changing data selection.
+- Provide pointer pan on background in an explicit labelled move mode, plus click/tap directional buttons and
+  keyboard-equivalent controls. Ignore node/control starts, distinguish a drag from a click, and end safely on
+  pointercancel/lost capture. Exit move mode with its button or viewport Escape. Do not intercept modal Escape.
+  Normal page scrolling and browser zoom remain available outside that explicit mode; do not capture Ctrl/Cmd
+  browser zoom. Any optional wheel camera binding must be documented and confined to the map (Alt+wheel).
+- The minimap shows the displayed node layout and current viewport rectangle, labelled as displayed content.
+  Clicking it can move the camera; provide the same movement without dragging via the direction/fit controls.
+  Minimap graphics need not duplicate every node in the keyboard tab sequence.
+- Camera controls and detail do not scale with the world. Viewport resize/wide/fullscreen must retain a usable
+  camera and selection; avoid unconditional fit on every query or transient render. Respect reduced motion.
+  At 1440/390/320px and browser text zoom, the toolbar, list, detail and exit path remain reachable. A labelled
+  narrow map toggle remains available; no huge world dimensions may overflow the document itself.
+
+### State, lifecycle and integration
+
+- Pan/zoom/fit, move mode, minimap, group/page expansion and selected-position make no API request and do not
+  change dataset/version/latest attempt, draft equipment/tag, submitted range, successful query, explanation
+  or ZIP. They must not cancel a pending valid query. Camera state is local and disposable, not stored history.
+- Explicit item selection from another group updates the existing equipment/tag controls as one selection action,
+  then uses the existing query/explanation invalidation path. Same-item selection preserves the successful result.
+  Date-only draft edits keep the submitted-range meaning. Search typing/clear/paging stays presentation-only.
+- Key graph state to dataset/version/latest attempt from the authorized description. File switch, replace/retry/
+  recovery/refresh, missing current and observed context/auth/deletion/expiry/integrity failure discard stale graph
+  metadata and pending camera callbacks. Generic query failure may retain valid metadata; never restore old stats.
+  A late callback from a previous dataset must not redraw, select or focus its old nodes in the new context.
+- Reuse the current result/source/history/explanation and wide/fullscreen controls. Respect modal ownership:
+  no viewport shortcut/focus-in handler may activate inert content, close a second layer or steal dialog focus.
+  No API/schema/store/model change, raw CSV calculation, external dependency request or graph database is required.
+- Technical first implementation: ordinary DOM/SVG plus a small local map controller using browser pointer and
+  resize APIs. Keep graph layout/camera responsibilities separate from existing app selection/query code; a local
+  `map-canvas.js` file may be loaded before app.js. No third-party package or renderer conversion is required.
+
+### Completion evidence
+
+Main directly reviews the diff and actual Chromium screens. Check real sample and labelled synthetic 8/11/50/200
+items, multiple equipment groups with identical tags, more than 20 groups and more than 200 items; assert counts,
+complete reachability, non-overlapping world boxes and layout/pan/zoom response timings rather than claiming
+capacity from a static bound. Verify camera and grouping while a query is held, same/other item selection,
+source and independent CSV/ZIP identity, previous-result/delivery/recovery, transient and context failure,
+empty results, deleted/expired/cross-workspace/integrity refusal, hostile long labels, 1440/390/320px, keyboard,
+click-only navigation, pointer cancellation, minimap, real wide/fullscreen entry/exit and existing modal coexistence.
+Reuse unaffected HTTP oracles; update earlier browser expectations only where this accepted presentation changed.
+The existing OPC UA timestamp failures and missing independent user task observations remain separate open work.
 
 ## Completion and public-release boundary
 
