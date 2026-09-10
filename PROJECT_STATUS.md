@@ -5,16 +5,20 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-02 실행 시계 역행 재현·오류 진단 보강 / LOCAL VERIFIED, 2026-09-10. 관련 검사 37개·기존 발행 근거 read-back PASS. 호스트 교정·과거 두 실패의 소급 원인 확정·MFG-09/12는 미완료 |
+| 현재 작업 | MFG-02 공유 시계 원인 분리·교정안 준비 완료, 2026-09-11 KST. Python 밖의 직접 커널 호출에서도 역행을 확인했고 시계 속도 설정·NTP 보정량을 대조했다. 제품 진단 보강은 LOCAL VERIFIED; 공유 시스템 교정은 미실행 |
 | 수용한 범위 | [MFG-02](docs/BACKLOG.md#mfg-02--recovery-and-replay-identity)의 보존 실패 → 원본 코드/검사 → 격리 loopback 재현. 확인한 결함만 국소 교정하고 시간 의미·validator를 완화하지 않는다. 미리보기·사용자 DB·시스템 설정은 변경하지 않는다 |
-| Git 기준 | `fix/opcua-time-order`, source `a86195b33f37391d2c04ff43b74642f65bdae5d2`, 조사 기준 `5d24282`, Worker 보존 `87a9548`. 기존 지도 source `d33ed90` 유지. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
+| Git 기준 | `fix/opcua-time-order`, source `a86195b33f37391d2c04ff43b74642f65bdae5d2`, 후속 조사 기준 `f74cfcc`, Worker 보존 `87a9548`. 기존 지도 source `d33ed90` 유지. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 제품 Main이 공유 시계 문제의 원인과 수정안을 기술 작업으로 맡는다. 의존성을 배제한 별도 프로세스 관측까지 완료했으며, 추가로 가능한 격리 진단을 진행하고 실제 공유 시스템 변경이 필요할 때 영향·복구안을 제시한다. 사용자 검수는 MFG-09/12에 별도 미완료로 유지한다 |
+| 다음 한 행동 | [공유 시계 교정안](docs/VERIFICATION.md#clock-layer-diagnosis)의 영향·복구 범위에 대한 승인 여부를 확인한다. 추천 첫 변경은 커널 시계 속도 설정 하나의 교정이며 정상 확인 시 runtime에 유지한다. Main이 실행·검수하며 승인 전 시스템을 변경하지 않는다. MFG-09/12 실제 사용자 관찰은 별도 미완료다 |
 
 ## 실행과 근거
 
+- 2026-09-11 KST [커널 호출·시각 보정 대조와 교정안](docs/VERIFICATION.md#clock-layer-diagnosis):
+  별도 C 프로세스 두 개에서도 같은 UTC 역행을 확인했다. 커널 `tick=11000`과 보정 전 시계 대비 약 1.1배의 속도가 일치하며,
+  네 번의 뒤로 이동은 NTP 보정량과 각각 1μs 이내로 맞았다. 앞으로 이동하는 경로는 호스트 동기화가 유력하지만 호출 주체는 미확정이다.
+  공유 시계 설정을 바꾸거나 과거 실패·전체 검사·사용자 효용을 완료 처리하지 않았다.
 - 2026-09-11 KST 격리 진단: 앱·site packages·Python 환경 변수를 배제한 Python 3.10/3.12 두 프로세스의
   20초 관측에서 각각 네 번의 UTC 역행을 같은 경과 시간 구간에 확인했다. [격리 경계와 근거](docs/VERIFICATION.md#clock-process-isolation).
   개별 가상환경만으로 공유 UTC 시계가 분리되지 않음을 확인한 것이며, 호스트 근본 원인이나 교정 완료는 아니다.

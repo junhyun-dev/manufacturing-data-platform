@@ -712,3 +712,96 @@ The [Linux man-pages time namespace documentation](https://man7.org/linux/man-pa
 explicitly leaves `CLOCK_REALTIME` unvirtualized. A separate virtualenv or ordinary container namespace is therefore not
 an independent UTC clock for this comparison; no container was started. Further investigation and any concrete repair
 remain product-maintainer work. No product timestamp semantics changed and no prior whole-suite/user gate was closed.
+
+
+<a id="clock-layer-diagnosis"></a>
+## Clock layer diagnosis and bounded correction proposal — 2026-09-11 KST
+
+Investigation baseline: `f74cfcc680b704dcf568c7dd5dd8ff5a05d199ae`, branch `fix/opcua-time-order`, clean.
+Product source remains `a86195b`; the raw timestamp contract, preview, databases and service processes are unchanged.
+Main reused the earlier failure and two-process evidence; this step separates the clock API, kernel rate and time service.
+No clock setter, service restart, privilege escalation, container/WSL action or new network time request was executed.
+
+Local evidence root: `.cache/clock-layer-checks/20260910T154152428180Z/`. Raw runtime metadata remains local, including
+any time-server identifiers. The following summary intentionally omits those identifiers.
+
+| Direct observation | Evidence and limit |
+|---|---|
+| Python/library isolation | Main reviewed the small C reader, rebuilt static and dynamic binaries, and ran both together for one fixed 8-second observation. 761/759 samples, no failed clock reads. Both libc and direct `SYS_clock_gettime` saw the same approximately +5.3601 s and −5.86255 s steps after subtracting monotonic elapsed time; cross-process step differences were 23/9 ns. `main-builds.json`, `main-capture.json`, `main-analysis.json`, raw `main-*.jsonl`. |
+| Static call path | The static executable has no dynamic section; disassembly of its `syscall` wrapper contains the x86-64 syscall instruction. The reviewed source hash is `2c332d67521390ea7585e52edbab38a266146dc53bb082f59569044ddb854bb2`. This rules out Python/project code and dynamic interposition as necessary causes; it does not identify every privileged clock writer. |
+| Rate setting | Read-only `adjtimex` with zero modes returned `tick=11000`, `freq=0`; user clock ticks per second are 100. Independent C captures measured MONOTONIC/RAW ratios 1.099999976 and 1.099999985. `read-discipline.c`, `discipline.json`, `versions.json`, `main-analysis.json`. |
+| Backward adjustment | One 20-second, 192-sample observer read only the time service's cached local D-Bus NTPMessage property. All four backward-step estimates coincide with a new accepted packet and match its calculated offset within 0.63 μs. Forward steps precede those updates. `observe-sync.py`, `sync-series.json`, `sync-analysis.json`. The observer did not initiate NTP traffic. |
+| Candidate forward path | The running kernel reports the matching WSL2 5.15.167.4 release; `hv_utils.timesync_implicit=Y`, and the exposed PTP clock is named hyperv. A read-only `/dev/ptp0` open was denied, errno 13; no escalation followed. `host-clock-metadata.json`, `ptp-readonly.json`. Direct host-versus-NTP comparison and forward setter attribution remain unavailable. |
+| Setter provenance | Targeted readable system configuration locations had no matching tick setter; one unrelated file was unreadable. A targeted time-service journal query returned no entries. `targeted-config-scan.json`, `time-service-journal.json`. Absence in this limited search does not prove that no other component changes the clock. |
+
+The [matching kernel's tick calculation](https://github.com/microsoft/WSL2-Linux-Kernel/blob/linux-msft-wsl-5.15.167.4/kernel/time/ntp.c#L242)
+and [nominal USER_TICK_USEC definition](https://github.com/microsoft/WSL2-Linux-Kernel/blob/linux-msft-wsl-5.15.167.4/include/linux/jiffies.h#L62)
+explain the measured rate: 100 user ticks/s normally use 10000 μs, whereas 11000 μs supplies 1.1 seconds per nominal second
+before other corrections. This is a confirmed non-nominal rate setting, not a product scheduling or serialization defect.
+Who selected that value, and why, remain unknown. Cached server transmit times advanced 15.026233 s across three packet
+intervals while RAW advanced 15.015040443 s and MONOTONIC advanced 16.516543961 s (`rate-crosscheck.json`). This coarse
+external elapsed-time comparison also supports the rate finding; packet observation timing and server accuracy are not
+independently certified. RAW is a comparison clock here, not an independently certified UTC source.
+
+The [systemd v255 implementation](https://github.com/systemd/systemd/blob/v255/src/timesync/timesyncd-manager.c#L189)
+resynchronizes after external clock steps and directly applies large NTP offsets. The measured negative step/offset pairs
+strongly identify the backward leg as time-service correction. This is numerical and source evidence, not tracing of the
+local service's exact syscall; the distribution's patched binary was not rebuilt. Its synchronized flag does not establish
+continuous monotonic UTC. Stopping the service merely to hide rejection is not a correction.
+
+The [matching Hyper-V implementation](https://github.com/microsoft/WSL2-Linux-Kernel/blob/linux-msft-wsl-5.15.167.4/drivers/hv/hv_util.c#L321)
+can set guest time when implicit sync is enabled and a host sample is at least five seconds ahead. The observed forward
+steps and enabled parameter fit this path. Without the denied host clock read or direct writer attribution, it remains
+a supported hypothesis rather than a proven host/NTP conflict. The exact cause of the older two operand-free suite failures
+also remains UNKNOWN; the later captured collector rejection is already explained by observed realtime regression.
+
+### Proposed first change; not executed or authorized by this investigation
+
+Main recommends a maintenance window to correct **only the shared kernel rate setting** first. This is a system-wide
+change, not isolation inside this repository. A virtualenv or ordinary container would still share realtime.
+
+1. Immediately before a change, retain `adjtimex(modes=0)` read-back and the current rate/step evidence. Require that
+   `tick` is still 11000 and USER_HZ is still 100; if values or ownership have changed, stop and reassess rather than
+   overwriting another operator. Establish one maintainer for this setting during the approved window: the syscall has
+   no atomic compare-and-set, and equal read-back values alone cannot exclude a competing writer. If that coordination
+   cannot be established, do not apply. Preserve all unrelated fields and existing application/service processes.
+2. The proposed setter is exactly `struct timex {.modes = ADJ_TICK, .tick = 10000}` through `adjtimex`; no other mode bits,
+   raw UTC set, NTP stop, persistent configuration or restart. This requires authorized shared-system access and the
+   appropriate privilege, unlike the [zero-mode read](https://man7.org/linux/man-pages/man2/adjtimex.2.html).
+3. Read `tick` back and compare kernel MONOTONIC/RAW intervals and UTC steps for a fixed **60 RAW-clock-second** observation,
+   using the same RAW clock for the before/after window because MONOTONIC's rate is itself being changed. Rate
+   correction and disappearance of steps are separate outcomes. Do not claim stability from the synchronized flag or
+   keep rerunning until an observation happens to pass. If steps remain, retain them and continue source attribution.
+   The proposed final state is runtime tick 10000 if the rate correction is confirmed without adverse workload effects;
+   this is not a persistent configuration change. Remaining steps do not automatically justify restoring the known
+   11000 rate. Unexpected parameter changes or workload effects stop the experiment without repeated overwrites.
+4. If the bounded observation is stable, run the two originally affected OPC UA checks once in fresh local directories,
+   preserving raw timestamp validation and reading their spool/current evidence. This does not retroactively identify
+   the old failures, certify all host workloads or close human acceptance.
+5. If adverse effects require recovery, restore only this task's prior `tick=11000` when the current value is still the
+   one it wrote and coordinated ownership excludes another writer; equal values are not proof of ownership. Otherwise
+   stop for the maintainer's decision without a blind rollback. Never rewind UTC to a saved timestamp or replay a whole stale timex structure. Restoring the old
+   rate also restores its known defect; it is containment/recovery, not success. Elapsed time and timer effects during a
+   rate change cannot be undone, so approval must cover other workloads sharing this kernel.
+
+A runtime `timesync_implicit: Y → N` experiment is a **separate conditional candidate**, not part of that first change.
+It could remove the suspected implicit forward correction while leaving NTP and explicit host SYNC handling, but it would
+also change clock catch-up after host/guest disruption. Its need and permitted impact must be reviewed from the first
+result and stronger host-clock evidence. No combined change or permanent switch is recommended on the current evidence.
+
+The permitted read-only investigation and concrete proposal are complete at this boundary. Actual shared-system repair
+requires approval of that impact/recovery scope. Technical execution and validation remain with the product maintainer;
+coordination does not transfer investigation to another project. No product contract change, full-suite rerun, browser
+rerun, release, deployment or user-task success is claimed here.
+
+Review and verification: the existing Worker supplied the C probe and a separate read-only proposal review; Main read
+the source/linkage and raw results, rebuilt the probe and checked the independent time-service evidence. Review narrowed
+the proposal to RAW-based comparison windows, explicit final tick state and the non-atomic ownership/rollback limit.
+No Worker product patch was integrated. Main's documentation checks passed: 43 reader tests (0.06 s), 101 relative targets
+exist, and the new owner anchor resolves. The existing 37 affected runtime tests were not repeated for this documentation
+change. Worker source/build/smoke evidence remains in `.cache/clock-layer-probe-20260911/` in its existing worktree.
+The fixed observations were 8 seconds for Worker, 8 seconds for Main's concurrent C pair and 20 seconds for cached NTP
+state; these are probe durations, not additive active-work time or measured collaboration savings. UTC regressed during
+the work, so wall timestamps do not support a reliable total duration. Token/compute cost is UNKNOWN. No common workflow
+was changed. The useful division here was a different call path plus Main's independent system-state evidence; both
+reviewers continued to distinguish a diagnosis/proposal from an executed repair.
