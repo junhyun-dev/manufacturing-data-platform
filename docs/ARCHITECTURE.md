@@ -10,7 +10,8 @@ flowchart LR
   api --> validate["file contract 검증"]
   validate --> attempt["latest attempt + issues"]
   validate -- ready --> version["immutable checked version"]
-  version --> select["equipment / tag / time range"]
+  version --> membership["파일 안 설비–측정 항목 지도 / 전체 목록"]
+  membership --> select["equipment / tag / time range"]
   select --> view["통계 + 실제 관측"]
   select --> export["version-pinned CSV + manifest"]
   attempt -- refused --> previous["기존 last-good / 결과 없음"]
@@ -26,6 +27,7 @@ flowchart LR
 | 경계 | 구현 owner | 책임과 연결된 evidence |
 |---|---|---|
 | browser 화면과 현재 선택 | [`static/index.html`](../src/manufacturing_data_platform/file_review/static/index.html), [`static/app.js`](../src/manufacturing_data_platform/file_review/static/app.js) | dataset·latest/current 표시, version을 고정한 조회·download, 이전 결과와 오류 표시 |
+| 설비–항목 지도와 연결된 상세 | [`static/app.js`](../src/manufacturing_data_platform/file_review/static/app.js), [지도 browser verifier](../scripts/verify_equipment_map_browser.py) | authorized current의 series 소속 표시, 목록과 공유하는 선택, 이전 조회 무효화·명시적 파일 새로고침, 실제 CSV/ZIP·모바일 반례 |
 | HTTP·browser security boundary | [`app.py`](../src/manufacturing_data_platform/file_review/app.py) | static client와 same-origin route, workspace cookie·CSRF·origin/host 확인, mode별 upload 허용, health identity |
 | CSV 검증과 content identity | [`model.py`](../src/manufacturing_data_platform/file_review/model.py) | CSV normalization, timestamp·quality·unit·duplicate 판정, source/version에 들어갈 canonical payload |
 | workspace state와 last-good | [`store.py`](../src/manufacturing_data_platform/file_review/store.py) | workspace 소유권, SQLite transaction, source/version/attempt/current, integrity read-back, retention·삭제 |
@@ -57,6 +59,11 @@ flowchart LR
   화면과 export는 사용한 version과 이전 결과 여부를 드러냅니다.
 - client는 CSV 전체를 자체 판정하지 않습니다. server의 검증·snapshot·집계 결과를 표시하며, export도 같은
   server-side version과 query를 사용합니다.
+
+설비 지도는 같은 current의 `series`를 표현하는 browser view입니다. 별도 관계 저장소나 계산 API는 없습니다.
+새 조회의 version·latest attempt와 지도 기준이 다르면 오래된 지도와 결과를 지우고 파일 상태 새로고침을 요구합니다.
+권한·삭제·무결성 오류도 이 경계를 무효화합니다. 날짜만 편집하면 기존 제출 구간을 유지하지만 설비/항목을 바꾸면
+이전 통계·export·설명을 지웁니다. 의미와 반례는 [지도 계약](FILE_REVIEW_CONTRACT.md#equipment-data-map--first-local-view)이 소유합니다.
 
 결과 설명도 이 snapshot/query 경계를 재사용합니다. 새 query 응답의 latest attempt ID와 명시적 version으로
 설명 대상을 고정하고, 다음 요청에서 최근 검사가 달라지면 답변을 거부합니다. 설명용 별도 데이터 저장소·SQL·LLM은 없습니다.

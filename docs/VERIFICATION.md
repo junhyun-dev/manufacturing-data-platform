@@ -7,6 +7,67 @@
 현재 CSV 웹 서비스는 [사용·검증 guide](FILE_REVIEW_GUIDE.md)의 `make serve`·`make verify-service`로
 실행한다. 이 문서의 OPC UA·Spark·historical report 검증은 별도의 기존 실험이며 웹 실행의 선행조건이 아니다.
 
+<a id="equipment-map-verification"></a>
+## Equipment data map — 2026-09-10 local verification
+
+기준은 `feat/equipment-data-map@a9abcf985476dbe0b9f0a3bc32b30a7b6ff38bc8`와 아래 정적 UI·browser oracle 변경이다.
+기존 Discovery 네 문서는 `7b23848`, 수용 계약은 `a9abcf9`에 보존했다. Worker는 별도 checkout에서 정적 UI 세 파일만
+구현했고 Main이 실제 diff·화면·서버/ZIP 정답을 검토해 통합했다. backend·DB·API·의존성·동결 portfolio artifact는 그대로다.
+현행 의미는 [지도 계약](FILE_REVIEW_CONTRACT.md#equipment-data-map--first-local-view), 사용법은 [Guide](FILE_REVIEW_GUIDE.md#설비-데이터-지도로-항목-찾기)로 연결한다.
+
+| 실제 검사 | 결과와 범위 |
+|---|---|
+| `make setup` | PASS, 기존 lock의 39 packages 확인 |
+| `make test` | **255 passed / 17 skipped**, 57.39초; 기존 FastAPI/Starlette deprecation warning 2개. optional runtime은 실행하지 않음 |
+| `make verify` | PASS, `.cache/telemetry-runs/run-gTqOADk1/`의 5개 fixture 판정과 current → manifest → 9개 event hash를 직접 읽고 재계산 |
+| `MFG_REVIEW_MODE=full make verify-service` | PASS, 실제 HTTP·업로드·거부된 교체·복구·ZIP·재시작; `.cache/file-review-verification/20260910T021724069085Z/receipt.json` |
+| 지도 browser oracle full/sample | **14/11개 묶음 PASS**, Chromium 140.0.7339.16; 마지막 실행 02:20:33–02:21:04 UTC |
+| 기존 결과 설명 browser full/sample | **18/12개 PASS**, 실제 설명·취소/시간 초과·맥락 변경·삭제·모바일 dialog. 최종 후속 수정은 지도 배치만 변경 |
+| 기존 파일 검토 browser full/sample | **11/7개 PASS**, 업로드/거부·이전 결과·복구·빈 구간·브라우저 격리·모바일 |
+
+지도 재현 명령은 `python3 scripts/verify_equipment_map_browser.py --url <loopback server> --mode full`이며,
+임의 업로드를 막은 별도 서버는 `--mode sample`을 쓴다. 이번 실행 root는
+`.cache/equipment-map-checks/20260910T020802221477Z/`이고 최종 `map-final-full/receipt.json`,
+`map-final-sample/receipt.json`, `responses.json`, 실제 ZIP·PNG를 보존한다. 같은 root의
+`explanation-full/`, `explanation-sample/`, `browser-full/`, `browser-sample/`은 각 기존 verifier의 실행이다.
+각 검사는 자신이 만든 browser workspace만 사용했다. 지도 fixture 삭제도 PASS이며 JS 오류·외부 HTTP 요청은 없었다.
+
+- 실제 공개 샘플 CSV를 별도 `csv.DictReader`와 `statistics.fmean`으로 읽었다. 온도 7,144개,
+  평균 55.7481173012318, 최소 44.85, 최대 64.075를 API/화면과 대조하고 ZIP의 전체 행·값·hash·version·조건을 확인했다.
+- 지도/목록 선택을 공유하고 새 항목 선택 시 이전 통계·export·설명을 지운다. 날짜 편집만으로 제출 전 조건을
+  적용하지 않는다. 실제 전달 누락·복구와 거부된 교체에서 같은 정상 version의 지도/ZIP이 유지됐다.
+- 실제 다른 탭의 재검사로 latest attempt 불일치를 만들고 명시적 새로고침을 확인했다. 다른 workspace의 404,
+  삭제 뒤 export 404, cookie 없는 query 401은 실제 HTTP다. 무결성 409·일시적 503은 UI 경계용 응답 주입이며,
+  서버의 실제 변조/만료는 기존 API·integrity tests가 검증한다. 늦은 응답은 transport abort를 무효화하고 draft 변경
+  event를 주입한 반례다. 이를 실제 사용자가 했던 행동이나 장애로 기록하지 않는다.
+- 실제 브라우저에서 1440/390/320px 화면과 Tab/Enter/Space·선택 포커스·근거 이동·설명 dialog의 Escape/복귀를 확인했다.
+  두 설비/11항목 합성 fixture는 1440/1280/1024/601/600/390/320px의 버튼 경계·선택 외곽선·중심/항목 겹침을 검사했다.
+  모든 항목의 목록 접근, 여덟 개 안에 선택 항목 포함, 다른 파일의 같은 이름 분리, 긴 markup 문자열의 비실행도 확인했다.
+- Main 화면 검토: 실제 [데스크톱](assets/file-review-equipment-map-desktop.png),
+  [390px 모바일](assets/file-review-equipment-map-mobile.png), [이전 정상 결과](assets/file-review-equipment-map-retained.png).
+  과거 MetroPT 공개 샘플 화면이며 실공장 상태·합성 다중 설비 화면·실제 사용자 관찰과 혼동하지 않는다.
+
+최종 HTTP에서 내려받은 파일과 checkout bytes가 같았으며 SHA-256은 다음과 같다. health의 revision은 당시
+`local-equipment-map-working-tree`였다. 이 digest가 검증한 UI를 특정하며 tag/배포 identity를 대신하지 않는다.
+
+```text
+index.html  5bff2f9b5874c2e9b8b17f96cd3a85b00b7e897e19a2d3e43026f714d14bdc15
+app.js      5b76fb65c9240e3807e860a174a89211cd56ad0db01638a61a3629828f74d558
+styles.css  78f65c1a882277a92ac466adbf128f5cb6d8de434ee447b7d369c46754d5d71a
+```
+
+분담 회고: Worker 반환 후 Main의 직접 검토에서 반복 identity 표시를 줄였고, SVG 선과 HTML 노드의 좌표계를 맞췄다.
+두 차례 검토 반영 뒤에도 8개 항목의 중심 겹침이 독립 browser oracle에서 실패했다. Main이 조밀한 배치를 보정하고
+320px에서 세 항목은 더 짧은 높이를 쓰도록 한 뒤 영향받은 full/sample 지도 검사를 다시 통과시켰다.
+Worker의 최초 작업 시작 01:41:05 UTC부터 마지막 반환 완료 02:15:20 UTC까지 약 34분이며 두 검토 반영을 포함한다.
+수용 계약 commit 01:39:54 UTC부터 최종 지도 검사 종료 02:21:04 UTC까지 약 41분은 관측 가능한 경과 시간으로,
+계약 작성 전 조사나 뒤 문서/로컬 preview 정리는 포함하지 않는다. 확인 가능한 모델별 token·비용은 **UNKNOWN**이다.
+이 한 사례로 분담 방식의 보편적 속도·비용 우위를 주장하지 않는다. 제안은 다음에도 구현 반환과 다른 독립 반례를
+Main이 검토하되, 경미한 통합 수정을 불필요한 왕복으로 늘리지 않는 것이다. 공통 방법 변경은 하지 않았다.
+
+이번 검사에서 Docker/WSL 조작·원격 조회·외부 AI·push/PR/merge/Release/배포는 하지 않았다.
+지도 효용, 세 항목에서 기존 목록보다 빠른지, 물리 건강을 오해하지 않는지와 MFG-09/MFG-12의 독립 과제 관찰은 미검증이다.
+
 <a id="visual-discovery-verification"></a>
 ## Equipment visual discovery — 2026-09-10
 

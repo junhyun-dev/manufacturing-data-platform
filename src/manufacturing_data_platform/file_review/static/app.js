@@ -4,7 +4,8 @@ const $ = (id) => document.getElementById(id);
 const state = {
   csrf: null, datasets: [], active: null, query: null, busy: false, queryGeneration: 0,
   capabilities: { uploads: true, sample: true, accounts: false }, limits: { upload_bytes: 8 * 1024 * 1024, rows: 50000, datasets: 10 },
-  explanation: { generation: 0, controller: null, timeout: null, loading: false, question: null, requestKey: null, answerKey: null, retryVisible: false, returnFocus: null }
+  explanation: { generation: 0, controller: null, timeout: null, loading: false, question: null, requestKey: null, answerKey: null, retryVisible: false, returnFocus: null },
+  map: { expanded: false, unavailable: null }
 };
 const explanationNarrow = window.matchMedia("(max-width: 850px)");
 const EXPLANATION_TIMEOUT_MS = 10000;
@@ -34,9 +35,13 @@ function setBusy(busy, message = "처리 중…") {
   $("loading-text").textContent = message;
   for (const id of ["upload-button", "welcome-upload", "sample-button", "welcome-sample", "replace-button", "delete-button", "query-button", "reset-range", "retry-button", "delivery-button", "recover-button", "export-button", "explanation-launcher"]) $(id).disabled = busy;
   for (const item of document.querySelectorAll(".dataset-item")) item.disabled = busy;
+  for (const item of document.querySelectorAll("[data-map-tag]")) item.disabled = busy;
   $("equipment-filter").disabled = busy;
   $("tag-filter").disabled = busy;
+  $("map-refresh").disabled = busy;
+  $("map-source-link").disabled = busy || !!state.map.unavailable || !currentDataset()?.current;
   $("main").setAttribute("aria-busy", String(busy));
+  updateQueryControls();
   updateExplanationControls();
 }
 
@@ -76,6 +81,180 @@ function attemptDate(value) {
 }
 
 function currentDataset() { return state.datasets.find((dataset) => dataset.id === state.active); }
+
+function isReviewContextError(error) {
+  return [401, 403, 404].includes(error?.status) || ["INTEGRITY", "CONTEXT_CHANGED"].includes(error?.code);
+}
+
+function updateQueryControls() {
+  $("export-button").disabled = state.busy || !state.query;
+}
+
+function setQueryPlaceholder(message, hidden = false) {
+  $("query-placeholder").textContent = message;
+  $("query-placeholder").hidden = hidden;
+}
+
+function queryMatchesDraft() {
+  const selected = state.query;
+  const dataset = currentDataset();
+  return !!selected && !!dataset?.current && selected.datasetId === dataset.id &&
+    selected.result.version === dataset.current.version && selected.result.latest_attempt_id === dataset.latest?.id &&
+    selected.result.equipment === $("equipment-filter").value && selected.result.tag === $("tag-filter").value;
+}
+
+function updateMapSelectionStatus(message) {
+  const dataset = currentDataset();
+  const item = dataset?.current?.series.find((series) => series.equipment === $("equipment-filter").value && series.tag === $("tag-filter").value);
+  if (!item) {
+    $("map-selection-status").textContent = message || "선택할 수 있는 측정 항목이 없습니다.";
+    return;
+  }
+  if (message) {
+    $("map-selection-status").textContent = message;
+  } else if (queryMatchesDraft()) {
+    $("map-selection-status").textContent = `조회 완료 · 선택 구간 ${number(state.query.result.summary.count)}개 · 파일 전체 ${number(item.count)}개`;
+  } else {
+    $("map-selection-status").textContent = `선택한 항목을 조회해 주세요 · 파일 전체 ${number(item.count)}개`;
+  }
+}
+
+function applyMapVisibility() {
+  const narrow = explanationNarrow.matches;
+  const toggle = $("map-view-toggle");
+  toggle.hidden = !narrow;
+  $("equipment-map-body").hidden = narrow && !state.map.expanded;
+  toggle.setAttribute("aria-expanded", String(!narrow || state.map.expanded));
+  toggle.textContent = state.map.expanded ? "지도 접기" : "지도 펼치기";
+}
+
+function visibleMapSeries(series, selected) {
+  const visible = series.slice(0, 8);
+  if (selected && !visible.includes(selected)) visible[visible.length - 1] = selected;
+  return visible;
+}
+
+function renderMapUnavailable(message) {
+  const root = $("equipment-map");
+  root.replaceChildren();
+  const unavailable = node("div", undefined, "map-unavailable");
+  unavailable.append(node("strong", "지도 근거를 확인할 수 없습니다."), node("p", message));
+  root.append(unavailable);
+  $("map-overflow").textContent = "오래된 항목 관계나 통계를 표시하지 않습니다.";
+  $("map-selected-item").textContent = "—";
+  $("map-selection-status").textContent = "파일 상태를 새로고침해 주세요.";
+  $("map-context").replaceChildren();
+  $("map-source-link").disabled = true;
+  applyMapVisibility();
+}
+
+function renderEquipmentMap() {
+  const dataset = currentDataset();
+  const current = dataset?.current;
+  if (!dataset || !current) return;
+  $("equipment-map-section").hidden = false;
+  if (state.map.unavailable) {
+    renderMapUnavailable(state.map.unavailable);
+    return;
+  }
+  const equipment = $("equipment-filter").value;
+  let tag = $("tag-filter").value;
+  const series = (current.series || []).filter((item) => item.equipment === equipment);
+  const selected = series.find((item) => item.tag === tag) || series[0];
+  if (selected && selected.tag !== tag) {
+    tag = selected.tag;
+    $("tag-filter").value = tag;
+  }
+  const visible = visibleMapSeries(series, selected);
+  const root = $("equipment-map");
+  const dense = visible.length > 3;
+  root.classList.toggle("map-dense", dense);
+  root.replaceChildren();
+  const lines = svgElement("svg", { class: "map-lines", viewBox: "0 0 100 100", preserveAspectRatio: "none", "aria-hidden": "true", focusable: "false" });
+  const slots = dense ? [
+    { x: 24, y: 13 }, { x: 76, y: 13 }, { x: 76, y: 36 }, { x: 76, y: 64 },
+    { x: 76, y: 87 }, { x: 24, y: 87 }, { x: 24, y: 64 }, { x: 24, y: 36 }
+  ] : [
+    { x: 50, y: 15 }, { x: 78, y: 15 }, { x: 78, y: 50 }, { x: 78, y: 85 },
+    { x: 50, y: 85 }, { x: 22, y: 85 }, { x: 22, y: 50 }, { x: 22, y: 15 }
+  ];
+  const positions = visible.map((_, index) => slots[Math.round(index * slots.length / Math.max(visible.length, 1)) % slots.length]);
+  for (const position of positions) lines.append(svgElement("line", { x1: 50, y1: 50, x2: position.x, y2: position.y }));
+  root.append(lines);
+  const center = node("div", undefined, "map-center");
+  center.append(node("span", "파일 안 설비"), node("strong", equipment));
+  root.append(center);
+  visible.forEach((item, index) => {
+    const button = node("button", undefined, "map-node");
+    button.type = "button";
+    button.dataset.mapTag = item.tag;
+    button.style.setProperty("--map-x", `${positions[index].x}%`);
+    button.style.setProperty("--map-y", `${positions[index].y}%`);
+    button.setAttribute("aria-pressed", String(item.tag === tag));
+    button.setAttribute("aria-label", `${item.tag}, ${item.unit || "단위 없음"}, 파일 전체 ${number(item.count)}개 관측`);
+    button.title = item.tag;
+    button.disabled = state.busy;
+    button.append(node("span", item.tag, "map-node-name"), node("small", `${item.unit || "단위 없음"} · 전체 ${number(item.count)}`));
+    button.addEventListener("click", () => selectMapTag(item.tag));
+    root.append(button);
+  });
+  const remainder = Math.max(0, series.length - visible.length);
+  $("map-overflow").textContent = remainder
+    ? `전체 ${number(series.length)}개 중 ${number(visible.length)}개 표시 · 나머지 ${number(remainder)}개는 위 측정 항목 목록에서 선택할 수 있습니다.`
+    : `이 설비의 측정 항목 ${number(series.length)}개를 모두 표시합니다.`;
+  $("map-selected-item").textContent = selected ? `${selected.tag} · ${selected.unit || "단위 없음"}` : "—";
+  updateMapSelectionStatus();
+  const context = $("map-context");
+  context.replaceChildren();
+  const retained = dataset.latest?.status !== "ready";
+  const resultState = node("article");
+  resultState.append(node("strong", "현재 보관 결과"), node("p", retained ? "이전 정상 결과 유지" : "분석 가능"));
+  const attemptState = node("article");
+  attemptState.append(node("strong", "최신 시도 · 서버 시각"), node("p", `${statusNames[dataset.latest?.status] || dataset.latest?.status || "확인 불가"} · ${attemptDate(dataset.latest?.at) || "—"}`));
+  const physicalState = node("article");
+  physicalState.append(node("strong", "설비 상태"), node("p", "판단 근거 없음"));
+  const sourceTime = node("article");
+  sourceTime.append(node("strong", "원본 관측 범위"), node("p", `${dateLabel(current.range?.start)} – ${dateLabel(current.range?.end)} · ${current.time_basis === "unspecified" ? "시간대 미제공" : "UTC"}`));
+  context.append(resultState, attemptState, physicalState, sourceTime);
+  if (dataset.source_kind === "sample") context.append(node("p", "공개 샘플 · 과거 열차 공기압축기 기록 · 설비명은 검증된 자산 ID나 실시간 상태가 아닙니다.", "map-sample-note"));
+  $("map-source-link").disabled = state.busy;
+  applyMapVisibility();
+}
+
+function clearQueryForDraft(message = "선택한 항목을 조회해 주세요.", { closeExplanationPanel = true } = {}) {
+  state.queryGeneration += 1;
+  state.query = null;
+  if (closeExplanationPanel) resetExplanation();
+  $("query-results").hidden = true;
+  showError("", "query-error");
+  setQueryPlaceholder(message);
+  updateQueryControls();
+  updateMapSelectionStatus(message);
+}
+
+function invalidateMapAndQuery(message, { preserveExplanationPanel = false } = {}) {
+  state.map.unavailable = message || "파일 상태가 바뀌었습니다.";
+  clearQueryForDraft("파일 상태를 새로고침한 뒤 다시 조회해 주세요.", { closeExplanationPanel: !preserveExplanationPanel });
+  renderEquipmentMap();
+  showError(state.map.unavailable, "query-error");
+}
+
+function suspendMapAndQuery(message) {
+  clearQueryForDraft(message);
+  if (currentDataset()?.current) {
+    state.map.unavailable = message;
+    renderEquipmentMap();
+  }
+}
+
+function selectMapTag(tag) {
+  if ($("tag-filter").value === tag) return;
+  $("tag-filter").value = tag;
+  clearQueryForDraft();
+  renderEquipmentMap();
+  const selected = [...document.querySelectorAll("[data-map-tag]")].find((button) => button.dataset.mapTag === tag);
+  selected?.focus({ preventScroll: true });
+}
 
 function explanationKey(selected = state.query) {
   if (!selected) return null;
@@ -208,10 +387,7 @@ function renderExplanationAnswer(payload, key) {
 }
 
 function invalidateQueryForExplanation(message) {
-  state.queryGeneration += 1;
-  state.query = null;
-  $("query-results").hidden = true;
-  showError(message, "query-error");
+  invalidateMapAndQuery(message, { preserveExplanationPanel: true });
   $("explanation-answer").replaceChildren();
   $("explanation-context").replaceChildren();
   $("explanation-panel").querySelector(".explanation-evidence").hidden = true;
@@ -219,7 +395,7 @@ function invalidateQueryForExplanation(message) {
   state.explanation.requestKey = null;
   state.explanation.answerKey = null;
   state.explanation.retryVisible = false;
-  $("explanation-status").textContent = "파일 상태가 바뀌었거나 이 결과를 더 이상 확인할 수 없습니다. 파일 결과를 다시 조회해 주세요.";
+  $("explanation-status").textContent = "파일 상태가 바뀌었거나 이 결과를 더 이상 확인할 수 없습니다. 파일 상태를 새로고침해 주세요.";
 }
 
 async function requestExplanation(question) {
@@ -272,7 +448,9 @@ async function requestExplanation(question) {
         typeof payload.title !== "string" || !Array.isArray(payload.paragraphs) ||
         !payload.paragraphs.every((paragraph) => typeof paragraph === "string") || !Array.isArray(payload.evidence) ||
         !payload.evidence.every((kind) => ["query", "source", "history"].includes(kind))) {
-      throw new Error("설명 응답이 마지막 조회 결과와 일치하지 않습니다. 결과를 다시 조회해 주세요.");
+      const mismatch = new Error("설명 응답이 마지막 조회 결과와 일치하지 않습니다. 결과를 다시 조회해 주세요.");
+      mismatch.code = "CONTEXT_CHANGED";
+      throw mismatch;
     }
     renderExplanationAnswer(payload, key);
   } catch (error) {
@@ -344,9 +522,14 @@ function renderList() {
     button.append(node("span", "CSV", "file-icon"), text, node("span", undefined, `dataset-dot ${dataset.latest?.status || ""}`));
     button.addEventListener("click", () => action("파일을 불러오는 중…", async () => {
       resetExplanation();
-      const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}`);
-      upsert(payload.dataset);
-      await selectDataset(payload.dataset.id, true);
+      try {
+        const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}`);
+        upsert(payload.dataset);
+        await selectDataset(payload.dataset.id, true);
+      } catch (error) {
+        if (dataset.id === state.active && isReviewContextError(error)) invalidateMapAndQuery(error.message);
+        throw error;
+      }
     }));
     $("dataset-list").append(button);
   }
@@ -390,6 +573,8 @@ function renderDataset(dataset, resetFilters) {
   const current = dataset.current;
   const previousEquipment = resetFilters ? "" : $("equipment-filter").value;
   const previousTag = resetFilters ? "" : $("tag-filter").value;
+  state.map.unavailable = null;
+  if (resetFilters) state.map.expanded = false;
   $("welcome").hidden = true;
   $("workspace").hidden = false;
   $("dataset-title").textContent = dataset.name;
@@ -419,6 +604,7 @@ function renderDataset(dataset, resetFilters) {
   $("analysis-area").hidden = !current;
   $("no-current").hidden = !!current;
   $("query-results").hidden = true;
+  setQueryPlaceholder("선택한 항목을 조회해 주세요.");
   showError("", "query-error");
   state.query = null;
   $("source-metadata").replaceChildren();
@@ -444,13 +630,23 @@ function renderDataset(dataset, resetFilters) {
     const end = dateLabel(current.range?.end);
     $("start-filter").title = `원본 첫 시각: ${start}`;
     $("end-filter").title = `원본 마지막 시각: ${end}. 종료 시각과 같은 관측값은 포함하지 않습니다.`;
+    renderEquipmentMap();
+  } else {
+    $("equipment-map-section").hidden = true;
+    $("equipment-map").replaceChildren();
+    $("map-overflow").textContent = "";
+    $("map-selected-item").textContent = "";
+    $("map-selection-status").textContent = "";
+    $("map-context").replaceChildren();
+    $("map-source-link").disabled = true;
   }
   $("sample-attribution").hidden = dataset.source_kind !== "sample";
   $("sample-exercise").hidden = dataset.source_kind !== "sample";
   renderHistory(dataset);
+  updateQueryControls();
 }
 
-async function selectDataset(id, resetFilters = false) {
+async function selectDataset(id, resetFilters = false, loadResult = true) {
   resetExplanation();
   const changed = state.active !== id;
   state.active = id;
@@ -459,13 +655,16 @@ async function selectDataset(id, resetFilters = false) {
   renderList();
   if (!dataset) {
     state.query = null;
+    state.map.unavailable = null;
+    $("equipment-map-section").hidden = true;
+    $("equipment-map").replaceChildren();
     $("workspace").hidden = true;
     $("welcome").hidden = false;
     document.title = "Telemetry Review · 설비 데이터 검토";
     return;
   }
   renderDataset(dataset, resetFilters || changed);
-  if (dataset.current) await loadQuery();
+  if (dataset.current && loadResult) await loadQuery();
 }
 
 function selectedParameters(dataset) {
@@ -483,19 +682,47 @@ async function loadQuery() {
   resetExplanation();
   const dataset = currentDataset();
   if (!dataset?.current) return;
+  if (state.map.unavailable) {
+    showError("파일 상태를 새로고침한 뒤 조회해 주세요.", "query-error");
+    return;
+  }
   const generation = ++state.queryGeneration;
+  const params = selectedParameters(dataset);
+  const captured = {
+    datasetId: dataset.id,
+    version: dataset.current.version,
+    latestAttemptId: dataset.latest?.id,
+    equipment: params.get("equipment"),
+    tag: params.get("tag")
+  };
   state.query = null;
   $("query-results").hidden = true;
+  setQueryPlaceholder("선택한 항목을 조회하는 중…");
+  updateMapSelectionStatus("선택한 항목을 조회하는 중…");
+  updateQueryControls();
   showError("", "query-error");
   try {
-    const params = selectedParameters(dataset);
     const result = await request(`/api/datasets/${encodeURIComponent(dataset.id)}/query?${params}`);
-    if (generation !== state.queryGeneration || dataset.id !== state.active) return;
+    if (generation !== state.queryGeneration || captured.datasetId !== state.active) return;
+    const described = currentDataset();
+    if (!described?.current || described.current.version !== captured.version || described.latest?.id !== captured.latestAttemptId ||
+        result.version !== captured.version || result.latest_attempt_id !== captured.latestAttemptId ||
+        result.equipment !== captured.equipment || result.tag !== captured.tag) {
+      invalidateMapAndQuery("파일 버전 또는 최근 검사 상태가 바뀌었습니다. 파일 상태를 명시적으로 새로고침해 주세요.");
+      return;
+    }
     state.query = { result, datasetId: dataset.id, params: new URLSearchParams(params) };
     state.query.params.set("version", result.version);
     renderQuery(result);
   } catch (error) {
-    if (generation === state.queryGeneration) showError(error.message, "query-error");
+    if (generation !== state.queryGeneration) return;
+    if (isReviewContextError(error)) invalidateMapAndQuery(error.message);
+    else {
+      showError(error.message, "query-error");
+      setQueryPlaceholder("조회를 완료하지 못했습니다. 조건을 확인하고 다시 조회해 주세요.");
+      updateMapSelectionStatus("조회하지 못했습니다. 선택한 항목을 다시 조회해 주세요.");
+      updateQueryControls();
+    }
   }
 }
 
@@ -568,6 +795,7 @@ function renderChart(result) {
 
 function renderQuery(result) {
   $("query-results").hidden = false;
+  setQueryPlaceholder("", true);
   $("previous-query").hidden = !result.previous_result;
   $("previous-query").textContent = `${result.latest_status === "ready" ? "최신 검사와 다른 버전을 조회하고 있습니다." : "최근 검사가 완료되지 않아 이전 검증 결과를 유지합니다."} 표시와 내려받기 모두 버전 ${shortHash(result.version)}을 사용합니다.`;
   const start = result.filter?.start ? `${dateLabel(result.filter.start)}부터` : "첫 관측부터";
@@ -594,6 +822,8 @@ function renderQuery(result) {
     row.append(qualityCell);
     $("preview-body").append(row);
   }
+  updateMapSelectionStatus();
+  updateQueryControls();
 }
 
 async function upload(file, replace) {
@@ -602,7 +832,7 @@ async function upload(file, replace) {
   if (!file.size) { showError("빈 파일입니다. CSV 내용이 있는 파일을 선택해 주세요."); return; }
   const dataset = currentDataset();
   if (replace && !dataset) return;
-  resetExplanation();
+  suspendMapAndQuery(replace ? "수정 파일 검사가 끝나면 지도를 다시 표시합니다." : "새 파일 검사가 끝나면 지도를 다시 표시합니다.");
   await action(replace ? "수정 파일을 검사하는 중…" : "파일을 업로드하고 검사하는 중…", async () => {
     const path = replace ? `/api/datasets/${encodeURIComponent(dataset.id)}/replace` : "/api/datasets";
     const payload = await request(`${path}?${new URLSearchParams({ name: file.name })}`, { method: "POST", body: file, headers: { "Content-Type": "text/csv; charset=utf-8" } });
@@ -613,7 +843,7 @@ async function upload(file, replace) {
 }
 
 async function openSample() {
-  resetExplanation();
+  suspendMapAndQuery("공개 샘플 검사가 끝나면 지도를 다시 표시합니다.");
   await action("공개 샘플을 준비하고 검사하는 중…", async () => {
     const payload = await request("/api/datasets/sample", { method: "POST" });
     upsert(payload.dataset);
@@ -625,7 +855,7 @@ async function openSample() {
 async function runAttempt(route, message, resultMessage) {
   const dataset = currentDataset();
   if (!dataset) return;
-  resetExplanation();
+  suspendMapAndQuery("검사가 끝나면 파일 버전과 지도를 다시 표시합니다.");
   await action(message, async () => {
     const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}/${route}`, { method: "POST" });
     upsert(payload.dataset);
@@ -634,11 +864,43 @@ async function runAttempt(route, message, resultMessage) {
   });
 }
 
+async function refreshMapDataset() {
+  const dataset = currentDataset();
+  if (!dataset || state.busy) return;
+  const datasetId = dataset.id;
+  suspendMapAndQuery("파일 상태를 다시 확인하는 중입니다.");
+  showError("", "query-error");
+  await action("파일 상태를 새로고침하는 중…", async () => {
+    try {
+      const payload = await request(`/api/datasets/${encodeURIComponent(datasetId)}`);
+      if (datasetId !== state.active) return;
+      upsert(payload.dataset);
+      state.map.unavailable = null;
+      await selectDataset(datasetId, false, false);
+      showToast("현재 파일 버전과 최근 검사 상태를 다시 확인했습니다. 선택한 항목을 조회해 주세요.");
+    } catch (error) {
+      if (datasetId === state.active) {
+        state.map.unavailable = error.message || "파일 상태를 새로고침하지 못했습니다.";
+        renderEquipmentMap();
+        setQueryPlaceholder("파일 상태를 새로고침한 뒤 다시 조회해 주세요.");
+        showError(state.map.unavailable, "query-error");
+      }
+      throw error;
+    }
+  });
+}
+
 async function downloadResult() {
   const selected = state.query;
   if (!selected) return;
   await action("선택한 버전의 결과를 준비하는 중…", async () => {
-    const response = await request(`/api/datasets/${encodeURIComponent(selected.datasetId)}/export?${selected.params}`, { binary: true });
+    let response;
+    try {
+      response = await request(`/api/datasets/${encodeURIComponent(selected.datasetId)}/export?${selected.params}`, { binary: true });
+    } catch (error) {
+      if (isReviewContextError(error)) invalidateMapAndQuery(error.message);
+      throw error;
+    }
     const blob = await response.blob();
     const link = node("a");
     const url = URL.createObjectURL(blob);
@@ -658,7 +920,19 @@ function installEvents() {
     cancelAnimationFrame(resizeFrame);
     resizeFrame = requestAnimationFrame(() => { if (state.query) renderChart(state.query.result); });
   });
-  explanationNarrow.addEventListener("change", () => { if (!$("explanation-panel").hidden) closeExplanation(); });
+  explanationNarrow.addEventListener("change", () => {
+    if (!$("explanation-panel").hidden) closeExplanation();
+    applyMapVisibility();
+  });
+  $("map-view-toggle").addEventListener("click", () => { state.map.expanded = !state.map.expanded; applyMapVisibility(); });
+  $("map-refresh").addEventListener("click", refreshMapDataset);
+  $("map-source-link").addEventListener("click", () => {
+    const target = $("source-details");
+    target.open = true;
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   $("explanation-launcher").addEventListener("click", openExplanation);
   $("explanation-close").addEventListener("click", () => closeExplanation());
   $("explanation-backdrop").addEventListener("click", () => closeExplanation());
@@ -695,7 +969,17 @@ function installEvents() {
   $("replace-button").addEventListener("click", () => $("replace-input").click());
   for (const [id, replace] of [["upload-input", false], ["replace-input", true]]) $(id).addEventListener("change", (event) => { const file = event.target.files?.[0]; event.target.value = ""; upload(file, replace); });
   for (const id of ["sample-button", "welcome-sample"]) $(id).addEventListener("click", openSample);
-  $("equipment-filter").addEventListener("change", () => { const dataset = currentDataset(); if (dataset) populateTags(dataset); });
+  $("equipment-filter").addEventListener("change", () => {
+    const dataset = currentDataset();
+    if (!dataset) return;
+    populateTags(dataset);
+    clearQueryForDraft();
+    renderEquipmentMap();
+  });
+  $("tag-filter").addEventListener("change", () => {
+    clearQueryForDraft();
+    renderEquipmentMap();
+  });
   $("query-form").addEventListener("submit", (event) => { event.preventDefault(); action("선택 구간을 분석하는 중…", loadQuery); });
   $("reset-range").addEventListener("click", () => { $("start-filter").value = ""; $("end-filter").value = ""; action("전체 기간을 분석하는 중…", loadQuery); });
   $("export-button").addEventListener("click", downloadResult);
@@ -707,9 +991,14 @@ function installEvents() {
     if ($("delete-dialog").returnValue !== "delete") return;
     const dataset = currentDataset();
     if (!dataset) return;
-    resetExplanation();
+    suspendMapAndQuery("파일을 삭제하는 중입니다.");
     action("파일과 검사 기록을 삭제하는 중…", async () => {
-      await request(`/api/datasets/${encodeURIComponent(dataset.id)}`, { method: "DELETE" });
+      try {
+        await request(`/api/datasets/${encodeURIComponent(dataset.id)}`, { method: "DELETE" });
+      } catch (error) {
+        if (isReviewContextError(error)) invalidateMapAndQuery(error.message);
+        throw error;
+      }
       state.datasets = state.datasets.filter((item) => item.id !== dataset.id);
       await selectDataset(state.datasets[0]?.id || null, true);
       showToast("파일과 검사 기록을 삭제했습니다.");

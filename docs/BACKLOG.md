@@ -6,7 +6,7 @@
 
 ## MFG-13 — Equipment data map discovery
 
-**B안 첫 로컬 구현 수용 / 진행 중 — 2026-09-10.** Discovery 보존 commit `7b23848`; 이전 source 기준 `794a66c`.
+**B안 첫 로컬 구현·검증 완료 — 2026-09-10.** Discovery 보존 `7b23848`; 수용 계약 `a9abcf9`; 실제 사용자 수용은 미검증.
 
 - 사용자 방향: 설비별 상태와 관계를 시각적으로 읽고 다음에 확인할 측정 항목·원본 근거를 찾는다.
 - [공개 화면 비교·실제 데이터·한 장면의 wireframe](research/file-review-workflow.md#equipment-visual-discovery)이 근거 owner다.
@@ -22,6 +22,11 @@
 - 이번 완료: 실제 한눈에 보이는 샘플 지도와 상세, full/sample HTTP·브라우저, 320/390/1440px·키보드·
   동일 버전 ZIP·이전 결과·늦은 응답·무결성/삭제·긴 이름/8개 초과 항목 반례를 확인하고 화면/여는 방법을 남긴다.
   로컬 준비·실제 사용자 수용·Release를 구분한다. MFG-09/MFG-12의 실제 사용자 검증은 유지한다.
+- 결과: [직접 diff·화면·독립 CSV/ZIP oracle와 검증 기록](VERIFICATION.md#equipment-map-verification).
+  지도 full/sample 14/11개 묶음, 기존 설명 18/12·기존 화면 11/7개 시나리오 PASS. 항목이 많을 때 중심과 겹친 배치를
+  실제 browser 반례로 보정했다. 지도에서 빠진 항목도 기존 전체 목록으로 선택할 수 있다.
+- 다음 근거: 실제 검토자의 온도 결과·같은 버전 근거 찾기. 세 항목의 지도 효용과 상태/시각 오해를 관찰한다.
+  효용이 없으면 지도 축소/목록 중심 구성을 검토한다. 자산 연결·온톨로지 확장은 관계 원본·사용 질문부터 별도로 결정한다.
 
 ## MFG-12 — Guided result explanation preview
 

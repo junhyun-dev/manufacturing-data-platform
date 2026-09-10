@@ -5,27 +5,33 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | WORK — MFG-13 B안 설비 데이터 지도 첫 로컬 구현·검증 진행. MFG-12 결과 설명 preview는 LOCAL VERIFIED 유지 |
+| 현재 작업 | LOCAL VERIFIED — MFG-13 B안 설비 데이터 지도 첫 로컬 구현·직접 검토 완료. MFG-12 결과 설명 preview 유지. 실제 사용자 수용은 미검증 |
 | 수용한 범위 | 2026-09-10 설비 선택 → 한 파일 버전의 측정 항목 지도 → 관측 그래프·원본 근거·같은 버전 ZIP. [수용 계약](docs/FILE_REVIEW_CONTRACT.md#equipment-data-map--first-local-view). 기존 목록/CSV/이전 결과/설명 유지. 물리 연결·설비 건강·graph DB·외부 AI·유료 호출·공개 발행·배포는 포함하지 않음 |
-| Git 기준 | `feat/equipment-data-map`, Discovery 네 문서 변경을 `7b23848`에 보존한 뒤 시작. 제품 source 기준 `794a66c`; MFG-12 구현·검증 `092b8e6`. 현재 HEAD·dirty와 실행 근거는 실제 Git/검증 기록에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
+| Git 기준 | `feat/equipment-data-map`, Discovery 네 문서 `7b23848`, 수용 계약 `a9abcf9`. 이 기준 위 지도 source·독립 browser oracle·사용/검증 문서를 통합했다. 최종 UI digest는 지도 검증 기록, 현재 HEAD·dirty는 실제 Git에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 수용한 지도 UI를 구현하고 Main이 같은 버전 근거·실제 데스크톱/모바일·키보드·실패 경로를 직접 검토한다 |
+| 다음 한 행동 | 실제 검토자 한 명에게 샘플의 전달 누락 뒤 온도 결과와 같은 버전의 근거를 찾아 전달하게 하고, 도움 요청·잘못된 버전 선택·상태 오해·소요 시간을 관찰한다. 에이전트 검사는 사용자 피드백으로 세지 않음 |
 
 ## 실행과 근거
 
-- 이번 방향 조사: [MFG-13](docs/BACKLOG.md#mfg-13--equipment-data-map-discovery), [공개 화면·wireframe·데이터 제약](docs/research/file-review-workflow.md#equipment-visual-discovery), [2026-09-10 문서 검사](docs/VERIFICATION.md#visual-discovery-verification).
+- 이번 결과: [MFG-13](docs/BACKLOG.md#mfg-13--equipment-data-map-discovery), [지도 검증](docs/VERIFICATION.md#equipment-map-verification).
+  필수 검사 PASS, 255 passed / 17 skipped, 지도 full/sample 14/11개 묶음·기존 설명 18/12·기존 화면 11/7 PASS.
+  실제 [데스크톱](docs/assets/file-review-equipment-map-desktop.png) · [모바일](docs/assets/file-review-equipment-map-mobile.png).
+- 방향 근거: [공개 화면·wireframe·데이터 제약](docs/research/file-review-workflow.md#equipment-visual-discovery), [문서 검사](docs/VERIFICATION.md#visual-discovery-verification).
 
 ```bash
 make setup
 make serve
 # http://127.0.0.1:8000
+# 공개 샘플만 여는 별도 로컬 서버는 대신:
+# MFG_REVIEW_MODE=sample MFG_REVIEW_DB=.cache/equipment-map-preview/review.sqlite3 make serve
 ```
 
 [사용법](docs/FILE_REVIEW_GUIDE.md)은 full/sample 실행과 첫 사용자 흐름을 안내한다. `full`은 자기 CSV를 받는 로컬 흐름,
 `sample`은 임의 업로드를 서버에서 거부하는 체험 후보다. 한 프로세스·SQLite이고 계정·팀 공유·현장 연결은 없다.
 [Architecture](docs/ARCHITECTURE.md)에서 현재 서비스와 별도 OPC UA 실험의 책임 경계를 확인한다.
+지도는 같은 파일 버전의 설비 이름–측정 항목 소속만 표현한다. 온톨로지·공장 topology·고장 진단으로 주장하지 않는다.
 
 - 기존 서비스: [2026-09-08 검사·실제 HTTP/브라우저·clean checkout·컨테이너 기록](docs/VERIFICATION.md#file-service-verification).
 - 이번 설명 기능: [MFG-12 검증](docs/VERIFICATION.md#guided-explanation-verification). 255 passed / 17 skipped,

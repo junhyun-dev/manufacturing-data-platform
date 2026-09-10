@@ -3,6 +3,17 @@
 This repository has no published release yet. Entries describe local changes and the release candidate;
 a date and immutable Git tag are added only after remote CI and release verification succeed.
 
+## Local equipment data map — version unassigned
+
+- Added a file-version equipment-to-measurement map linked to the existing selection, observations,
+  source evidence and matching CSV/manifest ZIP. Native lists remain available for every item.
+- Kept file validation, latest attempt and retained result distinct from unknown physical equipment health.
+  Selection/context changes clear incompatible results; narrow screens support a collapsible map and keyboard use.
+- Verified actual full/sample Chromium flows, independent CSV/ZIP values and context/failure cases;
+  see [dated evidence](docs/VERIFICATION.md#equipment-map-verification).
+- No new database, API, graph dependency, inferred plant relation or external AI. Local verification
+  does not establish usability improvement, a release or deployment; the existing release gate is unchanged.
+
 ## Local guided explanation preview — version unassigned
 
 - Added three selected questions about the currently reviewed source/version, handoff limits and

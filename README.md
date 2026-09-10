@@ -6,7 +6,7 @@
 **파일 업로드 → 문제 확인 → 설비·측정 항목·시간 구간 조회 → 검토 근거와 함께 내려받기**를 제공합니다.
 잘못된 수정 파일을 올리면 최신 검사 실패를 알리고 이전 정상 결과를 유지합니다.
 
-현재는 실제 HTTP·Chromium·새 checkout·비루트 읽기 전용 컨테이너 재시작까지 확인한 **로컬 릴리스 후보**입니다.
+현재는 실제 HTTP·Chromium에서 확인한 **로컬 릴리스 후보**입니다.
 외부 배포·실사용·production 성과는 검증하지 않았습니다. [파일 계약](docs/FILE_REVIEW_CONTRACT.md)과
 [사용법·검증](docs/FILE_REVIEW_GUIDE.md)에서 입력 의미와 실행 범위를 확인할 수 있습니다.
 
@@ -36,7 +36,11 @@ docker compose --env-file .env.example up --build
 파일은 실행 서버의 임시 작업 공간에 저장됩니다. 입력·보관·삭제 한도와 정확한 동작은
 [파일 계약](docs/FILE_REVIEW_CONTRACT.md#state-identity-and-recovery)이 소유합니다.
 
-![공개 샘플에서 구간 분석과 데이터 근거를 확인하는 실제 로컬 화면](docs/assets/file-review-sample.png)
+**설비 데이터 지도**에서 파일 안 설비와 측정 항목의 소속을 보고 항목을 선택할 수 있습니다. 기존 목록 선택도 유지합니다.
+선은 물리 연결이나 설비 건강을 뜻하지 않습니다. [지도 사용법](docs/FILE_REVIEW_GUIDE.md#설비-데이터-지도로-항목-찾기) ·
+[로컬 검증과 한계](docs/VERIFICATION.md#equipment-map-verification)
+
+![공개 샘플의 설비–측정 항목 지도와 선택한 온도 관측을 함께 보는 실제 로컬 화면](docs/assets/file-review-equipment-map-desktop.png)
 
 ## 무엇을 어디서 확인하는가
 
