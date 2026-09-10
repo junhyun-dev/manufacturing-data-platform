@@ -183,6 +183,9 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
   [조사·검증](VERIFICATION.md#opcua-time-order-investigation)이 근거를 소유한다. 호스트 시계의 근본 원인·교정은
   이번 제품 범위 밖이며 시스템/WSL 설정을 변경하지 않는다. 시간 보정·validator 완화·skip·통과할 때까지 재시도로 닫지 않는다.
   제품 시간 의미를 바꿀 필요가 생길 때만 별도 수용을 받는다. MFG-02 전체 복구 계약과 MFG-09/12 사용자 관찰은 계속 OPEN이다.
+  2026-09-11 KST [의존성을 배제한 두 프로세스 진단](VERIFICATION.md#clock-process-isolation)에서도 공유 UTC 역행을
+  함께 포착했다. 원인 조사·구체적인 수정안 준비는 제품 Main의 기술 작업이며 사용자에게 일반 기술 선택을 넘기지 않는다.
+  공유 시계를 조정한 구성요소는 아직 미확인이다. 실제 시스템 변경이 필요한 경우에만 구체적인 영향·복구 범위를 확인한다.
 
 ## MFG-03 — Public report reproduction without the author's cache
 

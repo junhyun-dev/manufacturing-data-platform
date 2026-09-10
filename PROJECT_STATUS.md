@@ -11,10 +11,13 @@
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 호스트 시계 조사·교정의 별도 환경 범위를 결정한다. 이번에는 환경 변경 없이 진단 보강까지만 닫았다. 지도 전체화면의 실제 검토자 과제는 MFG-09/12에 별도 미완료로 유지한다 |
+| 다음 한 행동 | 제품 Main이 공유 시계 문제의 원인과 수정안을 기술 작업으로 맡는다. 의존성을 배제한 별도 프로세스 관측까지 완료했으며, 추가로 가능한 격리 진단을 진행하고 실제 공유 시스템 변경이 필요할 때 영향·복구안을 제시한다. 사용자 검수는 MFG-09/12에 별도 미완료로 유지한다 |
 
 ## 실행과 근거
 
+- 2026-09-11 KST 격리 진단: 앱·site packages·Python 환경 변수를 배제한 Python 3.10/3.12 두 프로세스의
+  20초 관측에서 각각 네 번의 UTC 역행을 같은 경과 시간 구간에 확인했다. [격리 경계와 근거](docs/VERIFICATION.md#clock-process-isolation).
+  개별 가상환경만으로 공유 UTC 시계가 분리되지 않음을 확인한 것이며, 호스트 근본 원인이나 교정 완료는 아니다.
 - 시각 실패 조사·진단 보강: [MFG-02 실행 근거와 한계](docs/VERIFICATION.md#opcua-time-order-investigation).
   실제 UTC가 약 5.86초 역행한 수집 실패를 재현했다. 기존 순서 검증은 유지하고 오류에 두 시각·정수 μs 차이를 추가했다.
   통합 후 industrial-source/event-time 검사 **37 passed**(32.78초), 기존 발행 파일 37개·9개 event의 hash read-back은 동일하다.

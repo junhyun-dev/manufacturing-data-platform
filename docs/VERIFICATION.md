@@ -687,3 +687,28 @@ model token/compute usage and monetary cost are UNKNOWN. Existing session/model 
 Remaining decision: host clock diagnosis/repair needs a separately authorized environment task. This result does not alter
 MFG-02 source-recollection identity, MFG-07's earlier timeout investigation, or MFG-09/12 independent user observation.
 No Docker/WSL/system settings, other project services, remote Git, public release or deployment were changed.
+
+
+<a id="clock-process-isolation"></a>
+## Clock process isolation — 2026-09-11 KST (2026-09-10 UTC)
+
+The product maintainer owns technical investigation and a concrete correction proposal; read-only diagnosis does not
+require the user to choose a technical mechanism or a coordinator to perform the work. Shared system changes still need
+a specific impact/recovery review. Existing service processes, user databases and Docker/WSL settings remain unchanged.
+
+At source `3b969a625a185aa41f7a7a7b23f7201f16a299c5`, two fresh subprocesses ran **one fixed 20-second observation** with
+Python 3.10.12 and 3.12.3, `-I -S -B`, a minimal environment and no application or third-party imports. Only temporary
+processes and output files were isolated; this was not an independent kernel/VM clock. Each sampled realtime and monotonic
+clocks approximately every 20 ms. This sampling interval did not modify a collector, validator or test tolerance.
+
+Evidence: `.cache/clock-isolation-checks/20260910T152758043949Z/` contains the scripts, `baseline.json`, `processes.json`,
+raw per-process samples, `summary.json` and `paired.json`. The two processes returned zero and retained 968/969 samples.
+Each observed four UTC backward steps of about 5.84–5.86 s in overlapping monotonic intervals; corresponding
+wall-minus-monotonic steps differed by at most 2,007 ns. Maximum clock read windows were 104,448/49,904 ns.
+This shows the project code, installed packages and a particular Python version are not necessary to reproduce the
+clock behavior. It does not identify the component adjusting the shared clock or prove a specific kernel/VM/NTP defect.
+
+The [Linux man-pages time namespace documentation](https://man7.org/linux/man-pages/man7/time_namespaces.7.html)
+explicitly leaves `CLOCK_REALTIME` unvirtualized. A separate virtualenv or ordinary container namespace is therefore not
+an independent UTC clock for this comparison; no container was started. Further investigation and any concrete repair
+remain product-maintainer work. No product timestamp semantics changed and no prior whole-suite/user gate was closed.
