@@ -438,6 +438,12 @@
       if (announceChange) announce(state.moveMode ? "지도 이동을 켰습니다. 빈 배경을 끌어 옮기고 Esc로 끝낼 수 있습니다." : "지도 이동을 껐습니다. 방향 버튼으로도 위치를 옮길 수 있습니다.");
     }
 
+    function cancelMove() {
+      if (!state.moveMode) return false;
+      setMoveMode(false);
+      return true;
+    }
+
     function renderMinimap() {
       minimap.replaceChildren();
       if (!state.layout) {
@@ -627,7 +633,7 @@
     updateControls();
     renderMinimap();
 
-    return { clear, setContext, setBusy, resize, revealSelection };
+    return { clear, setContext, setBusy, resize, revealSelection, cancelMove };
   }
 
   window.createFileReviewMapCanvas = createMapCanvas;

@@ -6,6 +6,14 @@ const state = {
   capabilities: { uploads: true, sample: true, accounts: false }, limits: { upload_bytes: 8 * 1024 * 1024, rows: 50000, datasets: 10 },
   explanation: { generation: 0, controller: null, timeout: null, loading: false, question: null, requestKey: null, answerKey: null, retryVisible: false, returnFocus: null },
   map: { expanded: false, unavailable: null },
+  mapFullscreen: {
+    active: false, generation: 0, acquiredNative: false, nativeRequested: false,
+    enteredWithNative: false, priorWide: false, priorExpanded: false,
+    scrollX: 0, scrollY: 0, originalParent: null, originalNext: null,
+    launcherParent: null, launcherNext: null,
+    inertRecords: [], focusAfterExit: true, cancelledNativeEntry: false,
+    lateExitPending: false, nativeExitPending: false
+  },
   search: { page: 0 },
   view: { wide: false, fullscreenPending: false, returningToBase: false, baseScrollX: 0, baseScrollY: 0, suppressFullscreenFocusUntil: 0 }
 };
@@ -49,6 +57,7 @@ function setBusy(busy, message = "처리 중…") {
   $("main").setAttribute("aria-busy", String(busy));
   updateQueryControls();
   updateExplanationControls();
+  updateMapFullscreenControls();
 }
 
 async function request(path, options = {}) {
@@ -104,11 +113,277 @@ function modalOwnsFocus() {
   return !!document.querySelector("dialog:modal") || !$("explanation-panel").hidden;
 }
 
+function mapEntryBlockedByModal() {
+  return !!document.querySelector("dialog:modal") || (!$("explanation-panel").hidden && explanationNarrow.matches) || $("application-shell").inert;
+}
+
 function redrawReviewChart() {
   requestAnimationFrame(() => {
     if (state.query) renderChart(state.query.result);
     mapCanvas?.resize();
   });
+}
+
+function updateMapFullscreenControls() {
+  const active = state.mapFullscreen.active;
+  const available = reviewViewAvailable();
+  const cancellableEntry = active && state.mapFullscreen.nativeRequested && !state.mapFullscreen.nativeExitPending;
+  const toggle = $("map-fullscreen-toggle");
+  toggle.textContent = active ? "지도 보기 나가기" : "지도 전체화면";
+  toggle.setAttribute("aria-pressed", String(active));
+  toggle.disabled = (state.view.fullscreenPending && !cancellableEntry) || (!active && !available);
+  $("map-review-link").disabled = !active || (state.view.fullscreenPending && !cancellableEntry);
+  $("map-source-link").disabled = state.busy || (state.view.fullscreenPending && !cancellableEntry) || !!state.map.unavailable || !currentDataset()?.current;
+}
+
+function syncMapFullscreenStatus(message) {
+  updateMapFullscreenControls();
+  if (message) {
+    $("map-fullscreen-status").textContent = message;
+  } else if (state.mapFullscreen.active && nativeFullscreenActive()) {
+    $("map-fullscreen-status").textContent = "브라우저 전체화면에서 지도를 보고 있습니다. Esc 또는 지도 보기 나가기로 돌아갈 수 있습니다.";
+  } else if (state.mapFullscreen.active) {
+    $("map-fullscreen-status").textContent = "브라우저 화면 안에서 지도를 크게 보고 있습니다. 지도 보기 나가기로 돌아갈 수 있습니다.";
+  } else if (reviewViewAvailable()) {
+    $("map-fullscreen-status").textContent = "지도를 화면에 크게 펼쳐 살펴볼 수 있습니다.";
+  } else {
+    $("map-fullscreen-status").textContent = "분석할 수 있는 현재 결과가 있어야 지도를 크게 볼 수 있습니다.";
+  }
+}
+
+function setMapBackgroundInert() {
+  const records = [document.querySelector(".sidebar"), $("main")].filter(Boolean).map((element) => ({ element, inert: element.inert }));
+  for (const record of records) record.element.inert = true;
+  state.mapFullscreen.inertRecords = records;
+}
+
+function restoreMapBackgroundInert() {
+  for (const record of state.mapFullscreen.inertRecords) record.element.inert = record.inert;
+  state.mapFullscreen.inertRecords = [];
+}
+
+function restoreDedicatedMap({ focus = true, preserveCancelledEntry = false } = {}) {
+  const mapState = state.mapFullscreen;
+  if (!mapState.active || !mapState.originalParent) return;
+  const section = $("equipment-map-section");
+  const parent = mapState.originalParent;
+  const next = mapState.originalNext;
+  mapState.active = false;
+  mapState.generation += 1;
+  document.body.classList.remove("map-fullscreen-open");
+  if (next?.parentNode === parent) parent.insertBefore(section, next); else parent.append(section);
+  const launcher = $("explanation-launcher");
+  if (mapState.launcherNext?.parentNode === mapState.launcherParent) mapState.launcherParent.insertBefore(launcher, mapState.launcherNext);
+  else mapState.launcherParent.append(launcher);
+  mapState.launcherParent = null;
+  mapState.launcherNext = null;
+  $("map-fullscreen-layer").hidden = true;
+  restoreMapBackgroundInert();
+  state.map.expanded = mapState.priorExpanded;
+  state.view.wide = mapState.priorWide;
+  const scrollX = mapState.scrollX;
+  const scrollY = mapState.scrollY;
+  mapState.acquiredNative = false;
+  mapState.nativeRequested = false;
+  mapState.nativeExitPending = false;
+  mapState.enteredWithNative = false;
+  mapState.originalParent = null;
+  mapState.originalNext = null;
+  if (!preserveCancelledEntry) mapState.cancelledNativeEntry = false;
+  applyMapVisibility();
+  syncReviewViewStatus();
+  syncMapFullscreenStatus();
+  requestAnimationFrame(() => {
+    window.scrollTo(scrollX, scrollY);
+    redrawReviewChart();
+    if (focus && !modalOwnsFocus() && !section.hidden) {
+      const target = $("map-fullscreen-toggle").disabled ? $("main") : $("map-fullscreen-toggle");
+      target.focus({ preventScroll: true });
+    }
+  });
+}
+
+async function exitLateMapNativeEntry() {
+  const mapState = state.mapFullscreen;
+  if (mapState.lateExitPending) return;
+  if (!nativeFullscreenActive()) {
+    mapState.cancelledNativeEntry = false;
+    state.view.fullscreenPending = false;
+    syncReviewViewStatus();
+    syncMapFullscreenStatus();
+    return;
+  }
+  mapState.lateExitPending = true;
+  state.view.fullscreenPending = true;
+  updateReviewViewControls();
+  try {
+    await document.exitFullscreen();
+  } catch (_) {
+    if (nativeFullscreenActive()) {
+      mapState.cancelledNativeEntry = false;
+      $("review-view-status").textContent = "지도 전환 뒤 시작된 전체화면을 종료하지 못했습니다. 전체화면 나가기나 Esc를 다시 사용해 주세요.";
+    }
+  } finally {
+    mapState.lateExitPending = false;
+    if (!nativeFullscreenActive()) mapState.cancelledNativeEntry = false;
+    state.view.fullscreenPending = false;
+    updateReviewViewControls();
+    if (!mapState.cancelledNativeEntry) syncMapFullscreenStatus();
+  }
+}
+
+async function enterDedicatedMap() {
+  const mapState = state.mapFullscreen;
+  if (mapState.active || state.view.fullscreenPending) return;
+  if (!reviewViewAvailable() || mapEntryBlockedByModal()) {
+    syncMapFullscreenStatus(!reviewViewAvailable() ? "분석할 수 있는 현재 결과가 있어야 지도를 크게 볼 수 있습니다." : "열린 모달 대화 상자를 닫은 뒤 지도를 크게 볼 수 있습니다.");
+    return;
+  }
+  const section = $("equipment-map-section");
+  mapState.generation += 1;
+  const generation = mapState.generation;
+  mapState.active = true;
+  mapState.acquiredNative = false;
+  mapState.nativeRequested = false;
+  mapState.nativeExitPending = false;
+  mapState.enteredWithNative = nativeFullscreenActive();
+  mapState.priorWide = state.view.wide;
+  mapState.priorExpanded = state.map.expanded;
+  mapState.scrollX = window.scrollX;
+  mapState.scrollY = window.scrollY;
+  mapState.originalParent = section.parentNode;
+  mapState.originalNext = section.nextSibling;
+  const launcher = $("explanation-launcher");
+  mapState.launcherParent = launcher.parentNode;
+  mapState.launcherNext = launcher.nextSibling;
+  mapState.focusAfterExit = true;
+  mapState.cancelledNativeEntry = false;
+  const layer = $("map-fullscreen-layer");
+  layer.hidden = false;
+  layer.append(section);
+  section.querySelector(".map-heading-actions").append(launcher);
+  layer.scrollTop = 0;
+  setMapBackgroundInert();
+  document.body.classList.add("map-fullscreen-open");
+  if (explanationNarrow.matches) state.map.expanded = true;
+  applyMapVisibility();
+  syncMapFullscreenStatus(mapState.enteredWithNative ? "현재 브라우저 전체화면에서 지도를 크게 보고 있습니다." : "지도를 화면에 맞춘 뒤 브라우저 전체화면을 확인하는 중입니다.");
+  requestAnimationFrame(() => {
+    mapCanvas?.resize();
+    if (mapState.active && !modalOwnsFocus()) {
+      const target = $("map-fullscreen-toggle").disabled ? $("equipment-map") : $("map-fullscreen-toggle");
+      target.focus({ preventScroll: true });
+    }
+  });
+  if (mapState.enteredWithNative) return;
+  if (typeof document.documentElement.requestFullscreen !== "function") {
+    syncMapFullscreenStatus("이 브라우저는 전체화면을 지원하지 않아 화면 안에서 지도를 크게 표시합니다.");
+    return;
+  }
+  mapState.nativeRequested = true;
+  state.view.fullscreenPending = true;
+  updateReviewViewControls();
+  updateMapFullscreenControls();
+  try {
+    await document.documentElement.requestFullscreen();
+    if (generation !== mapState.generation || !mapState.active) {
+      if (nativeFullscreenActive()) exitLateMapNativeEntry();
+      return;
+    }
+    if (nativeFullscreenActive()) {
+      mapState.acquiredNative = true;
+      syncMapFullscreenStatus();
+    } else {
+      syncMapFullscreenStatus("전체화면 상태를 확인할 수 없어 화면 안에서 지도를 크게 표시합니다.");
+    }
+  } catch (_) {
+    if (generation === mapState.generation && mapState.active) {
+      syncMapFullscreenStatus(nativeFullscreenActive() ? undefined : "브라우저 전체화면을 시작하지 못해 화면 안에서 지도를 크게 표시합니다.");
+    }
+  } finally {
+    if (generation === mapState.generation && mapState.active) {
+      mapState.nativeRequested = false;
+      state.view.fullscreenPending = false;
+      updateReviewViewControls();
+      updateMapFullscreenControls();
+    } else if (!nativeFullscreenActive() && !mapState.lateExitPending) {
+      mapState.cancelledNativeEntry = false;
+      state.view.fullscreenPending = false;
+      syncReviewViewStatus();
+      syncMapFullscreenStatus();
+    }
+  }
+}
+
+async function leaveDedicatedMap({ focus = true } = {}) {
+  const mapState = state.mapFullscreen;
+  if (!mapState.active) return true;
+  if (state.view.fullscreenPending) {
+    if (!mapState.nativeRequested || mapState.nativeExitPending) return false;
+    mapState.cancelledNativeEntry = true;
+    restoreDedicatedMap({ focus, preserveCancelledEntry: true });
+    $("map-fullscreen-status").textContent = "지도 보기를 닫았습니다. 진행 중이던 전체화면 전환을 정리하고 있습니다.";
+    return true;
+  }
+  mapState.focusAfterExit = focus;
+  if (!mapState.acquiredNative || !nativeFullscreenActive()) {
+    restoreDedicatedMap({ focus });
+    return true;
+  }
+  state.view.fullscreenPending = true;
+  mapState.nativeExitPending = true;
+  updateReviewViewControls();
+  syncMapFullscreenStatus("브라우저 전체화면을 종료하고 검토 화면으로 돌아가는 중입니다.");
+  try {
+    await document.exitFullscreen();
+    if (mapState.active && !nativeFullscreenActive()) restoreDedicatedMap({ focus });
+    if (mapState.active && nativeFullscreenActive()) syncMapFullscreenStatus("전체화면 종료 상태를 확인하지 못했습니다. 지도 보기 나가기나 Esc를 다시 사용해 주세요.");
+  } catch (_) {
+    if (mapState.active && !nativeFullscreenActive()) restoreDedicatedMap({ focus });
+    else if (mapState.active) syncMapFullscreenStatus("전체화면을 종료하지 못했습니다. 지도 보기 나가기나 Esc를 다시 사용해 주세요.");
+  } finally {
+    mapState.nativeExitPending = false;
+    state.view.fullscreenPending = false;
+    updateReviewViewControls();
+    updateMapFullscreenControls();
+  }
+  return !mapState.active;
+}
+
+function abandonDedicatedMapForContextChange() {
+  const mapState = state.mapFullscreen;
+  if (!mapState.active) return;
+  const cancelPendingEntry = mapState.nativeRequested && !nativeFullscreenActive();
+  const exitAcquiredNative = mapState.acquiredNative && nativeFullscreenActive();
+  if (cancelPendingEntry) mapState.cancelledNativeEntry = true;
+  restoreDedicatedMap({ focus: false, preserveCancelledEntry: cancelPendingEntry });
+  if (exitAcquiredNative) {
+    state.view.fullscreenPending = true;
+    updateReviewViewControls();
+    document.exitFullscreen().catch(() => {
+      if (nativeFullscreenActive()) $("review-view-status").textContent = "전체화면을 종료하지 못했습니다. 전체화면 나가기나 Esc를 다시 사용해 주세요.";
+    }).finally(() => {
+      state.view.fullscreenPending = false;
+      updateReviewViewControls();
+    });
+  }
+}
+
+async function focusReviewTarget(target, { openDetails = false } = {}) {
+  if (state.mapFullscreen.active && !await leaveDedicatedMap({ focus: false })) return false;
+  if (!target?.isConnected || target.hidden) return false;
+  if (openDetails && target instanceof HTMLDetailsElement) target.open = true;
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  target.tabIndex = -1;
+  target.focus({ preventScroll: true });
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  return true;
+}
+
+async function returnToReviewFromMap() {
+  if (state.mapFullscreen.active && !await leaveDedicatedMap({ focus: false })) return;
+  const target = queryMatchesDraft() && !$("query-results").hidden ? $("query-results") : $("query-form");
+  await focusReviewTarget(target);
 }
 
 function updateReviewViewControls() {
@@ -122,6 +397,7 @@ function updateReviewViewControls() {
   $("review-fullscreen-toggle").textContent = fullscreen ? "전체화면 나가기" : "전체화면";
   $("review-fullscreen-toggle").setAttribute("aria-pressed", String(fullscreen));
   $("review-fullscreen-toggle").disabled = state.view.fullscreenPending || (!fullscreen && !available);
+  updateMapFullscreenControls();
 }
 
 function syncReviewViewStatus() {
@@ -172,6 +448,10 @@ function finishBaseView() {
 }
 
 async function leaveWideView() {
+  if (state.mapFullscreen.active) {
+    await leaveDedicatedMap();
+    return;
+  }
   if (state.view.fullscreenPending) return;
   if (!nativeFullscreenActive()) {
     finishBaseView();
@@ -198,7 +478,7 @@ async function leaveWideView() {
 }
 
 async function toggleNativeFullscreen() {
-  if (state.view.fullscreenPending) return;
+  if (state.view.fullscreenPending || state.mapFullscreen.active) return;
   if (nativeFullscreenActive()) {
     state.view.fullscreenPending = true;
     updateReviewViewControls();
@@ -241,6 +521,28 @@ async function toggleNativeFullscreen() {
 }
 
 function handleFullscreenChange() {
+  const mapState = state.mapFullscreen;
+  if (mapState.cancelledNativeEntry) {
+    if (nativeFullscreenActive()) exitLateMapNativeEntry();
+    else {
+      mapState.cancelledNativeEntry = false;
+      state.view.fullscreenPending = false;
+      syncReviewViewStatus();
+      syncMapFullscreenStatus();
+    }
+    redrawReviewChart();
+    return;
+  }
+  if (mapState.active) {
+    if (nativeFullscreenActive()) {
+      if (mapState.nativeRequested) mapState.acquiredNative = true;
+      syncMapFullscreenStatus();
+    } else {
+      restoreDedicatedMap({ focus: mapState.focusAfterExit });
+    }
+    redrawReviewChart();
+    return;
+  }
   if (nativeFullscreenActive()) {
     state.view.wide = true;
     syncReviewViewStatus();
@@ -260,6 +562,27 @@ function handleFullscreenChange() {
     syncReviewViewStatus();
   }
   redrawReviewChart();
+}
+
+function handleFullscreenError() {
+  const mapState = state.mapFullscreen;
+  if (mapState.cancelledNativeEntry) {
+    $("review-view-status").textContent = mapState.lateExitPending
+      ? "지도 전환 뒤 시작된 전체화면을 종료하지 못했습니다. 전체화면 나가기나 Esc를 다시 사용해 주세요."
+      : "지도 전환 중 전체화면 오류가 발생했습니다. 현재 화면 상태를 확인하는 중입니다.";
+    return;
+  }
+  if (mapState.active) {
+    syncMapFullscreenStatus(mapState.nativeExitPending
+      ? "전체화면을 종료하지 못했습니다. 지도 보기 나가기나 Esc를 다시 사용해 주세요."
+      : nativeFullscreenActive() ? undefined : "브라우저 전체화면을 시작하지 못해 화면 안에서 지도를 크게 표시합니다.");
+    return;
+  }
+  if (nativeFullscreenActive()) syncReviewViewStatus();
+  else {
+    updateReviewViewControls();
+    $("review-view-status").textContent = "전체화면 전환을 완료하지 못했습니다. 넓게 보기는 계속 사용할 수 있습니다.";
+  }
 }
 
 function selectedEquipmentSeries() {
@@ -361,14 +684,16 @@ function updateMapSelectionStatus(message) {
 function applyMapVisibility() {
   const narrow = explanationNarrow.matches;
   const toggle = $("map-view-toggle");
-  toggle.hidden = !narrow;
-  $("equipment-map-body").hidden = narrow && !state.map.expanded;
-  toggle.setAttribute("aria-expanded", String(!narrow || state.map.expanded));
+  const dedicated = state.mapFullscreen.active;
+  toggle.hidden = !narrow || dedicated;
+  $("equipment-map-body").hidden = !dedicated && narrow && !state.map.expanded;
+  toggle.setAttribute("aria-expanded", String(dedicated || !narrow || state.map.expanded));
   toggle.textContent = state.map.expanded ? "지도 접기" : "지도 펼치기";
   requestAnimationFrame(() => mapCanvas?.resize());
 }
 
 function renderMapUnavailable(message) {
+  abandonDedicatedMapForContextChange();
   mapCanvas?.clear(message);
   $("map-overflow").textContent = "오래된 항목 관계나 통계를 표시하지 않습니다.";
   $("map-selected-item").textContent = "—";
@@ -377,6 +702,7 @@ function renderMapUnavailable(message) {
   $("map-source-link").disabled = true;
   resetTagSearch("파일 상태를 새로고침하면 항목 이름을 다시 찾을 수 있습니다.");
   syncReviewViewStatus();
+  syncMapFullscreenStatus();
   applyMapVisibility();
 }
 
@@ -432,6 +758,7 @@ function renderEquipmentMap({ resetContext = false, revealSelection = false, foc
   context.append(resultState, attemptState, physicalState, sourceTime);
   if (dataset.source_kind === "sample") context.append(node("p", "공개 샘플 · 과거 열차 공기압축기 기록 · 설비명은 검증된 자산 ID나 실시간 상태가 아닙니다.", "map-sample-note"));
   $("map-source-link").disabled = state.busy;
+  syncMapFullscreenStatus();
   applyMapVisibility();
 }
 
@@ -454,6 +781,7 @@ function invalidateMapAndQuery(message, { preserveExplanationPanel = false } = {
 }
 
 function suspendMapAndQuery(message) {
+  abandonDedicatedMapForContextChange();
   clearQueryForDraft(message);
   if (currentDataset()?.current) {
     state.map.unavailable = message;
@@ -734,15 +1062,12 @@ function retryExplanation() {
   requestExplanation(state.explanation.question);
 }
 
-function focusExplanationEvidence(kind) {
+async function focusExplanationEvidence(kind) {
   if (state.explanation.answerKey !== explanationKey()) return;
   const target = { query: $("query-results"), source: $("source-details"), history: $("history-details") }[kind];
   if (!target) return;
-  if (target instanceof HTMLDetailsElement) target.open = true;
   closeExplanation({ returnFocus: false, discard: true });
-  target.tabIndex = -1;
-  target.focus({ preventScroll: true });
-  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  await focusReviewTarget(target, { openDetails: target instanceof HTMLDetailsElement });
 }
 
 function upsert(dataset) {
@@ -877,6 +1202,7 @@ function renderDataset(dataset, resetFilters) {
     resetTagSearch();
     renderEquipmentMap({ resetContext: true });
   } else {
+    abandonDedicatedMapForContextChange();
     $("equipment-map-section").hidden = true;
     mapCanvas?.clear();
     $("map-overflow").textContent = "";
@@ -891,9 +1217,11 @@ function renderDataset(dataset, resetFilters) {
   renderHistory(dataset);
   updateQueryControls();
   syncReviewViewStatus();
+  syncMapFullscreenStatus();
 }
 
 async function selectDataset(id, resetFilters = false, loadResult = true) {
+  if (state.mapFullscreen.active && state.active !== id) abandonDedicatedMapForContextChange();
   resetExplanation();
   const changed = state.active !== id;
   state.active = id;
@@ -910,6 +1238,7 @@ async function selectDataset(id, resetFilters = false, loadResult = true) {
     document.title = "Telemetry Review · 설비 데이터 검토";
     resetTagSearch("분석할 수 있는 결과가 있어야 항목 이름을 찾을 수 있습니다.");
     syncReviewViewStatus();
+    syncMapFullscreenStatus();
     return;
   }
   renderDataset(dataset, resetFilters || changed);
@@ -1179,13 +1508,7 @@ function installEvents() {
   $("review-wide-toggle").addEventListener("click", () => { if (state.view.wide) leaveWideView(); else enterWideView(); });
   $("review-fullscreen-toggle").addEventListener("click", toggleNativeFullscreen);
   document.addEventListener("fullscreenchange", handleFullscreenChange);
-  document.addEventListener("fullscreenerror", () => {
-    if (nativeFullscreenActive()) syncReviewViewStatus();
-    else {
-      updateReviewViewControls();
-      $("review-view-status").textContent = "전체화면 전환을 완료하지 못했습니다. 넓게 보기는 계속 사용할 수 있습니다.";
-    }
-  });
+  document.addEventListener("fullscreenerror", handleFullscreenError);
   $("tag-search").addEventListener("input", () => { state.search.page = 0; renderTagSearch(); });
   $("tag-search-clear").addEventListener("click", () => { resetTagSearch(); $("tag-search").focus(); });
   $("tag-search-prev").addEventListener("click", () => {
@@ -1202,13 +1525,9 @@ function installEvents() {
   });
   $("map-view-toggle").addEventListener("click", () => { state.map.expanded = !state.map.expanded; applyMapVisibility(); });
   $("map-refresh").addEventListener("click", refreshMapDataset);
-  $("map-source-link").addEventListener("click", () => {
-    const target = $("source-details");
-    target.open = true;
-    target.tabIndex = -1;
-    target.focus({ preventScroll: true });
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  $("map-fullscreen-toggle").addEventListener("click", () => { if (state.mapFullscreen.active) leaveDedicatedMap(); else enterDedicatedMap(); });
+  $("map-source-link").addEventListener("click", () => focusReviewTarget($("source-details"), { openDetails: true }));
+  $("map-review-link").addEventListener("click", returnToReviewFromMap);
   $("explanation-launcher").addEventListener("click", openExplanation);
   $("explanation-close").addEventListener("click", () => closeExplanation());
   $("explanation-backdrop").addEventListener("click", () => closeExplanation());
@@ -1226,23 +1545,30 @@ function installEvents() {
     if (event.key === "Escape" && nativeFullscreenActive() && (openDialog || (!panel.hidden && explanationNarrow.matches))) {
       state.view.suppressFullscreenFocusUntil = Date.now() + 1000;
     }
-    if (panel.hidden) return;
-    if (openDialog) return;
-    if (event.key === "Escape") {
-      event.preventDefault();
-      closeExplanation();
+    if (!panel.hidden) {
+      if (openDialog) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeExplanation();
+        return;
+      }
+      if (event.key !== "Tab" || !explanationNarrow.matches) return;
+      const focusable = [...panel.querySelectorAll("button:not(:disabled)")].filter((item) => !item.hidden && item.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !focusable.includes(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
       return;
     }
-    if (event.key !== "Tab" || !explanationNarrow.matches) return;
-    const focusable = [...panel.querySelectorAll("button:not(:disabled)")].filter((item) => !item.hidden && item.offsetParent !== null);
-    if (!focusable.length) return;
-    const first = focusable[0], last = focusable[focusable.length - 1];
-    if (event.shiftKey && (document.activeElement === first || !focusable.includes(document.activeElement))) {
+    if (event.key === "Escape" && state.mapFullscreen.active && !openDialog) {
       event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))) {
-      event.preventDefault();
-      first.focus();
+      if (mapCanvas?.cancelMove()) return;
+      leaveDedicatedMap();
     }
   });
   for (const id of ["upload-button", "welcome-upload"]) $(id).addEventListener("click", () => $("upload-input").click());

@@ -72,7 +72,8 @@
           </section>
           <div class="review-layout">
             <section id="equipment-map-section" class="equipment-map-section" aria-labelledby="equipment-map-title">
-              <header class="map-heading"><div><p class="eyebrow">ONE FILE VERSION</p><h2 id="equipment-map-title">설비 데이터 지도</h2></div><div class="map-heading-actions"><button id="map-view-toggle" class="text-button" type="button" aria-controls="equipment-map-body" aria-expanded="false">지도 펼치기</button><button id="map-refresh" class="text-button" type="button">파일 상태 새로고침</button></div></header>
+              <header class="map-heading"><div><p class="eyebrow">ONE FILE VERSION</p><h2 id="equipment-map-title">설비 데이터 지도</h2></div><div class="map-heading-actions"><button id="map-view-toggle" class="text-button" type="button" aria-controls="equipment-map-body" aria-expanded="false">지도 펼치기</button><button id="map-refresh" class="text-button" type="button">파일 상태 새로고침</button><button id="map-fullscreen-toggle" class="button secondary small" type="button" aria-pressed="false">지도 전체화면</button></div></header>
+              <p id="map-fullscreen-status" class="map-fullscreen-status" role="status" aria-live="polite">지도를 화면에 크게 펼쳐 살펴볼 수 있습니다.</p>
               <div id="equipment-map-body">
                 <p id="map-relation-note" class="map-relation-note">선은 이 파일 버전에서 설비 이름별로 묶인 측정 항목의 소속만 나타냅니다. 물리 연결이나 설비 상태를 뜻하지 않습니다.</p>
                 <div class="map-camera-toolbar" aria-label="지도 보기 조절">
@@ -108,7 +109,7 @@
                   <p class="map-selection-label">선택한 측정 항목</p>
                   <strong id="map-selected-item"></strong>
                   <p id="map-selection-status" role="status"></p>
-                  <button id="map-source-link" class="button secondary small" type="button">출처와 버전 근거 보기</button>
+                  <div class="map-selection-actions"><button id="map-source-link" class="button secondary small" type="button">출처와 버전 근거 보기</button><button id="map-review-link" class="button secondary small" type="button">관측·근거로 돌아가기</button></div>
                 </article>
                 <div id="map-context" class="map-context"></div>
               </div>
@@ -134,6 +135,7 @@
       </section>
       <footer class="page-footer"><span>Telemetry Review</span><span>확인한 데이터와 그 근거를 함께.</span></footer>
     </main>
+    <div id="map-fullscreen-layer" class="map-fullscreen-layer" role="region" aria-label="설비 데이터 지도 전체화면" hidden></div>
     <button id="explanation-launcher" class="explanation-launcher" type="button" aria-controls="explanation-panel" aria-expanded="false"><span aria-hidden="true">?</span> 이 결과에 질문</button>
   </div>
   <div id="explanation-backdrop" class="explanation-backdrop" hidden></div>

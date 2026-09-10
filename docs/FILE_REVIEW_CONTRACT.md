@@ -463,6 +463,8 @@ the display layout only; the preceding camera/data/query/evidence and modal safe
   restore it to its original location on exit. Make covered background content non-interactive/unfocusable
   while preserving pre-existing inert values. Existing explanation and native delete dialog retain ownership;
   neither may be hidden behind the map or closed as a side effect of an application Escape handler.
+  The same explanation launcher may join the map header during this mode and return to its original parent
+  on exit, so it cannot cover evidence/return actions. Keep exit controls reachable while scrolling.
 - Native fullscreen still targets the document root so existing dialogs remain in its fullscreen subtree.
   Enter map-focused layout first; when unsupported/denied keep a clearly labelled browser-area fallback.
   Status follows actual fullscreen state, not a requested boolean. Serialize pending entry/exit, avoid duplicate
@@ -475,7 +477,8 @@ the display layout only; the preceding camera/data/query/evidence and modal safe
   `map-review-link` focuses the successful analysis, or query controls when a new selection needs a query.
 - View entry/exit and evidence navigation launch no query and change no file/version/latest-attempt pins,
   draft or submitted range, successful result, explanation answer, ZIP or map selection. Normal explicit item
-  selection still uses existing invalidation. Context loss/deletion must not strand exit controls in a hidden
+  selection still uses existing invalidation. An explicit guided-answer evidence click retains its existing
+  close/discard policy; the map transition itself must not discard an answer. Context loss/deletion must not strand exit controls in a hidden
   ancestor; restore the underlying error/empty view safely, with the normal native exit still reachable.
 - Verify actual map bounds, not only a fullscreen attribute: at 1440×900 the map viewport should occupy at
   least 85% of viewport width and 65% of viewport height; at 390×844 and 320×844 at least 90% width and 50%
