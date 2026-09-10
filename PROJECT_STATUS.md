@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | LOCAL VERIFIED — MFG-13 B안 설비 데이터 지도 첫 로컬 구현·직접 검토 완료. MFG-12 결과 설명 preview 유지. 실제 사용자 수용은 미검증 |
+| 현재 작업 | WORK — MFG-13 후속 탐색: 넓게 보기·지원 환경 전체화면·항목 이름 검색 구현/검증. 기존 지도와 MFG-12 설명은 LOCAL VERIFIED 유지. 실제 사용자 수용은 미검증 |
 | 수용한 범위 | 2026-09-10 설비 선택 → 한 파일 버전의 측정 항목 지도 → 관측 그래프·원본 근거·같은 버전 ZIP. [수용 계약](docs/FILE_REVIEW_CONTRACT.md#equipment-data-map--first-local-view). 기존 목록/CSV/이전 결과/설명 유지. 물리 연결·설비 건강·graph DB·외부 AI·유료 호출·공개 발행·배포는 포함하지 않음 |
-| Git 기준 | `feat/equipment-data-map`, Discovery 네 문서 `7b23848`, 수용 계약 `a9abcf9`. 이 기준 위 지도 source·독립 browser oracle·사용/검증 문서를 통합했다. 최종 UI digest는 지도 검증 기록, 현재 HEAD·dirty는 실제 Git에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
+| Git 기준 | `feat/review-navigation`, 구현 기준 `45512b6`, 기존 탐색 조사 세 문서 변경은 `51b66ad`에 보존. 정확한 HEAD·dirty는 실제 Git에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 실제 검토자 한 명에게 샘플의 전달 누락 뒤 온도 결과와 같은 버전의 근거를 찾아 전달하게 하고, 도움 요청·잘못된 버전 선택·상태 오해·소요 시간을 관찰한다. 에이전트 검사는 사용자 피드백으로 세지 않음 |
+| 다음 한 행동 | 수용한 탐색 UI를 구현하고 Main이 mode/검색의 선택·버전 불변, 실제 fullscreen·모바일/키보드·기존 설명/실패·ZIP을 직접 검토한다. 기존 MFG-09/12 사용자 과제 관찰은 별도로 남음 |
 
 ## 실행과 근거
 
@@ -45,9 +45,9 @@ make serve
 ## 유지하는 후속 판단
 
 지도 탐색 UX는 [MFG-13 후속 검토](docs/research/file-review-workflow.md#map-navigation-review)에 추천을 정리했다.
-`45512b6`의 구현·보존 화면과 공식 문서를 대조했으며 **넓게 보기·선택적 전체화면 + 전체 항목 이름 검색**이 첫 후보다.
-확대/이동/맞춤은 별도 후속 후보이며 구현은 아직 미수용이다. 작성자의 긍정적 첫 인상을 과제 수행 성공으로 기록하지 않는다.
-현재 로컬 기능·서버와 위 다음 사용자 관찰을 유지하며, 이 검토는 Release의 새 선행조건이 아니다.
+`45512b6`의 구현·보존 화면과 공식 문서를 대조한 뒤 **넓게 보기·선택적 전체화면 + 전체 항목 이름 검색**을 로컬 구현하기로 수용했다.
+[탐색 계약](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 따른다. 확대/이동/맞춤은 별도 후속 후보다.
+작성자의 긍정적 첫 인상을 과제 수행 성공으로 기록하지 않는다. 기존 사용자 관찰은 유지하며 Release의 새 선행조건이 아니다.
 
 [MFG-10](docs/BACKLOG.md#mfg-10--context-bound-review-assistant-discovery)은 공개 조사·코드 대조까지 마쳤다.
 [추천안](docs/research/review-assistant.md)은 마지막으로 확인한 결과의 버전·구간을 설명하는 읽기 전용 도우미다.

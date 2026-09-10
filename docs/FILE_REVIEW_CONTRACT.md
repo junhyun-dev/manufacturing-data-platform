@@ -297,6 +297,71 @@ selected-node focus, source-evidence focus and the existing explanation modal. S
 a test fixture, not evidence of plant relationships. Passing these checks establishes local behavior; the map's
 advantage over the existing selectors and independent user task success remain unverified.
 
+## Review navigation — wide view, fullscreen and item search
+
+Accepted on 2026-09-10 for local implementation. The equipment-map contract above remains in force.
+The outcome is finding a measurement by its full name and reading its observations, source and matching ZIP
+in a wider connected workspace. This is presentation/metadata navigation, not a new analysis or identity model.
+No zoom/pan camera, change to the eight-node bound, physical relation/health inference, Canvas renderer,
+graph store, new API, dependency, persistence or external call is included.
+
+### Wide view and fullscreen lifecycle
+
+- A `넓게 보기` / `기본 화면으로` button changes the existing document layout, preserving the original DOM
+  and all current map/list/query/source/history/export/explanation targets. Reduce surrounding navigation space;
+  keep dataset/equipment/version context, query controls, chart and evidence reachable. Narrow screens stack
+  and scroll normally; the wider mode must not require dragging or suppress browser text/page zoom.
+- Entering/leaving either presentation mode never changes dataset/version/latest-attempt pins, draft selection,
+  submitted range, successful result, explanation answer or ZIP parameters, and never triggers a data query.
+  An in-flight query may finish normally across a mode change. Only existing data/selection actions invalidate it.
+- Fullscreen is optional and entered from an explicit user gesture. Request it on the document root so that the
+  existing explanation panel, toast and native deletion dialog remain available. Enter wide layout first.
+  Pending fullscreen transitions prevent duplicate requests; UI state follows actual `fullscreenElement` /
+  `fullscreenchange`, not an optimistic boolean. Unsupported/denied requests leave ordinary wide view usable
+  and show a plain-language status. No-current/unavailable content cannot initiate a new expanded view.
+- Fullscreen exit (button, Esc or browser/system exit) leaves ordinary wide view. `기본 화면으로` also exits
+  native fullscreen before restoring the base layout. If exit fails, retain reachable exit controls and report it.
+  Re-entering is explicit. Keep the current selection/result and restore focus to the corresponding mode control
+  and the appropriate saved scroll position when returning to base view; never focus a hidden/removed element.
+- Modal ownership takes precedence: deletion confirmation handles its own Escape; the narrow explanation
+  dialog retains focus containment and closes once. A fullscreen event while either is open must not steal
+  focus or activate deletion, close a second layer by application handlers, or strand background inert state.
+  Error/no-current content inside an already expanded view stays readable with usable exit controls.
+
+### Search is metadata navigation
+
+- Search all `current.series` items for the currently selected equipment in the authorized dataset/version.
+  Match tag name by trimmed, case-insensitive plain substring (no regex, fuzzy alias or cross-file search).
+  Render names and units as inert text. Expose full names, match/total counts, an explicit no-match state and clear.
+  Keep the original complete native equipment/tag selectors and the map's selected-item-in-eight rule.
+- Typing, clearing, paging or focusing results makes no HTTP request and changes no draft selection, submitted
+  result, explanation or export. A selection outside the search results is explicitly still the current selection.
+  Empty search shows an instruction/total count and uses the existing full list; it need not duplicate every item.
+- Bound a nonempty search to 20 result buttons per page with reachable previous/next controls and accurate
+  page/match counts. Every match is reachable. This is a rendering bound, not a new accepted data-size limit.
+  Result selection uses the same existing item-selection action; selecting a different tag clears old statistics,
+  export and explanation until explicit query. Selecting the already selected item preserves the successful result.
+- Dataset/equipment switch and refreshed dataset descriptions clear the search term/page. Observed context,
+  authorization, expiry, deletion or integrity failures clear/disable stale search results with the map; a generic
+  query failure may retain valid metadata but cannot revive old statistics. Delayed responses follow existing pins.
+- Stable targets: `review-wide-toggle`, `review-fullscreen-toggle`, `review-view-status`, `tag-search`,
+  `tag-search-clear`, `tag-search-status`, `tag-search-results`, `tag-search-prev`, `tag-search-next`,
+  and result buttons with `data-search-tag`. Preserve search focus while typing/paging; choosing a result puts
+  focus on the corresponding existing selected map button or native selector. Long names must wrap without page overflow.
+
+### Completion evidence
+
+Use actual full/sample HTTP and Chromium. Establish successful query/ZIP context, then assert that modes,
+search/clear/page and fullscreen errors do not change it or add queries. Check real native fullscreen entry/exit
+separately from labelled unsupported/rejection/event-order injections; do not report an API stub as native support.
+Check basic/fullscreen explanation and deletion-dialog coexistence, button/Escape focus return, 1440/390/320px,
+orientation/200% browser text scaling, normal scrolling, and keyboard-only selection to matching ZIP.
+Use the actual three-item sample and labelled synthetic 8/11/50/200-item inputs with similar/128-character/markup
+names. Include zero matches, selection beyond the first eight/page, another equipment/file with the same name,
+empty results, refused replacement/retained current, changed latest attempt, transient failure, integrity/deleted/
+expired/cross-workspace refusal and delayed query across view/selection changes. Reuse existing server oracles.
+Record measured fixture behavior without claiming production capacity, independent user success or release.
+
 ## Completion and public-release boundary
 
 Verify normal upload, sample-mode upload refusal, rejected replacement preserving an earlier result, corrected replacement, sample delivery failure
