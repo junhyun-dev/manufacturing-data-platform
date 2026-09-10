@@ -7,6 +7,30 @@
 현재 CSV 웹 서비스는 [사용·검증 guide](FILE_REVIEW_GUIDE.md)의 `make serve`·`make verify-service`로
 실행한다. 이 문서의 OPC UA·Spark·historical report 검증은 별도의 기존 실험이며 웹 실행의 선행조건이 아니다.
 
+<a id="visual-discovery-verification"></a>
+## Equipment visual discovery — 2026-09-10
+
+문서 변경 기준은 `feat/review-explanation@794a66c04d77a3a44fb894966c7968d97ce5dbe8` clean이다.
+변경은 PROJECT_STATUS·Backlog·workflow research·이 검증 문서 네 곳이다. 제품 source/UI·Contract·설정·의존성·
+branch·보존 portfolio artifact를 변경하지 않았다. [조사와 wireframe](research/file-review-workflow.md#equipment-visual-discovery)은
+제안이며 구현·사용성 통과·릴리스 근거가 아니다.
+
+- 공개 자료: Grafana node graph/선택 메뉴/state timeline, Cognite Search preview의 공식 게시 이미지 원본을 직접 열었다.
+  게시된 데스크톱 화면 관찰이며 제품 로그인·실제 조작·모바일 동작 확인은 아니다. 출처·관찰/공급자 설명/가설은 조사 owner에 있다.
+- 로컬 데이터: 번들 CSV를 Python `csv.DictReader`·`Counter`·`hashlib.sha256`으로 직접 읽어
+  21,432행, 설비 이름 1개, 세 항목 각 7,144개, 원본 시각 범위·품질 미제공과 provenance hash 일치를 확인했다.
+  사용자 원본이나 런타임 DB를 외부로 보내지 않았다.
+- `make setup`: PASS, 기존 lock의 39 packages 확인. `make test`: **255 passed / 17 skipped**, 53.78초.
+  기존 FastAPI/Starlette deprecation warning 2개. optional runtime skip을 실행 성공으로 세지 않는다.
+- `make verify`: PASS. `.cache/telemetry-runs/run-YTuX78aS/`의 5개 fixture 판정과
+  `runtime_identity.json`·`readback.json`·current → manifest → 9개 실제 event를 확인했다.
+  source/test tree SHA-256 `0e14665094088a7ed07c02744c4273947ab3e11fed074790724a24407c1856fa`로 기존 구현과 같다.
+  local OPC UA fixture 검증이며 새 지도나 웹 브라우저 검증이 아니다.
+- 최종 문서 상대 경로/anchor 59개·공개 경계·`git diff --check`·변경 경로 검사 PASS. source/UI 변경이 없어 새 브라우저·
+  컨테이너·preview 서버는 실행하지 않았다. 기존 MFG-12 화면 검증과 실제 검토자의 미완료 과제 관찰을 구분한다.
+
+새 commit·push·PR·merge·Release·배포·외부 AI 호출은 없다. 다음은 MFG-13 구현 후보에 대한 작성자의 선택이다.
+
 ## 기본 환경
 
 Linux, Python 3.10, uv, Bash, Make를 사용한다. OPC UA는 loopback 주소에서만 재생한다.

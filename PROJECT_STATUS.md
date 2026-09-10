@@ -5,15 +5,17 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | LOCAL VERIFIED — MFG-12 결과 설명 preview 구현·직접 검토·HTTP/브라우저 검증 완료 |
-| 수용한 범위 | 2026-09-09 현재 CSV 결과 설명 방향으로 계속 진행 수용. 첫 로컬 구현은 선택형 질문과 실제 서버 근거; 외부 AI·자유 대화·유료 호출·배포는 포함하지 않음 |
-| Git 기준 | `feat/review-explanation`; 구현·검증 완료 `092b8e6d5065136a1b1d5d4f182463b0b622ee34`. 2026-09-09 승인된 백업 대상은 기존 `origin`의 동일 작업 브랜치. 현재 HEAD·dirty와 원격 ref 일치는 Git으로 확인; main 병합과 구분 |
+| 현재 작업 | DISCOVERY — MFG-13 설비 데이터 지도 조사·설계 제안 완료, 구현 수용 대기. MFG-12 결과 설명 preview는 LOCAL VERIFIED 유지 |
+| 수용한 범위 | 2026-09-10 설비 상태·관계 시각화의 공개 조사와 설계 제안. 화면 형태·관계 의미·구현·graph DB는 미수용. 기존 선택형 결과 설명·CSV 계약을 유지하며 외부 AI·자유 대화·유료 호출·배포는 포함하지 않음 |
+| Git 기준 | `feat/review-explanation`; 이번 문서 변경 기준 `794a66c04d77a3a44fb894966c7968d97ce5dbe8`, 시작 시 clean. MFG-12 구현·검증 완료 `092b8e6d5065136a1b1d5d4f182463b0b622ee34`. HEAD 유지, PROJECT_STATUS/Backlog/workflow research/Verification 네 문서의 미커밋 변경. 현재 HEAD·dirty는 Git으로 확인. 새 branch·source/UI 변경·원격 조회/반영 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 공개 샘플의 전달 누락 → 결과 설명 → 같은 버전 근거 찾기를 실제 검토자 한 명에게 안내 없이 사용하게 하고, 막힌 질문 한 가지를 기록한다 |
+| 다음 한 행동 | [MFG-13 추천·화면 구상](docs/research/file-review-workflow.md#equipment-visual-discovery)을 보고 ‘현재 파일 안 설비 그룹–측정 항목 지도’의 첫 로컬 구현 여부를 선택한다. 선택 전 구현하지 않음 |
 
 ## 실행과 근거
+
+- 이번 방향 조사: [MFG-13](docs/BACKLOG.md#mfg-13--equipment-data-map-discovery), [공개 화면·wireframe·데이터 제약](docs/research/file-review-workflow.md#equipment-visual-discovery), [2026-09-10 문서 검사](docs/VERIFICATION.md#visual-discovery-verification).
 
 ```bash
 make setup
@@ -42,6 +44,8 @@ make serve
 
 [MFG-09](docs/BACKLOG.md#mfg-09--independent-use-release-and-feedback)는 기존 `v0.1.0` Release와 독립 사용·공개 운영 경계를 소유한다.
 문서 정비나 새 기능 조사를 Release의 새 선행조건으로 만들지 않는다. 실제 업무 파일로 설명 없는 사용과 기존 도구 대비 가치는 미검증이다.
+공개 샘플 화면에 대한 작성자의 첫 인상은 긍정적이었지만 과제 수행·버전 선택·소요 시간은 관찰되지 않았다.
+전달 누락 → 결과 설명 → 같은 버전 근거 찾기의 실제 검토자 관찰은 MFG-09/MFG-12의 남은 검증으로 보존한다.
 
 공개 설명은 구현·검증한 파일 서비스와 별도 OPC UA 실험의 근거까지다. 공장 도입·반복 사용·생산 운영·처리량/비용 절감과
 원본 OPC UA 재수집의 멱등성은 주장하지 않는다. 제품 source·문서는 Apache-2.0, MetroPT 발췌본은 별도 CC BY 4.0 경계를 유지한다.

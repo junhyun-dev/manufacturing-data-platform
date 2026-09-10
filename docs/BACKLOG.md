@@ -4,6 +4,23 @@
 현재 선택한 작업은 [PROJECT_STATUS](../PROJECT_STATUS.md) 한 곳, 각 작업의 범위와 완료 조건은 이 파일이 소유한다.
 새 제품 의미와 외부 행동의 최종 결정자는 프로젝트 작성자다.
 
+## MFG-13 — Equipment data map discovery
+
+**조사·설계 제안 완료 / 구현 수용 대기 — 2026-09-10.** Git 기준 `794a66c04d77a3a44fb894966c7968d97ce5dbe8`.
+
+- 사용자 방향: 설비별 상태와 관계를 시각적으로 읽고 다음에 확인할 측정 항목·원본 근거를 찾는다.
+- [공개 화면 비교·실제 데이터·한 장면의 wireframe](research/file-review-workflow.md#equipment-visual-discovery)이 근거 owner다.
+- 추천: 한 파일 버전의 설비 그룹–측정 항목 지도 + 연결된 상세. 카드/검사 사건 목록을 단순 비교 기준으로 둔다.
+  전체 설비 버블망·물리 상태 시간 띠는 자산 식별·연결·상태 근거 부족으로 보류한다.
+- 첫 구현 후보: 기존 workspace/dataset/version과 series·query·export를 이용하는 읽기 전용 흐름.
+  파일의 현재 결과/최신 시도와 실제 설비 건강을 분리한다. 그래프 DB·물리 연결·인과·제어·외부 AI는 범위 밖이다.
+- 반례: 누락 전달을 설비 고장으로 칠함, 다른 파일의 같은 이름을 합침, 버전이 다른 통계와 ZIP을 연결함,
+  서버 처리 시각을 원본 관측 시간으로 표시함. 원본·합성 사건·추정 관계의 구분을 유지한다.
+- 이번 종료: 공식 공개 화면 관찰, CSV/hash·source 대조, 대안/추천/화면/제약/후속 검증을 기존 owner에 기록.
+  [문서 검사](VERIFICATION.md#visual-discovery-verification). 제품 source/UI·현재 계약·branch·배포는 바꾸지 않는다.
+- 다음 한 결정: 작성자가 위 한 파일 범위의 지도부터 로컬 구현할지 선택한다. 수용 후 affected 계약/UI/API/tests와
+  완료 증거를 구체화한다. MFG-09/MFG-12의 실제 사용자 검증을 이번 조사로 통과시키거나 취소하지 않는다.
+
 ## MFG-12 — Guided result explanation preview
 
 **로컬 구현·검증 완료 — 2026-09-09.** 기준 `defbacd452257ff626ffa1888005fbf7135940e9`.
