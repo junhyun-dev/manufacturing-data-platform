@@ -15,6 +15,7 @@
 `51b66ad`에 보존했다. [탐색 계약](FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)과
 [사용법](FILE_REVIEW_GUIDE.md#넓게-보기전체화면항목-이름-찾기)이 현행 약속과 실행 경로를 소유한다.
 **웹 탐색은 LOCAL VERIFIED / 저장소 전체 검사 gate는 OPEN / NOT RELEASED·NOT DEPLOYED**다.
+검증한 구현은 로컬 commit `743bebd0baaabdd1006ca3607bc11963c430185b`에 보존했다.
 
 | 실제 검사 | 결과와 범위 |
 |---|---|
@@ -76,6 +77,13 @@ Worker UTC 시작/종료는 03:02:21–03:33:44, 수용 계약 commit부터 최�
 문서/preview 정리와 뒤 전체 검사 재확인은 이 구간 밖이다. 시각 순서 오류도 관측했으므로 이 기록을 정밀 성능 비교에 쓰지 않는다.
 모델별 token·비용은 **UNKNOWN**이다. 로컬 검사 외 새 서비스·유료/외부 AI·push/PR/merge/Release/배포는 없다.
 MFG-09/12의 실제 검토자 과제, 지도/검색의 사용자 효용과 세 항목에서의 이점은 계속 미검증이다.
+
+로컬 preview는 기존 자기 제품 프로세스/DB 소유를 확인한 뒤 같은 DB로 갱신했다. 주소는 `http://127.0.0.1:8000`,
+source revision은 `743bebd0baaabdd1006ca3607bc11963c430185b`다. 실제 health·UI bytes와 새 브라우저에서
+샘플 이름 검색 → 온도 조회 → 넓게 보기 → 같은 version/hash의 7,144개 ZIP을 확인했다.
+`.cache/review-navigation-preview/20260910T035019572965Z/{server,readback}.json`이 로컬 실행 근거다.
+검증용 full/sample 서버만 종료했고 preview는 남겼다. 다른 제품 프로세스·Personal·공통 문서는 변경하지 않았다.
+
 
 <a id="equipment-map-verification"></a>
 ## Equipment data map — 2026-09-10 local verification

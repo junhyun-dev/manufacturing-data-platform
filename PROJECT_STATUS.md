@@ -7,7 +7,7 @@
 |---|---|
 | 현재 작업 | MFG-13 탐색 UI LOCAL VERIFIED — 넓게 보기·지원 환경 전체화면·항목 이름 검색. 전체 검사 gate는 기존 OPC UA 시각 오류로 OPEN. 실제 사용자 수용은 미검증 |
 | 수용한 범위 | 설비 선택 → 한 파일 버전의 항목 지도 → 관측·출처·같은 버전 ZIP. 여기에 [넓게 보기·전체화면·이름 검색](docs/FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)을 추가. 기존 8개 지도/전체 목록·CSV·이전 결과·설명 유지. 줌/이동·물리 관계/건강 추정·외부 AI·공개 배포는 포함하지 않음 |
-| Git 기준 | `feat/review-navigation`, 수용 계약 `3686f5d` 이후 정적 UI 3파일·browser oracle·관련 문서/화면 변경. 검증한 UI digest는 [실행 근거](docs/VERIFICATION.md#review-navigation-verification). 기존 조사 3문서는 `51b66ad` 보존. 정확한 HEAD·dirty는 실제 Git에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
+| Git 기준 | `feat/review-navigation`, 구현 `743bebd`(수용 계약 `3686f5d` 이후 정적 UI 3파일·browser oracle·관련 문서/화면). 검증한 UI digest는 [실행 근거](docs/VERIFICATION.md#review-navigation-verification). 기존 조사 3문서는 `51b66ad` 보존. 정확한 HEAD·dirty는 실제 Git에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
@@ -15,6 +15,9 @@
 
 ## 실행과 근거
 
+- 로컬 샘플 미리보기: **http://127.0.0.1:8000**. 기존 탭은 새로고침한다. 2026-09-10 실제 health/source revision
+  `743bebd0baaabdd1006ca3607bc11963c430185b`, 제공된 UI bytes·이름 검색·넓게 보기·온도 7,144개와 같은 버전 ZIP을 확인했다.
+  기존 preview DB를 유지했다. 로컬 실행 기록은 `.cache/review-navigation-preview/20260910T035019572965Z/server.json`과 `readback.json`.
 - 새 탐색: [수용 범위·검증과 한계](docs/VERIFICATION.md#review-navigation-verification). full/sample 13/10개 묶음,
   기존 지도 14/11·설명 18/12·파일 화면 11/7 PASS. 실제 browser Esc·200% 확대·모바일/키보드·동일 ZIP 확인.
   [넓게 보는 화면](docs/assets/file-review-navigation-desktop.png) · [390px 검색/목록](docs/assets/file-review-navigation-mobile.png).
