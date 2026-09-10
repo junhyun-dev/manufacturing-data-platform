@@ -7,6 +7,76 @@
 현재 CSV 웹 서비스는 [사용·검증 guide](FILE_REVIEW_GUIDE.md)의 `make serve`·`make verify-service`로
 실행한다. 이 문서의 OPC UA·Spark·historical report 검증은 별도의 기존 실험이며 웹 실행의 선행조건이 아니다.
 
+<a id="review-navigation-verification"></a>
+## Review navigation — 2026-09-10 local verification
+
+수용 기준은 `feat/review-navigation@3686f5dfa09d7abd19c0f2224192ef87bccf2def` 이후의 정적 UI 세 파일과
+[`verify_review_navigation_browser.py`](../scripts/verify_review_navigation_browser.py) diff다. 기존 조사 세 문서는
+`51b66ad`에 보존했다. [탐색 계약](FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)과
+[사용법](FILE_REVIEW_GUIDE.md#넓게-보기전체화면항목-이름-찾기)이 현행 약속과 실행 경로를 소유한다.
+**웹 탐색은 LOCAL VERIFIED / 저장소 전체 검사 gate는 OPEN / NOT RELEASED·NOT DEPLOYED**다.
+
+| 실제 검사 | 결과와 범위 |
+|---|---|
+| `make setup` | PASS, 기존 lock의 39 packages 확인 |
+| 새 탐색 browser full/sample | **13/10개 묶음 PASS**, Chromium 140.0.7339.16, 최종 03:38:39–03:39:24 UTC |
+| 기존 지도·설명·파일 browser full/sample | 각각 **14/11, 18/12, 11/7 PASS**, 최종 UI에서 재확인 |
+| `MFG_REVIEW_MODE=full make verify-service` | PASS, 실제 HTTP·독립 CSV/ZIP·보관 원본 복구·재시작. Backend는 이후 변경 없음 |
+| `make verify` | PASS, `.cache/telemetry-runs/run-YOqegXrl/`의 5개 판정과 current → manifest → 9개 event digest를 직접 재계산. 이 한 실행의 결과이며 아래 반복 검사 문제는 별개 |
+| `make test` | 초기 **255 passed / 17 skipped**(52.22초). 최종 UI 뒤 전체 실행은 **1 failed / 254 passed / 17 skipped**, 브라우저 종료 뒤 단독 전체 실행은 **2 failed / 253 passed / 17 skipped**(37.46초). 아래 OPC UA 시각 검사 실패를 숨기지 않음 |
+| 문서·공개 경계 | `tests/test_portfolio_release.py` **43 passed**(0.07초), 변경 문서 링크 대상 185개·Markdown fragment 61개와 추가 문장의 private-path/secret 검사·`git diff --check` PASS |
+
+이번 실행 root는 `.cache/review-navigation-checks/20260910T030858567199Z/`다.
+최종 `navigation-full-final/receipt.json`, `navigation-sample-final-2/receipt.json`,
+`map-final-{full,sample}/`, `explanation-final-{full,sample}/`, `browser-final-{full,sample}/`에
+실제 응답·ZIP·PNG·검사 결과가 있다. HTTP 전용 receipt는
+`.cache/file-review-verification/20260910T032208717811Z/receipt.json`이다.
+각 browser 검사는 자신의 workspace/fixture만 사용했다. 새 탐색 fixture 삭제 PASS, JS 오류와 외부 HTTP 요청은 없었다.
+
+- 실제 공개 CSV의 온도 7,144개, 평균 55.7481173012318와 ZIP의 전체 값·원본 hash·version·조회 조건을
+  Python CSV/통계와 비교했다. 미제출 날짜를 남긴 채 검색/지우기/화면 전환을 해도 같은 ZIP 근거를 유지했다.
+- 검색 입력/페이지 이동과 화면 전환의 API 무호출, 기존 선택·설명·제출 결과 보존, 실제 항목 선택의 무효화를
+  확인했다. 지연 중인 실제 query는 화면/검색 변경을 지나서 완료됐다. 다른 탭의 재검사, 거부된 교체, 삭제,
+  cookie 없는 조회와 명시적 새로고침을 확인했다. 503·무결성 UI 반례는 표시한 응답 주입이며 서버 변조/만료는 기존 tests가 소유한다.
+- 8/11/50/200항목, 128자 markup 이름, 다른 설비/파일의 같은 이름은 **합성 stress fixture**다.
+  모든 검색 페이지에 접근하고 지도 최대 8개·선택 항목 포함·완전한 원래 목록·텍스트 비실행을 확인했다.
+  200항목 fixture의 199개 검색 결과 페이지 순회는 0.788초였으나 자동화 한 실행이며 사용자 속도나 SLA로 주장하지 않는다.
+- 1440/390/320px·가로 화면, 키보드·포커스·전체화면 진입/종료 실패·중복 요청 방지와 설명/삭제 dialog 공존을 확인했다.
+  지원 API의 **실제 document-root fullscreen**과 거부/미지원/지연 Promise 주입을 구분했다.
+  별도 Xvfb의 XTest 키로 브라우저 Esc와 실제 200% 확대(DPR 1→2)를 확인했다. Xvfb에는 창 관리자가 없어
+  fullscreen 전후 창 크기는 CDP로 명시적으로 바꿨다. OS의 자동 전체화면 크기 변경·실제 휴대폰/Safari는 미검증이다.
+- Main 직접 화면 검토: [넓게 보기](assets/file-review-navigation-desktop.png), [390px 검색/목록](assets/file-review-navigation-mobile.png).
+  실제 공개 샘플이다. 로컬 `showcase-mobile-map.png`와 `native-200-x11.png`도 직접 열었다.
+  확대 화면의 Playwright 캡처가 실제 창을 온전히 담지 못해 기존 설치된 X11 화면 캡처로 별도 대조했으며,
+  브라우저 단축키 검증을 emulated viewport 변경으로 대신하지 않았다.
+
+최종 HTTP로 받은 bytes와 checkout이 같았다. 아래 SHA-256이 검증한 UI를 특정한다.
+
+```text
+index.html  2af592cbd2548900feaa1932b16b0f38dbf5d1f6fd54659c2b72b318eda81826
+app.js      14d8aa47956c1f2080de858b33b6b8303b6acd749fb86f2b305d41d20fb069ac
+styles.css  339b77b5648c38465c0fe12970ca67b41634ee0fc4844cf970b8c35aec7e13b8
+```
+
+**남은 전체 검사 문제:** 변경하지 않은 `test_event_time_trust.py::test_representative_verification_reports_five_operator_decisions`와
+`test_industrial_source_contract.py::test_local_opcua_three_scenarios_preserve_semantics_and_last_good`에서
+`collected_at must not precede server_timestamp`가 발생했다. 최근 단독 전체 로그는 위 root의 `make-test-serial.log`다.
+별도 한 번의 대상 검사(원래 validator에 그대로 위임하는 진단 wrapper)는 1 passed(9.51초)였고 실패 시각을 포착하지 못했다.
+단순 병렬 실행 원인이나 해결 완료로 단정하지 않는다. timestamp 순서를 만드는 원인은 UNKNOWN이며
+[MFG-02](BACKLOG.md#mfg-02--recovery-and-replay-identity)에 다음 조사와 종료 조건을 남겼다.
+이번 UI 변경으로 laboratory 계약을 완화하거나 시각·Docker/WSL·관련 source/tests를 바꾸지 않았다.
+
+분담 회고: 기존 Worker는 정적 UI 세 파일만 구현하고 03:33:44 UTC 반환 뒤 쓰기를 동결했다.
+Main은 실제 diff와 독립 browser/CSV/ZIP을 검토했다. 삭제 dialog가 열린 채 좁은 화면으로 바뀐 뒤 취소하면
+설명 밖에 포커스가 남는 반례를 찾아 Main이 한 번 보정했고, 같은 경로와 전체 관련 browser 검사를 통과시켰다.
+Worker clarification/rework는 0/0; Main의 제품 통합 보정은 1회다. browser oracle은 포인터 대상·CSP·viewport·Xvfb
+창 관리·텍스트 비교의 다섯 실행 보정과 작성 중 기계적 보정 두 건이 필요했다. 다음에는 브라우저 native 동작을
+작은 probe로 먼저 분리해 인계 뒤 oracle 재작업을 줄이는 것이 제안이다. 공통 방법은 변경하지 않았다.
+Worker UTC 시작/종료는 03:02:21–03:33:44, 수용 계약 commit부터 최종 탐색 browser 종료까지는 03:01:18–03:39:24다.
+문서/preview 정리와 뒤 전체 검사 재확인은 이 구간 밖이다. 시각 순서 오류도 관측했으므로 이 기록을 정밀 성능 비교에 쓰지 않는다.
+모델별 token·비용은 **UNKNOWN**이다. 로컬 검사 외 새 서비스·유료/외부 AI·push/PR/merge/Release/배포는 없다.
+MFG-09/12의 실제 검토자 과제, 지도/검색의 사용자 효용과 세 항목에서의 이점은 계속 미검증이다.
+
 <a id="equipment-map-verification"></a>
 ## Equipment data map — 2026-09-10 local verification
 

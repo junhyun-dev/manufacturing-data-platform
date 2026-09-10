@@ -1982,6 +1982,180 @@ dialog p {
   }
 }
 
+:root:fullscreen {
+  overflow: auto;
+  background: var(--paper);
+}
+
+:root:fullscreen body {
+  min-height: 100%;
+}
+
+.review-view-bar {
+  display: flex;
+  min-width: 0;
+  margin: 14px 0 -12px;
+  padding: 10px 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  border: 1px solid #dce7e4;
+  border-radius: 11px;
+  background: #fbfdfc;
+}
+
+.review-view-actions {
+  display: flex;
+  min-width: 0;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#review-view-status {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+body.review-wide .app-shell {
+  display: block;
+}
+
+body.review-wide .sidebar {
+  display: none;
+}
+
+body.review-wide main {
+  max-width: none;
+  padding-right: clamp(18px,3vw,56px);
+  padding-left: clamp(18px,3vw,56px);
+}
+
+body.review-wide .topbar {
+  height: 52px;
+}
+
+body.review-wide .workspace {
+  padding-top: 24px;
+}
+
+body.review-wide .review-view-bar {
+  position: sticky;
+  z-index: 16;
+  top: 0;
+  margin: 0 -12px -8px;
+  border-top: 0;
+  border-radius: 0 0 11px 11px;
+  box-shadow: 0 8px 20px #143b3214;
+}
+
+.tag-search-panel {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid #dce7e4;
+  border-radius: 12px;
+  background: #fbfdfc;
+}
+
+.tag-search-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+#tag-search-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tag-search-heading p {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+#tag-search {
+  width: 100%;
+  min-width: 0;
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1px solid #cfdcda;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+#tag-search-status {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.tag-search-results {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.tag-search-result {
+  display: flex;
+  min-width: 0;
+  padding: 9px 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #d6e2df;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+}
+
+.tag-search-result:hover:not(:disabled) {
+  border-color: #71aaa2;
+  background: #f4faf7;
+}
+
+.tag-search-result[aria-pressed="true"] {
+  border-color: var(--teal-dark);
+  background: var(--teal-light);
+  box-shadow: inset 3px 0 var(--teal-dark);
+}
+
+.tag-search-result strong {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.tag-search-result span {
+  flex: none;
+  max-width: 35%;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.tag-search-pagination {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 10px;
+}
+
 .review-layout {
   display: grid;
   grid-template-columns: minmax(320px,.72fr) minmax(0,1.28fr);
@@ -2314,6 +2488,10 @@ dialog p {
 }
 
 @media (max-width:850px) {
+  .tag-search-results {
+    grid-template-columns: 1fr;
+  }
+
   .review-layout {
     gap: 16px;
   }
@@ -2336,6 +2514,48 @@ dialog p {
 }
 
 @media (max-width:600px) {
+  .review-view-bar {
+    margin-top: 10px;
+    margin-bottom: -8px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-view-actions {
+    width: 100%;
+  }
+
+  .review-view-actions .button {
+    min-width: 0;
+    flex: 1 1 120px;
+  }
+
+  #review-view-status {
+    text-align: left;
+  }
+
+  body.review-wide .review-view-bar {
+    margin: 0 -8px -5px;
+  }
+
+  .tag-search-panel {
+    padding: 13px;
+  }
+
+  .tag-search-heading {
+    align-items: center;
+  }
+
+  .tag-search-result {
+    padding: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tag-search-result span {
+    max-width: 100%;
+    text-align: left;
+  }
+
   .equipment-map-section {
     padding: 15px;
   }

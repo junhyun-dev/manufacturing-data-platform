@@ -3,6 +3,18 @@
 This repository has no published release yet. Entries describe local changes and the release candidate;
 a date and immutable Git tag are added only after remote CI and release verification succeed.
 
+## Local review navigation — version unassigned
+
+- Added a wider connected review layout, optional document-root fullscreen and measurement-name search
+  within the current equipment/file version. Search pages contain at most 20 matches; the complete native
+  selector and eight-node map remain available.
+- View changes and passive search preserve confirmed results, explanation and matching ZIP parameters.
+  Fullscreen failures retain exit controls; narrow explanation/delete-dialog focus ownership survives resize.
+- Actual full/sample browser checks passed, including native Escape, 200% browser zoom and synthetic
+  8/11/50/200-item inputs. The full repository gate remains open for intermittent timestamp-order failures
+  in the unchanged OPC UA laboratory; see [dated evidence](docs/VERIFICATION.md#review-navigation-verification).
+- Local preview only. User task success, release and deployment remain unverified.
+
 ## Local equipment data map — version unassigned
 
 - Added a file-version equipment-to-measurement map linked to the existing selection, observations,

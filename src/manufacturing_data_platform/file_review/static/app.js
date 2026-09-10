@@ -5,10 +5,13 @@ const state = {
   csrf: null, datasets: [], active: null, query: null, busy: false, queryGeneration: 0,
   capabilities: { uploads: true, sample: true, accounts: false }, limits: { upload_bytes: 8 * 1024 * 1024, rows: 50000, datasets: 10 },
   explanation: { generation: 0, controller: null, timeout: null, loading: false, question: null, requestKey: null, answerKey: null, retryVisible: false, returnFocus: null },
-  map: { expanded: false, unavailable: null }
+  map: { expanded: false, unavailable: null },
+  search: { page: 0 },
+  view: { wide: false, fullscreenPending: false, returningToBase: false, baseScrollX: 0, baseScrollY: 0, suppressFullscreenFocusUntil: 0 }
 };
 const explanationNarrow = window.matchMedia("(max-width: 850px)");
 const EXPLANATION_TIMEOUT_MS = 10000;
+const TAG_SEARCH_PAGE_SIZE = 20;
 const statusNames = { ready: "파일 검증 완료", incomplete: "전달 미완료", blocked: "파일 수정 필요" };
 const qualityNames = { good: "Good 제공", unspecified: "미제공", uncertain: "Uncertain 제공", bad: "Bad 제공" };
 const kindNames = { import: "파일 검사", sample: "샘플 검사", replace: "수정 파일 검사", retry: "보관 원본 재검사", "delivery-check": "전달 누락 체험", delivery_check: "전달 누락 체험", recovery: "보관 원본 복구" };
@@ -36,6 +39,7 @@ function setBusy(busy, message = "처리 중…") {
   for (const id of ["upload-button", "welcome-upload", "sample-button", "welcome-sample", "replace-button", "delete-button", "query-button", "reset-range", "retry-button", "delivery-button", "recover-button", "export-button", "explanation-launcher"]) $(id).disabled = busy;
   for (const item of document.querySelectorAll(".dataset-item")) item.disabled = busy;
   for (const item of document.querySelectorAll("[data-map-tag]")) item.disabled = busy;
+  for (const item of document.querySelectorAll("[data-search-tag]")) item.disabled = busy;
   $("equipment-filter").disabled = busy;
   $("tag-filter").disabled = busy;
   $("map-refresh").disabled = busy;
@@ -84,6 +88,236 @@ function currentDataset() { return state.datasets.find((dataset) => dataset.id =
 
 function isReviewContextError(error) {
   return [401, 403, 404].includes(error?.status) || ["INTEGRITY", "CONTEXT_CHANGED"].includes(error?.code);
+}
+
+function nativeFullscreenActive() {
+  return Boolean(document.fullscreenElement);
+}
+
+function reviewViewAvailable() {
+  return !!currentDataset()?.current && !state.map.unavailable;
+}
+
+function modalOwnsFocus() {
+  return !!document.querySelector("dialog:modal") || !$("explanation-panel").hidden;
+}
+
+function redrawReviewChart() {
+  requestAnimationFrame(() => { if (state.query) renderChart(state.query.result); });
+}
+
+function updateReviewViewControls() {
+  const fullscreen = nativeFullscreenActive();
+  const available = reviewViewAvailable();
+  document.body.classList.toggle("review-wide", state.view.wide);
+  $("review-view-bar").hidden = !currentDataset() && !state.view.wide && !fullscreen;
+  $("review-wide-toggle").textContent = state.view.wide ? "기본 화면으로" : "넓게 보기";
+  $("review-wide-toggle").setAttribute("aria-pressed", String(state.view.wide));
+  $("review-wide-toggle").disabled = state.view.fullscreenPending || (!state.view.wide && !available);
+  $("review-fullscreen-toggle").textContent = fullscreen ? "전체화면 나가기" : "전체화면";
+  $("review-fullscreen-toggle").setAttribute("aria-pressed", String(fullscreen));
+  $("review-fullscreen-toggle").disabled = state.view.fullscreenPending || (!fullscreen && !available);
+}
+
+function syncReviewViewStatus() {
+  updateReviewViewControls();
+  if (nativeFullscreenActive()) {
+    $("review-view-status").textContent = reviewViewAvailable()
+      ? "전체화면에서 검토 중입니다. Esc 또는 나가기 버튼으로 종료할 수 있습니다."
+      : "전체화면에 현재 분석할 결과가 없습니다. Esc 또는 나가기 버튼으로 종료할 수 있습니다.";
+  } else if (state.view.wide) {
+    $("review-view-status").textContent = reviewViewAvailable()
+      ? "넓게 보는 중입니다. 선택과 조회 결과는 그대로 유지됩니다."
+      : "넓게 보는 중이며 현재 분석할 결과가 없습니다. 기본 화면으로 돌아갈 수 있습니다.";
+  } else if (reviewViewAvailable()) {
+    $("review-view-status").textContent = "지도와 분석을 더 넓게 볼 수 있습니다.";
+  } else {
+    $("review-view-status").textContent = "분석할 수 있는 결과가 있어야 넓게 볼 수 있습니다.";
+  }
+}
+
+function enterWideView() {
+  if (state.view.wide) return true;
+  if (!reviewViewAvailable()) {
+    syncReviewViewStatus();
+    return false;
+  }
+  state.view.baseScrollX = window.scrollX;
+  state.view.baseScrollY = window.scrollY;
+  state.view.wide = true;
+  syncReviewViewStatus();
+  redrawReviewChart();
+  return true;
+}
+
+function finishBaseView() {
+  const x = state.view.baseScrollX;
+  const y = state.view.baseScrollY;
+  state.view.wide = false;
+  state.view.returningToBase = false;
+  syncReviewViewStatus();
+  requestAnimationFrame(() => {
+    window.scrollTo(x, y);
+    redrawReviewChart();
+    if (modalOwnsFocus()) return;
+    const wideToggle = $("review-wide-toggle");
+    const target = $("review-view-bar").hidden || wideToggle.disabled ? $("main") : wideToggle;
+    target.focus({ preventScroll: true });
+  });
+}
+
+async function leaveWideView() {
+  if (state.view.fullscreenPending) return;
+  if (!nativeFullscreenActive()) {
+    finishBaseView();
+    return;
+  }
+  state.view.returningToBase = true;
+  state.view.fullscreenPending = true;
+  updateReviewViewControls();
+  $("review-view-status").textContent = "전체화면을 종료한 뒤 기본 화면으로 돌아가는 중입니다.";
+  try {
+    await document.exitFullscreen();
+    if (!nativeFullscreenActive() && state.view.returningToBase) finishBaseView();
+    else if (nativeFullscreenActive()) $("review-view-status").textContent = "전체화면 종료 상태를 확인하지 못했습니다. 나가기 버튼이나 Esc를 다시 사용해 주세요.";
+  } catch (_) {
+    if (!nativeFullscreenActive() && state.view.returningToBase) finishBaseView();
+    else {
+      state.view.returningToBase = false;
+      $("review-view-status").textContent = "전체화면을 종료하지 못했습니다. 나가기 버튼이나 Esc를 다시 사용해 주세요.";
+    }
+  } finally {
+    state.view.fullscreenPending = false;
+    updateReviewViewControls();
+  }
+}
+
+async function toggleNativeFullscreen() {
+  if (state.view.fullscreenPending) return;
+  if (nativeFullscreenActive()) {
+    state.view.fullscreenPending = true;
+    updateReviewViewControls();
+    $("review-view-status").textContent = "전체화면을 종료하는 중입니다.";
+    try {
+      await document.exitFullscreen();
+      if (!nativeFullscreenActive()) {
+        updateReviewViewControls();
+        $("review-view-status").textContent = "전체화면을 종료했습니다. 넓게 보기는 유지됩니다.";
+      }
+    } catch (_) {
+      $("review-view-status").textContent = nativeFullscreenActive()
+        ? "전체화면을 종료하지 못했습니다. 나가기 버튼이나 Esc를 다시 사용해 주세요."
+        : "전체화면을 종료했습니다. 넓게 보기는 유지됩니다.";
+    } finally {
+      state.view.fullscreenPending = false;
+      updateReviewViewControls();
+    }
+    return;
+  }
+  if (!enterWideView()) return;
+  if (typeof document.documentElement.requestFullscreen !== "function") {
+    $("review-view-status").textContent = "이 브라우저는 전체화면을 지원하지 않습니다. 넓게 보기는 계속 사용할 수 있습니다.";
+    return;
+  }
+  state.view.fullscreenPending = true;
+  updateReviewViewControls();
+  $("review-view-status").textContent = "전체화면으로 전환하는 중입니다.";
+  try {
+    await document.documentElement.requestFullscreen();
+    if (nativeFullscreenActive()) syncReviewViewStatus();
+    else $("review-view-status").textContent = "전체화면 상태를 확인할 수 없습니다. 넓게 보기는 계속 사용할 수 있습니다.";
+  } catch (_) {
+    if (nativeFullscreenActive()) syncReviewViewStatus();
+    else $("review-view-status").textContent = "전체화면을 시작하지 못했습니다. 넓게 보기는 계속 사용할 수 있습니다.";
+  } finally {
+    state.view.fullscreenPending = false;
+    updateReviewViewControls();
+  }
+}
+
+function handleFullscreenChange() {
+  if (nativeFullscreenActive()) {
+    state.view.wide = true;
+    syncReviewViewStatus();
+  } else if (state.view.returningToBase) {
+    finishBaseView();
+    return;
+  } else if (state.view.wide) {
+    updateReviewViewControls();
+    $("review-view-status").textContent = "전체화면을 종료했습니다. 넓게 보기는 유지됩니다.";
+    const suppressFocus = Date.now() < state.view.suppressFullscreenFocusUntil;
+    if (!suppressFocus && !modalOwnsFocus()) {
+      const fullscreenToggle = $("review-fullscreen-toggle");
+      const target = fullscreenToggle.disabled ? $("review-wide-toggle") : fullscreenToggle;
+      target.focus({ preventScroll: true });
+    }
+  } else {
+    syncReviewViewStatus();
+  }
+  redrawReviewChart();
+}
+
+function selectedEquipmentSeries() {
+  const dataset = currentDataset();
+  const equipment = $("equipment-filter").value;
+  return dataset?.current?.series.filter((item) => item.equipment === equipment) || [];
+}
+
+function renderTagSearch(unavailableMessage) {
+  const input = $("tag-search");
+  const results = $("tag-search-results");
+  const clear = $("tag-search-clear");
+  const previous = $("tag-search-prev");
+  const next = $("tag-search-next");
+  const pagination = previous.parentElement;
+  const available = reviewViewAvailable();
+  input.disabled = !available;
+  clear.disabled = !available || input.value.length === 0;
+  results.replaceChildren();
+  previous.disabled = true;
+  next.disabled = true;
+  pagination.hidden = true;
+  if (!available) {
+    $("tag-search-status").textContent = unavailableMessage || "파일 상태를 확인하면 항목 이름을 찾을 수 있습니다.";
+    return;
+  }
+  const series = selectedEquipmentSeries();
+  const term = input.value.trim();
+  if (!term) {
+    state.search.page = 0;
+    $("tag-search-status").textContent = `현재 설비의 항목 ${number(series.length)}개 · 이름을 입력하거나 위 전체 목록을 사용하세요.`;
+    return;
+  }
+  const folded = term.toLowerCase();
+  const matches = series.filter((item) => String(item.tag).toLowerCase().includes(folded));
+  const pageCount = Math.max(1, Math.ceil(matches.length / TAG_SEARCH_PAGE_SIZE));
+  state.search.page = Math.min(state.search.page, pageCount - 1);
+  const start = state.search.page * TAG_SEARCH_PAGE_SIZE;
+  const selectedTag = $("tag-filter").value;
+  for (const item of matches.slice(start, start + TAG_SEARCH_PAGE_SIZE)) {
+    const button = node("button", undefined, "tag-search-result");
+    button.type = "button";
+    button.dataset.searchTag = item.tag;
+    button.disabled = state.busy;
+    button.setAttribute("aria-pressed", String(item.tag === selectedTag));
+    const detail = `${item.unit || "단위 없음"}${item.tag === selectedTag ? " · 현재 선택" : ""}`;
+    button.append(node("strong", item.tag), node("span", detail));
+    button.addEventListener("click", () => selectMapTag(item.tag));
+    results.append(button);
+  }
+  const selectionOutside = selectedTag && !matches.some((item) => item.tag === selectedTag);
+  $("tag-search-status").textContent = matches.length
+    ? `검색 ${number(matches.length)}개 / 전체 ${number(series.length)}개 · ${number(state.search.page + 1)} / ${number(pageCount)}쪽${selectionOutside ? " · 현재 선택 항목은 그대로 유지됩니다." : ""}`
+    : `검색 0개 / 전체 ${number(series.length)}개 · 결과 없음${selectionOutside ? " · 현재 선택 항목은 그대로 유지됩니다." : ""}`;
+  pagination.hidden = matches.length <= TAG_SEARCH_PAGE_SIZE;
+  previous.disabled = state.search.page === 0;
+  next.disabled = state.search.page >= pageCount - 1;
+}
+
+function resetTagSearch(message) {
+  $("tag-search").value = "";
+  state.search.page = 0;
+  renderTagSearch(message);
 }
 
 function updateQueryControls() {
@@ -145,6 +379,8 @@ function renderMapUnavailable(message) {
   $("map-selection-status").textContent = "파일 상태를 새로고침해 주세요.";
   $("map-context").replaceChildren();
   $("map-source-link").disabled = true;
+  resetTagSearch("파일 상태를 새로고침하면 항목 이름을 다시 찾을 수 있습니다.");
+  syncReviewViewStatus();
   applyMapVisibility();
 }
 
@@ -247,13 +483,25 @@ function suspendMapAndQuery(message) {
   }
 }
 
+function focusSelectedTag(tag) {
+  const mapButton = [...document.querySelectorAll("[data-map-tag]")].find((button) => button.dataset.mapTag === tag);
+  const mapVisible = mapButton && !$("equipment-map-body").hidden && mapButton.offsetParent !== null;
+  const target = mapVisible ? mapButton : $("tag-filter");
+  target.focus({ preventScroll: true });
+  target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 function selectMapTag(tag) {
-  if ($("tag-filter").value === tag) return;
+  if ($("tag-filter").value === tag) {
+    renderTagSearch();
+    focusSelectedTag(tag);
+    return;
+  }
   $("tag-filter").value = tag;
   clearQueryForDraft();
   renderEquipmentMap();
-  const selected = [...document.querySelectorAll("[data-map-tag]")].find((button) => button.dataset.mapTag === tag);
-  selected?.focus({ preventScroll: true });
+  renderTagSearch();
+  focusSelectedTag(tag);
 }
 
 function explanationKey(selected = state.query) {
@@ -329,13 +577,15 @@ function renderExplanationContext(context, summary) {
 
 function applyExplanationMode() {
   const panel = $("explanation-panel");
-  const modal = !panel.hidden && explanationNarrow.matches;
+  // A native confirmation owns focus even if a resize makes the explanation narrow.
+  const modal = !panel.hidden && explanationNarrow.matches && !document.querySelector("dialog:modal");
   panel.setAttribute("role", modal ? "dialog" : "complementary");
   if (modal) panel.setAttribute("aria-modal", "true"); else panel.removeAttribute("aria-modal");
   $("application-shell").inert = modal;
   for (const element of document.querySelectorAll(".skip-link,#toast,#delete-dialog")) element.inert = modal;
   document.body.classList.toggle("explanation-modal-open", modal);
   $("explanation-backdrop").hidden = !modal;
+  if (modal && !panel.contains(document.activeElement)) $("explanation-title").focus();
 }
 
 function openExplanation() {
@@ -630,6 +880,7 @@ function renderDataset(dataset, resetFilters) {
     const end = dateLabel(current.range?.end);
     $("start-filter").title = `원본 첫 시각: ${start}`;
     $("end-filter").title = `원본 마지막 시각: ${end}. 종료 시각과 같은 관측값은 포함하지 않습니다.`;
+    resetTagSearch();
     renderEquipmentMap();
   } else {
     $("equipment-map-section").hidden = true;
@@ -639,11 +890,13 @@ function renderDataset(dataset, resetFilters) {
     $("map-selection-status").textContent = "";
     $("map-context").replaceChildren();
     $("map-source-link").disabled = true;
+    resetTagSearch("분석할 수 있는 결과가 있어야 항목 이름을 찾을 수 있습니다.");
   }
   $("sample-attribution").hidden = dataset.source_kind !== "sample";
   $("sample-exercise").hidden = dataset.source_kind !== "sample";
   renderHistory(dataset);
   updateQueryControls();
+  syncReviewViewStatus();
 }
 
 async function selectDataset(id, resetFilters = false, loadResult = true) {
@@ -661,6 +914,8 @@ async function selectDataset(id, resetFilters = false, loadResult = true) {
     $("workspace").hidden = true;
     $("welcome").hidden = false;
     document.title = "Telemetry Review · 설비 데이터 검토";
+    resetTagSearch("분석할 수 있는 결과가 있어야 항목 이름을 찾을 수 있습니다.");
+    syncReviewViewStatus();
     return;
   }
   renderDataset(dataset, resetFilters || changed);
@@ -921,8 +1176,35 @@ function installEvents() {
     resizeFrame = requestAnimationFrame(() => { if (state.query) renderChart(state.query.result); });
   });
   explanationNarrow.addEventListener("change", () => {
-    if (!$("explanation-panel").hidden) closeExplanation();
+    if (!$("explanation-panel").hidden) {
+      applyExplanationMode();
+      updateExplanationControls();
+    }
     applyMapVisibility();
+  });
+  $("review-wide-toggle").addEventListener("click", () => { if (state.view.wide) leaveWideView(); else enterWideView(); });
+  $("review-fullscreen-toggle").addEventListener("click", toggleNativeFullscreen);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  document.addEventListener("fullscreenerror", () => {
+    if (nativeFullscreenActive()) syncReviewViewStatus();
+    else {
+      updateReviewViewControls();
+      $("review-view-status").textContent = "전체화면 전환을 완료하지 못했습니다. 넓게 보기는 계속 사용할 수 있습니다.";
+    }
+  });
+  $("tag-search").addEventListener("input", () => { state.search.page = 0; renderTagSearch(); });
+  $("tag-search-clear").addEventListener("click", () => { resetTagSearch(); $("tag-search").focus(); });
+  $("tag-search-prev").addEventListener("click", () => {
+    state.search.page = Math.max(0, state.search.page - 1);
+    renderTagSearch();
+    const target = $("tag-search-prev").disabled ? $("tag-search-next") : $("tag-search-prev");
+    target.focus();
+  });
+  $("tag-search-next").addEventListener("click", () => {
+    state.search.page += 1;
+    renderTagSearch();
+    const target = $("tag-search-next").disabled ? $("tag-search-prev") : $("tag-search-next");
+    target.focus();
   });
   $("map-view-toggle").addEventListener("click", () => { state.map.expanded = !state.map.expanded; applyMapVisibility(); });
   $("map-refresh").addEventListener("click", refreshMapDataset);
@@ -946,8 +1228,12 @@ function installEvents() {
   }
   document.addEventListener("keydown", (event) => {
     const panel = $("explanation-panel");
+    const openDialog = document.querySelector("dialog:modal");
+    if (event.key === "Escape" && nativeFullscreenActive() && (openDialog || (!panel.hidden && explanationNarrow.matches))) {
+      state.view.suppressFullscreenFocusUntil = Date.now() + 1000;
+    }
     if (panel.hidden) return;
-    if (document.querySelector("dialog:modal")) return;
+    if (openDialog) return;
     if (event.key === "Escape") {
       event.preventDefault();
       closeExplanation();
@@ -974,11 +1260,13 @@ function installEvents() {
     if (!dataset) return;
     populateTags(dataset);
     clearQueryForDraft();
+    resetTagSearch();
     renderEquipmentMap();
   });
   $("tag-filter").addEventListener("change", () => {
     clearQueryForDraft();
     renderEquipmentMap();
+    renderTagSearch();
   });
   $("query-form").addEventListener("submit", (event) => { event.preventDefault(); action("선택 구간을 분석하는 중…", loadQuery); });
   $("reset-range").addEventListener("click", () => { $("start-filter").value = ""; $("end-filter").value = ""; action("전체 기간을 분석하는 중…", loadQuery); });
@@ -988,7 +1276,10 @@ function installEvents() {
   $("recover-button").addEventListener("click", () => runAttempt("retry", "보관된 전체 원본으로 복구하는 중…", "보관 원본을 다시 검사했습니다. 결과 버전과 최근 기록을 확인해 주세요."));
   $("delete-button").addEventListener("click", () => { $("delete-dialog").returnValue = "cancel"; $("delete-dialog").showModal(); });
   $("delete-dialog").addEventListener("close", () => {
-    if ($("delete-dialog").returnValue !== "delete") return;
+    if ($("delete-dialog").returnValue !== "delete") {
+      if (!$("explanation-panel").hidden) applyExplanationMode();
+      return;
+    }
     const dataset = currentDataset();
     if (!dataset) return;
     suspendMapAndQuery("파일을 삭제하는 중입니다.");

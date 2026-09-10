@@ -60,6 +60,12 @@ flowchart LR
 - client는 CSV 전체를 자체 판정하지 않습니다. server의 검증·snapshot·집계 결과를 표시하며, export도 같은
   server-side version과 query를 사용합니다.
 
+넓게 보기·선택적 fullscreen은 같은 DOM과 조회 결과를 유지하는 presentation state입니다. fullscreen은 document root를
+사용해 shell 밖의 기존 설명/dialog도 함께 유지하고 실제 browser event로 상태를 동기화합니다. 이름 검색은 현재 설비의
+authorized series metadata만 필터링합니다. 검색어/페이지/화면 전환은 query를 호출하지 않고, 실제 항목 선택이 기존
+무효화 경로로 이어집니다. [탐색 계약](FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)과
+[browser oracle](../scripts/verify_review_navigation_browser.py)이 상태 보존과 fullscreen 실패/이탈·접근성 반례를 연결합니다.
+
 설비 지도는 같은 current의 `series`를 표현하는 browser view입니다. 별도 관계 저장소나 계산 API는 없습니다.
 새 조회의 version·latest attempt와 지도 기준이 다르면 오래된 지도와 결과를 지우고 파일 상태 새로고침을 요구합니다.
 권한·삭제·무결성 오류도 이 경계를 무효화합니다. 날짜만 편집하면 기존 제출 구간을 유지하지만 설비/항목을 바꾸면

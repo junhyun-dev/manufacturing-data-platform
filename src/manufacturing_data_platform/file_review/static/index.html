@@ -31,6 +31,10 @@
       <header class="topbar"><span>설비 데이터 검토</span><span class="local-label">파일 기반 분석</span></header>
       <div id="global-error" class="alert error global-alert" role="alert" hidden></div>
       <div id="loading" class="loading-note" role="status" hidden><span class="spinner" aria-hidden="true"></span><span id="loading-text">작업 공간을 불러오는 중…</span></div>
+      <div id="review-view-bar" class="review-view-bar" role="group" aria-label="검토 화면 보기" hidden>
+        <div class="review-view-actions"><button id="review-wide-toggle" class="button secondary small" type="button" aria-pressed="false">넓게 보기</button><button id="review-fullscreen-toggle" class="button secondary small" type="button" aria-pressed="false">전체화면</button></div>
+        <p id="review-view-status" role="status" aria-live="polite">지도와 분석을 더 넓게 볼 수 있습니다.</p>
+      </div>
 
       <section id="welcome" class="welcome" aria-labelledby="welcome-title">
         <p class="eyebrow">FROM FILE TO CHECKED RESULT</p>
@@ -58,6 +62,13 @@
         <div id="analysis-area" hidden>
           <div class="result-context"><span id="result-basis"></span><span id="result-version" class="mono"></span></div>
           <form id="query-form" class="filter-card"><div class="field"><label for="equipment-filter">설비</label><select id="equipment-filter" name="equipment"></select></div><div class="field"><label for="tag-filter">측정 항목</label><select id="tag-filter" name="tag"></select></div><div class="field date-field"><label for="start-filter">시작 시각 <span>포함</span></label><input id="start-filter" name="start" type="datetime-local" step="1"></div><div class="field date-field"><label for="end-filter">종료 시각 <span>미포함</span></label><input id="end-filter" name="end" type="datetime-local" step="1"></div><button class="button primary" id="query-button" type="submit">조회</button><div class="filter-footer"><span id="time-basis"></span><button id="reset-range" type="button" class="text-button">전체 기간 보기</button></div></form>
+          <section class="tag-search-panel" aria-labelledby="tag-search-label">
+            <div class="tag-search-heading"><div><label id="tag-search-label" for="tag-search">항목 이름 찾기</label><p>현재 설비의 전체 측정 항목에서 찾습니다.</p></div><button id="tag-search-clear" class="text-button" type="button">검색 지우기</button></div>
+            <input id="tag-search" type="search" autocomplete="off" spellcheck="false" placeholder="측정 항목 이름 일부 입력" aria-describedby="tag-search-status">
+            <p id="tag-search-status" role="status" aria-live="polite"></p>
+            <div id="tag-search-results" class="tag-search-results" role="group" aria-label="항목 이름 검색 결과"></div>
+            <div class="tag-search-pagination"><button id="tag-search-prev" class="button secondary small" type="button">이전</button><button id="tag-search-next" class="button secondary small" type="button">다음</button></div>
+          </section>
           <div class="review-layout">
             <section id="equipment-map-section" class="equipment-map-section" aria-labelledby="equipment-map-title">
               <header class="map-heading"><div><p class="eyebrow">ONE FILE VERSION</p><h2 id="equipment-map-title">설비 데이터 지도</h2></div><div class="map-heading-actions"><button id="map-view-toggle" class="text-button" type="button" aria-controls="equipment-map-body" aria-expanded="false">지도 펼치기</button><button id="map-refresh" class="text-button" type="button">파일 상태 새로고침</button></div></header>

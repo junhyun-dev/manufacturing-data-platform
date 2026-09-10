@@ -40,7 +40,11 @@ docker compose --env-file .env.example up --build
 선은 물리 연결이나 설비 건강을 뜻하지 않습니다. [지도 사용법](docs/FILE_REVIEW_GUIDE.md#설비-데이터-지도로-항목-찾기) ·
 [로컬 검증과 한계](docs/VERIFICATION.md#equipment-map-verification)
 
-![공개 샘플의 설비–측정 항목 지도와 선택한 온도 관측을 함께 보는 실제 로컬 화면](docs/assets/file-review-equipment-map-desktop.png)
+**넓게 보기·전체화면·항목 이름 찾기**로 같은 결과를 더 넓게 읽고 현재 설비의 전체 항목에서 검색할 수 있습니다.
+화면 전환과 검색만으로 조회·버전·ZIP은 바뀌지 않습니다. [탐색 사용법](docs/FILE_REVIEW_GUIDE.md#넓게-보기전체화면항목-이름-찾기) ·
+[검증과 남은 전체 검사 문제](docs/VERIFICATION.md#review-navigation-verification)
+
+![공개 샘플의 항목 검색과 지도·온도 관측·같은 버전 근거를 넓게 보는 실제 로컬 화면](docs/assets/file-review-navigation-desktop.png)
 
 ## 무엇을 어디서 확인하는가
 

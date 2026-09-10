@@ -27,12 +27,15 @@
   실제 browser 반례로 보정했다. 지도에서 빠진 항목도 기존 전체 목록으로 선택할 수 있다.
 - 다음 근거: 실제 검토자의 온도 결과·같은 버전 근거 찾기. 세 항목의 지도 효용과 상태/시각 오해를 관찰한다.
   효용이 없으면 지도 축소/목록 중심 구성을 검토한다. 자산 연결·온톨로지 확장은 관계 원본·사용 질문부터 별도로 결정한다.
-- 후속 탐색 UX — **로컬 구현 수용·진행 중, 2026-09-10**: 작성자의 긍정적 첫 인상과 확대/전체화면 후보 요청을 반영했다.
+- 후속 탐색 UX — **로컬 UI 구현·검증 완료, 2026-09-10**: 작성자의 긍정적 첫 인상과 확대/전체화면 후보 요청을 반영했다.
   [불편 조건·공식 근거·대안·수용 기준 제안](research/file-review-workflow.md#map-navigation-review).
   Main 추천은 검토 화면 넓게 보기·지원 환경 전체화면 + 현재 설비의 전체 항목 이름 검색이다. 기존 8개 지도/목록·같은 버전 근거를 유지한다.
   [수용 계약](FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)이 mode/검색·선택 보존·실패·완료 근거를 소유한다.
   Main은 계약·직접 diff/화면·독립 browser oracle·통합을, 기존 Worker는 한정된 정적 UI 구현을 맡는다.
-  줌/이동/맞춤은 계속 후속 후보이며 기존 기능 완료·사용자 과제·Release의 새 선행조건이 아니다.
+  [실제 결과](VERIFICATION.md#review-navigation-verification): 탐색 full/sample 13/10, 기존 지도·설명·파일 화면 회귀 PASS.
+  화면/검색만으로 선택·버전·제출 구간·ZIP은 바뀌지 않는다. 좁은 화면에서 삭제 취소 후 설명 포커스 복귀를 보정했다.
+  전체 검사 gate는 아래 MFG-02의 기존 시각 실패로 열려 있다. 줌/이동/맞춤은 계속 후속 후보이며,
+  MFG-09/12 사용자 과제와 Release를 이 구현 승인으로 완료 처리하지 않는다.
 
 ## MFG-12 — Guided result explanation preview
 
@@ -153,6 +156,14 @@ server/collection time이 들어가고, [수집 실행](../src/manufacturing_dat
 - 완료: 실패 → 명시적 복구 → 검증된 발행 → 반복 재시도 → MFG-01 분석 결과 확인을 재현한다.
   source identity, attempt identity, dataset version을 각각 설명할 수 있어야 한다.
 - 이 결과 전에는 원본 재수집의 멱등성, 자동 historical correction, end-to-end exactly-once를 주장하지 않는다.
+
+- 2026-09-10 전체 검사에서 **기존 OPC UA 시각 순서의 간헐 실패**가 드러났다.
+  `collected_at must not precede server_timestamp`로 representative verification와 three-scenario 검사가 실패했고,
+  단독 전체 실행에서도 재현됐다. 대상 하나의 후속 진단 실행은 통과했으나 원인은 미확인이다.
+  [실패/통과 구분과 로그](VERIFICATION.md#review-navigation-verification)를 따른다. 이번에는 laboratory source/tests와 CSV backend를 변경하지 않았다.
+  다음은 실패 event의 server/collection 시각과 직렬화·실행 시계 근거를 보존해 원인을 분리하는 조사다.
+  시간을 임의 보정하거나 validator를 완화하지 않는다. 수정이 필요하면 laboratory 계약 영향과 반례를 닫은 별도 범위로 진행한다.
+  종료 근거는 원인 재현, 필요한 변경의 수용 범위, 관련 검사와 전체 검사 결과다. 재시도 한 번의 PASS로 해결을 선언하지 않는다.
 
 ## MFG-03 — Public report reproduction without the author's cache
 

@@ -106,6 +106,30 @@ Telemetry Review의 저장소가 아니다.
 [390px 모바일](assets/file-review-equipment-map-mobile.png) · [같은 버전의 이전 결과](assets/file-review-equipment-map-retained.png).
 샘플은 과거 공개 기록이며, 다중 설비·긴 이름 검사는 별도 합성 fixture임을 구분한다.
 
+## 넓게 보기·전체화면·항목 이름 찾기
+
+**넓게 보기**는 파일 목록에 쓰던 공간을 줄여 지도와 선택 항목의 관측·출처·ZIP을 연결해서 읽는 화면이다.
+데이터를 다시 계산하거나 다른 버전을 여는 기능이 아니다. **기본 화면으로** 돌아가도 선택한 항목과 마지막 조회는 유지된다.
+작은 화면에서는 같은 내용을 위아래로 읽는다. 지도 최대 여덟 항목과 기존 전체 목록은 그대로다.
+
+**전체화면**은 지원되는 브라우저에서 창 테두리 밖까지 작업면을 넓힌다. 전체화면 나가기/Esc 뒤에는 넓게 보기가 남고,
+기본 배치로 돌아가려면 **기본 화면으로**를 누른다. 미지원이나 요청 실패 시에는 일반 넓게 보기를 계속 사용할 수 있다.
+설명·삭제 확인창이 열려 있으면 해당 창의 닫기 조작을 먼저 사용한다. 전체화면 전환만으로 파일이 삭제되거나 조회가 바뀌지 않는다.
+
+**항목 이름 찾기**에 이름 일부를 입력하면 현재 파일 버전·선택한 설비의 모든 측정 항목에서 찾는다.
+영문 대소문자와 검색어 앞뒤 공백을 구분하지 않으며, 검색 결과에는 전체 이름과 단위가 나온다.
+결과가 많으면 한 페이지 스무 개씩 이전/다음으로 읽고 기존 측정 항목 목록도 사용할 수 있다.
+검색어 입력·지우기·페이지 이동은 현재 선택과 조회 결과를 바꾸지 않는다. 검색 결과에 없더라도 현재 선택은 유지된다.
+다른 항목을 명시적으로 선택한 뒤 **조회**해야 새 통계와 ZIP을 만든다. 파일/설비를 바꾸거나 파일 상태를 새로고침하면 검색을 지운다.
+
+화면 확대·이동으로 숨은 항목을 찾는 기능은 포함하지 않는다. 새로운 물리 관계나 설비 건강 판정도 추가되지 않았다.
+이번 기능의 실제 검증 단계는 [현재 상태](../PROJECT_STATUS.md), 수용된 동작은
+[탐색 계약](FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)이 소유한다.
+
+[실제 공개 샘플 넓게 보기](assets/file-review-navigation-desktop.png) ·
+[390px 이름 검색과 목록 경로](assets/file-review-navigation-mobile.png).
+자동 브라우저 검사는 사용자가 이 흐름을 더 잘 수행한다는 증거와 구분한다.
+
 ## 결과 설명으로 근거 확인하기
 
 우측 하단의 **이 결과에 질문**을 열면 지금 보고 있는 결과에 대해 세 가지 질문을 선택할 수 있다.
@@ -182,6 +206,11 @@ python3 scripts/verify_file_review_browser.py --mode sample
 python3 scripts/verify_review_explanation_browser.py --mode full
 # 설비 지도: 실제 CSV/ZIP·선택·동일 이름·실패·모바일/키보드:
 python3 scripts/verify_equipment_map_browser.py --mode full
+# 넓게 보기·검색·전체화면과 동일 결과/ZIP 보존:
+python3 scripts/verify_review_navigation_browser.py --mode full
+# Xvfb/XTest가 이미 있는 Linux 검증 환경에서 실제 브라우저 Esc·200% 확대도 확인:
+xvfb-run -a -s '-screen 0 1600x1200x24' env MFG_NAV_X11_TEST=1 \
+  python3 scripts/verify_review_navigation_browser.py --mode full --native-desktop
 # sample 서버에서는 --mode sample을 사용한다.
 # 없으면 별도 검증 환경을 만들 수 있다:
 uv venv .cache/browser-venv
@@ -195,6 +224,8 @@ uv pip install --python .cache/browser-venv/bin/python playwright
 수동으로는 키보드 파일 선택, 오류 메시지, 긴 파일명, 작은 화면, 빈 구간에서 이전 그래프가 남지 않는지도 확인한다.
 결과 설명 검사는 고유한 `.cache/review-explanation-browser/<run>/`에 화면·서버 응답·ZIP·receipt를 남긴다.
 지도 검사는 `.cache/equipment-map-browser/<run>/`에 같은 종류의 근거와 실제 제공된 UI 파일 digest를 남긴다.
+탐색 검사는 `.cache/review-navigation-browser/<run>/`에 실제 fullscreen과 명시한 실패 주입을 구분해 남긴다.
+`--native-desktop`은 자신이 만든 Xvfb display에서만 실행한다. 기본 headless 실행을 실제 데스크톱의 브라우저 단축키 검증으로 세지 않는다.
 HTTP 503·무결성 오류·늦은 응답의 UI 반례에는 명시한 transport 주입을 사용한다. 실제 원본/버전 무결성은 별도 API 검사가 소유한다.
 늦은 응답 검사는 브라우저에서 지연과 무효한 transport abort를 주입해, 서버 응답이 도착해도 취소된 내용을 표시하지 않는지 확인한다.
 
