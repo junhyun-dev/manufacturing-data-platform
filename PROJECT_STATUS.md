@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | DISCOVERY — MFG-13 설비 데이터 지도 조사·설계 제안 완료, 구현 수용 대기. MFG-12 결과 설명 preview는 LOCAL VERIFIED 유지 |
-| 수용한 범위 | 2026-09-10 설비 상태·관계 시각화의 공개 조사와 설계 제안. 화면 형태·관계 의미·구현·graph DB는 미수용. 기존 선택형 결과 설명·CSV 계약을 유지하며 외부 AI·자유 대화·유료 호출·배포는 포함하지 않음 |
-| Git 기준 | `feat/review-explanation`; 이번 문서 변경 기준 `794a66c04d77a3a44fb894966c7968d97ce5dbe8`, 시작 시 clean. MFG-12 구현·검증 완료 `092b8e6d5065136a1b1d5d4f182463b0b622ee34`. HEAD 유지, PROJECT_STATUS/Backlog/workflow research/Verification 네 문서의 미커밋 변경. 현재 HEAD·dirty는 Git으로 확인. 새 branch·source/UI 변경·원격 조회/반영 없음 |
+| 현재 작업 | WORK — MFG-13 B안 설비 데이터 지도 첫 로컬 구현·검증 진행. MFG-12 결과 설명 preview는 LOCAL VERIFIED 유지 |
+| 수용한 범위 | 2026-09-10 설비 선택 → 한 파일 버전의 측정 항목 지도 → 관측 그래프·원본 근거·같은 버전 ZIP. [수용 계약](docs/FILE_REVIEW_CONTRACT.md#equipment-data-map--first-local-view). 기존 목록/CSV/이전 결과/설명 유지. 물리 연결·설비 건강·graph DB·외부 AI·유료 호출·공개 발행·배포는 포함하지 않음 |
+| Git 기준 | `feat/equipment-data-map`, Discovery 네 문서 변경을 `7b23848`에 보존한 뒤 시작. 제품 source 기준 `794a66c`; MFG-12 구현·검증 `092b8e6`. 현재 HEAD·dirty와 실행 근거는 실제 Git/검증 기록에서 확인. 로컬 작업이며 원격 조회/반영 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | [MFG-13 추천·화면 구상](docs/research/file-review-workflow.md#equipment-visual-discovery)을 보고 ‘현재 파일 안 설비 그룹–측정 항목 지도’의 첫 로컬 구현 여부를 선택한다. 선택 전 구현하지 않음 |
+| 다음 한 행동 | 수용한 지도 UI를 구현하고 Main이 같은 버전 근거·실제 데스크톱/모바일·키보드·실패 경로를 직접 검토한다 |
 
 ## 실행과 근거
 

@@ -222,6 +222,81 @@ keyboard/modal behavior and actual mobile/desktop screenshots. Assert attempts/c
 Full/sample browser and real HTTP read-back must retain the existing upload/query/export/recovery flow.
 These prove the guided preview's behavior; AI accuracy, user task improvement and general conversation remain unverified.
 
+## Equipment data map — first local view
+
+On 2026-09-10 the author accepted the researched B direction: select an equipment group in one file,
+see its measurement items as a small map, then inspect observations and export the same version's evidence.
+This is a local UI change. Physical asset identity, health, causality, plant topology, graph storage,
+external data/AI, public release and deployment are not part of this acceptance.
+
+### Meaning and data authority
+
+- The map represents membership in one authorized, integrity-checked dataset version. Its center is the
+  selected CSV equipment label; surrounding items come only from that version's `current.series`.
+  Display identity includes dataset ID, version, equipment, tag and unit. Identical names in another file
+  or workspace never create a link. A label is not a verified global asset identifier.
+- Lines mean `이 파일 버전에 기록된 측정 항목`. They have no direction, flow, causal, correlation or physical
+  distance meaning. Measurement nodes have equal size; selection uses text plus a visible outline.
+  A failed file attempt must not color an equipment/item node as a physical fault.
+- Distinguish current result availability/version, latest file-attempt status and `설비 상태: 판단 근거 없음`.
+  The bundled sample is a historical train-compressor record with an added equipment label, not live plant data.
+  Keep original observation range/time basis visible, separate from server processing times in recent history.
+  Sample delivery failure remains explicitly identified as an exercise. No continuous health/uptime timeline.
+- Node counts, if shown, are whole-version series counts. Selected-range statistics, chart, quality and export
+  remain owned by the existing server query/export paths. Missing quality is not Good; gaps are not outages.
+  No new API, stored graph, metadata ingestion, calculation, permission or retention policy is introduced.
+
+### Selection, layout and accessibility
+
+- Preserve `equipment-filter`, `tag-filter`, the explicit `조회` action and existing range controls. The map and
+  native selectors share one draft equipment/tag selection. Changing equipment or tag clears the old successful
+  query, visible statistics/export eligibility and explanation, and invalidates in-flight query responses.
+  Selecting a node fills the item selector and shows `선택한 항목을 조회해 주세요` until a successful query.
+  Do not automatically request every node's statistics. Selecting the already selected node need not clear a result.
+- Date-only edits retain the existing last-successful-query behavior: statistics/export/explanation stay bound to
+  the submitted range, with that range visible; draft date values are not represented as already calculated.
+  A new query clears the previous result while it loads. Dataset changes and replace/retry/recovery reset the
+  map/query/explanation together using the refreshed authorized dataset description.
+- At desktop width, show the equipment map and selected-item analysis in a connected layout. Keep the item's
+  name, unit, version context, observation plot and source-evidence action easy to find. Reuse existing source/history
+  sections and the result-explanation panel rather than opening a competing overlay or duplicating calculations.
+- At narrow width, stack the content and keep the complete native item list available. A labelled show/hide-map
+  control may default to collapsed on narrow screens. Both map buttons and native selectors must work by keyboard.
+  Use ordinary buttons with accessible names and pressed state; decorative SVG lines are hidden from assistive
+  technology. No drag, hover, color or animation is the only way to discover a relation, select an item or read evidence.
+- Render at most eight measurement nodes plus the center. Always include the selected item, even if it is outside
+  the first eight. Show displayed/total item counts and an explicit remainder notice; the native list includes all
+  items. A native equipment selector includes all file groups. Never silently imply the visible subset is complete.
+  Long/untrusted labels remain inert text, readable from the complete list/detail without page overflow.
+- Stable acceptance targets: `equipment-map-section`, `equipment-map`, `map-selection-status`, `map-refresh`,
+  `map-source-link`, `map-view-toggle`, `map-overflow`, and measurement buttons with `data-map-tag`.
+  Existing query, chart, source/history, export and explanation IDs remain available.
+
+### Changed context and failure
+
+- Each query captures dataset/version/latest-attempt and submitted selection. Render only if its request generation,
+  active dataset, version and equipment/tag still match. Compare the response version and latest-attempt ID with
+  the captured description: a mismatch clears the map/result and requests an explicit file refresh, not a silent
+  combination of old membership and new attempt state. This detects observed drift; it is not instantaneous cross-tab revocation.
+- Missing current, deletion/expiry/authorization denial or integrity failure clears obsolete map and result content
+  when observed by dataset, query, explanation or export paths. Show a useful unavailable state and a `map-refresh`
+  action where a refresh can recover. A generic transient network error may retain the labelled map context,
+  but not a failed query's old statistics. Failed refresh must not make stale content appear freshly verified.
+- Existing server workspace authorization, immutable-source checks, last-good publication and export pinning remain
+  enforcement points. Render all labels with textContent or equivalent safe DOM setters. Store no separate graph,
+  remembered cross-dataset selection or external dependency state.
+
+### Completion evidence
+
+Use real HTTP and Chromium against local full/sample modes. Verify public sample membership and independent CSV
+counts/aggregates/hash → successful selection → matching ZIP; refused replacement/delivery and retained version;
+recovery, no-current/integrity/expired/deleted/cross-workspace failures; empty selection; more than eight items;
+same equipment label in separate files; long markup labels; late query response after selection/context change;
+transient failure and explicit refresh. Check actual desktop/390/320px screenshots, keyboard map/list selection,
+selected-node focus, source-evidence focus and the existing explanation modal. Synthetic multi-equipment data is
+a test fixture, not evidence of plant relationships. Passing these checks establishes local behavior; the map's
+advantage over the existing selectors and independent user task success remain unverified.
+
 ## Completion and public-release boundary
 
 Verify normal upload, sample-mode upload refusal, rejected replacement preserving an earlier result, corrected replacement, sample delivery failure
