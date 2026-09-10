@@ -5,18 +5,20 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-13 탐색형 graph canvas 첫 로컬 구현·검증 완료 / LOCAL VERIFIED. preview 재기동·read-back 마무리 중. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
+| 현재 작업 | MFG-13 탐색형 graph canvas 첫 로컬 구현·검증·preview read-back 완료 / LOCAL VERIFIED, 2026-09-10. 과거 간헐 검사 gate OPEN·실제 사용자 수용 미검증 |
 | 수용한 범위 | [Graph canvas 계약](docs/FILE_REVIEW_CONTRACT.md#graph-canvas--file-local-membership-exploration): 한 파일 버전의 설비 그룹–항목 접기/펼치기, 8개 고정 표시 대체, 줌/이동·맞춤·선택 위치·미니맵. 기존 선택·조회·출처/같은 버전 ZIP·검색/전체 목록 유지. 물리 관계·건강·편집/실행·외부 AI·공개 배포 제외 |
-| Git 기준 | `feat/map-canvas`, 수용 계약 `2214e5b`, 의도 정정 `c6e3b5e`와 Worker 보존 `c6cf793`에서 통합. 실제 HEAD/dirty와 아래 source bytes·검증을 대조한다. 로컬 작업이며 push/merge/Release/배포 없음 |
+| Git 기준 | `feat/map-canvas`, 구현·검사 source `b18366bb37a34e0c7fdc03e21cc30ac5bb11f1c3`. 수용 계약 `2214e5b`, 의도 정정 `c6e3b5e`, Worker 보존 `c6cf793`. 이 뒤 closeout은 문서만 변경하며 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 보존된 preview DB로 샘플 서버를 다시 열고 source revision·UI bytes·온도/동일 ZIP을 read-back한다. MFG-02 시각 실패와 MFG-09/12 사용자 관찰은 별도 미완료로 보존 |
+| 다음 한 행동 | 실제 검토자가 공개 샘플의 지도에서 Oil_temperature를 찾아 관측값과 같은 버전 ZIP으로 이어가는 과제 한 건을 관찰한다. 복잡한 합성 지도의 효용·MFG-02 시각 실패·MFG-09/12 기존 사용자 과제는 별도 미완료로 보존 |
 
 ## 실행과 근거
 
-- 로컬 샘플 미리보기 **http://127.0.0.1:8000**는 통합 중 기존 제품 프로세스를 멈춘 상태이며 재기동한다.
-  기존 preview DB는 보존했다. 이전 revision `743bebd`의 기록은 `.cache/review-navigation-preview/20260910T035019572965Z/`다.
+- 로컬 샘플 미리보기 **http://127.0.0.1:8000**. 기존 탭은 새로고침한다. 2026-09-10 08:00 UTC 실제 health가
+  `sample`/source `b18366b`이며 네 UI 파일의 SHA-256·지도 조작·온도 7,144개·평균 55.74811730123181·동일 ZIP을 확인했다.
+  기존 preview DB를 유지했다. 실행/검수 기록은 `.cache/graph-canvas-preview/20260910T075938407126Z/server.json`과
+  `readback.json`. 이 주소는 로컬 프로세스이며 PC/환경 재시작 뒤 자동 복구를 보장하지 않는다.
 - 새 graph canvas: [검증·분담 관찰·한계](docs/VERIFICATION.md#graph-canvas-verification).
   canvas full/sample 9/6, navigation 13/10, map 14/11, explanation 18/12, file browser 11/7개 묶음 PASS.
   실제 3항목 샘플과 합성 50/200/205항목·25묶음을 구분했다. 모바일/키보드·native Esc·200% browser zoom,

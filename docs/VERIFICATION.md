@@ -488,8 +488,8 @@ sample 실행에서 복사한 동일 bytes의 공개 샘플 화면이다. 독립
 
 **LOCAL VERIFIED / NOT RELEASED.** 수용 계약 `2214e5b`, 의도 정정 보존 `c6e3b5e`, 이전 UI
 `743bebd`/closeout `984d875`에서 이어졌다. Worker의 네 정적 파일을 `c6cf793`에 보존한 뒤 Main이
-직접 diff·화면·반례를 검토하고 통합했다. 최종 source revision과 preview read-back은
-[현재 작업](../PROJECT_STATUS.md)이 연결한다. 원격 push/merge/Release/배포는 하지 않았다.
+직접 diff·화면·반례를 검토하고 통합했다. 최종 source는 `b18366bb37a34e0c7fdc03e21cc30ac5bb11f1c3`이며
+[현재 작업](../PROJECT_STATUS.md)이 preview read-back을 연결한다. 원격 push/merge/Release/배포는 하지 않았다.
 
 검증 루트는 `.cache/graph-canvas-checks/20260910T070532326883Z/`다. 아래 이름은 그 하위 경로이며
 브라우저별 `receipt.json`과 스크린샷을 보존한다. `browser-matrix.json`은 실제 PASS 영수증을 읽고
@@ -506,7 +506,7 @@ sample 실행에서 복사한 동일 bytes의 공개 샘플 화면이다. 독립
 | 기존 map full/sample | **14/11개 묶음 PASS**, `map-full-final3/`, `map-sample/` |
 | 기존 explanation full/sample | **18/12개 묶음 PASS**, `explanation-full/`, `explanation-sample/` |
 | 기존 file browser full/sample | **11/7개 묶음 PASS**, `file-full/`, `file-sample/` |
-| 정적·문서 경계 | 두 JS의 `node --check`, diff 공백 검사, 최종 링크/공개 경계 점검. 문서만 바꾼 뒤 필요한 reader checks 별도 실행 |
+| 정적·문서 경계 | 두 JS의 `node --check`, diff 공백 검사 PASS. 변경 문서의 상대 링크 190개 존재 확인·private path/secret 형식 검사, reader tests **43 passed / 0.06s** |
 
 [Canvas oracle](../scripts/verify_graph_canvas_browser.py)은 1440/390/320px·가로 화면, 실제 키보드 선택,
 배경 drag/Escape/pointercancel, 미니맵 실제 click 좌표, 최대 확대 후 선택 위치, 전체 맞춤, 접고 펼치기와
@@ -537,8 +537,16 @@ MouseEvent 좌표 반올림을 수정했다. 실제 DOM의 같은 프레임/전�
 Worker 실행은 UTC 06:55:57–07:27:48이며 쓰기 동결 후 통합했다. Main의 pre-review는 key 충돌, drag 취소,
 페이지 끝 포커스와 같은 설비의 검색 유지 보완으로 이어졌다. Main 브라우저 검토는 좁은 화면의 선택 크기와
 미니맵 좌표를 추가로 보완했다. 이 방식은 소유 경계를 분명히 했지만 oracle 조정·화면 재검토 시간이 들었다.
-총 작업 시간의 시작 계측·정확한 token/금액 사용량은 UNKNOWN이며, 모델별 비용/속도 우월성이나 분담의 순수
-시간 절감을 입증하는 비교 실험은 아니다. 공통 방법을 변경하지 않고 이번 구체적 검토 근거만 보존한다.
+첫 보존 commit 06:52:47부터 preview read-back 08:00:25까지 확인 가능한 경과는 **67분 38초**다.
+실제 작업 시작 계측은 없고 Worker와 Main 시간은 겹치므로 합산하지 않는다. 정확한 token/금액 사용량은
+UNKNOWN이다. 모델별 비용/속도 우월성이나 분담의 순수 시간 절감을 입증하는 비교 실험은 아니다.
+다음 검토에서는 실패 시 실제 DOM 좌표·전달된 입력을 바로 기록해 oracle 진단의 왕복을 줄이는 것을 권한다.
+공통 방법을 변경하지 않고 이번 구체적 검토 근거와 제안만 보존한다.
+
+최종 로컬 샘플 preview는 `.cache/graph-canvas-preview/20260910T075938407126Z/`에 기록했다.
+기존 DB를 유지하고 `b18366b`/sample health, 네 정적 파일 bytes, 실제 지도/넓게 보기, 독립 온도 집계와 ZIP을
+새 브라우저 작업 공간에서 확인했다. `readback.json`의 시각은 08:00:25 UTC이며 그 검수용 데이터만 삭제했다.
+공개 서비스·OS 재시작 후 생존을 보장하는 배포가 아니다.
 
 **남은 한계:** 이번 전체 검사 성공은 과거 OPC UA timestamp-order 검사 2건의 간헐 실패 원인을 해결한 것이
 아니다(MFG-02 OPEN). MFG-09/12의 독립 사용자 과제도 그대로 미완료다. 합성 200항목에서는 선이 많이 겹치고
