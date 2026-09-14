@@ -7,7 +7,7 @@
 |---|---|
 | 현재 작업 | MFG-14 결과 전달 경험 LOCAL VERIFIED, 2026-09-14. 같은 조회의 한국어 요약과 CSV/JSON 근거를 함께 전달한다. MFG-02 공유 시계 교정은 승인 대기로 보존 |
 | 수용한 범위 | [MFG-14](docs/BACKLOG.md#mfg-14--portable-review-handoff), [전달 계약](docs/FILE_REVIEW_CONTRACT.md#portable-review-handoff). 기존 버전·선택·구간·계산·권한을 유지하는 표시/첨부 요약. 공유 시계·환경·외부 행동은 변경하지 않는다 |
-| Git 기준 | `feat/review-handoff`, 계약 `9524bde`, 구현·검사 `99e2454c192ac23129e38a53921bc5300506c526`; 기존 시계 진단 `a86195b`/지도 `d33ed90`. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
+| Git 기준 | `feat/review-handoff`, 계약 `9524bde`, 구현·검사 `99e2454c192ac23129e38a53921bc5300506c526`; 기존 시계 진단 `a86195b`/지도 `d33ed90`. 2026-09-14 사용자 승인 백업 ref는 `origin/feat/review-handoff`. 실제 HEAD/dirty·원격 SHA는 Git에서 확인. merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
