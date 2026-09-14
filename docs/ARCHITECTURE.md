@@ -13,7 +13,7 @@ flowchart LR
   version --> membership["파일 안 설비–측정 항목 지도 / 전체 목록"]
   membership --> select["equipment / tag / time range"]
   select --> view["통계 + 실제 관측"]
-  select --> export["version-pinned CSV + manifest"]
+  select --> export["version-pinned 검토 요약 + CSV + manifest"]
   attempt -- refused --> previous["기존 last-good / 결과 없음"]
 ```
 
@@ -32,6 +32,7 @@ flowchart LR
 | CSV 검증과 content identity | [`model.py`](../src/manufacturing_data_platform/file_review/model.py) | CSV normalization, timestamp·quality·unit·duplicate 판정, source/version에 들어갈 canonical payload |
 | workspace state와 last-good | [`store.py`](../src/manufacturing_data_platform/file_review/store.py) | workspace 소유권, SQLite transaction, source/version/attempt/current, integrity read-back, retention·삭제 |
 | 조회와 전달 artifact | [`query.py`](../src/manufacturing_data_platform/file_review/query.py) | integrity-checked snapshot의 SQL 집계·실제 point 선택, 전체 선택 CSV와 manifest export |
+| 받는 사람이 읽는 검토 요약 | [`handoff.py`](../src/manufacturing_data_platform/file_review/handoff.py), [전달 browser verifier](../scripts/verify_review_handoff_browser.py) | ZIP에 쓰는 같은 manifest만 한국어 텍스트로 표시. 새 계산 없이 구간·이전 결과·출처·품질 한계를 전달하며 실제 CSV/ZIP과 대조 |
 | 선택 질문의 결과 설명 | [`explanation.py`](../src/manufacturing_data_platform/file_review/explanation.py), [`app.py`](../src/manufacturing_data_platform/file_review/app.py), [`static/app.js`](../src/manufacturing_data_platform/file_review/static/app.js) | 마지막 조회의 version·latest attempt 고정, 같은 snapshot/query의 사실로 규칙 기반 설명, 맥락 변화·취소·실패 시 답변 무효화 |
 | 계약·실패 반례 | [API tests](../tests/test_file_review_api.py), [integrity tests](../tests/test_file_review_integrity.py) | 정상/거부/교체, cross-workspace 접근, 변조·transaction 실패, version-pinned export |
 | 실제 실행 read-back | [HTTP verifier](../scripts/verify_file_review.py), [browser verifier](../scripts/verify_file_review_browser.py), [container verifier](../scripts/verify_release_container.py) | API·화면·container에서 관측한 결과; exact 실행 범위는 [Verification](VERIFICATION.md) 소유 |

@@ -79,6 +79,20 @@ Telemetry Review의 저장소가 아니다.
 설비 중단·서비스 장애·추정 결측 개수가 아니다. 원본과 변환·라이선스는
 [샘플 출처](../src/manufacturing_data_platform/file_review/sample/README.md)가 소유한다.
 
+## 검토 결과를 전달하기
+
+통계·그래프 아래의 **이 조회를 전달하기**에서 마지막으로 조회한 항목·구간·버전을 확인하고 **결과 내려받기**를 누른다.
+ZIP을 받은 사람은 다음 순서로 읽을 수 있다.
+
+- `review.txt`: 결과의 수치·분석 범위·시간대·품질 한계와 이전 결과 여부를 한국어로 읽는다.
+- `observations.csv`: 미리보기 일부가 아닌 선택 구간 전체를 다시 분석한다.
+- `manifest.json`: 정확한 조회 조건·버전·원본/CSV SHA-256을 프로그램으로 확인한다.
+
+요약은 같은 ZIP의 manifest로 만들며 별도 AI나 새 계산은 없다. 최근 검사 상태는 **ZIP을 준비할 때 확인한 상태**다.
+실패한 수정 입력은 분석에 포함하지 않는다. 입력 칸의 날짜만 바꿨다면 이전에 조회한 구간을 내려받으므로,
+새 구간을 적용하려면 먼저 조회한다. 빈 구간의 ZIP도 내려받을 수 있으며 평균이 없음을 명시한다.
+요약은 센서 정상·공유 허가·설비 중단의 판정이 아니다. 실제 보내는 대상과 데이터 공유는 사용자가 결정한다.
+
 ## 설비 데이터 지도로 항목 찾기
 
 파일 검증을 통과한 결과에서 설비 이름을 고르면 **설비 데이터 지도**가 같은 파일 버전에 기록된 측정 항목을 보여준다.
@@ -90,7 +104,7 @@ Telemetry Review의 저장소가 아니다.
    항목을 바꾸면 이전 항목의 통계·내려받기는 지워진다. 시각만 편집한 상태에서는 기존 제출 구간의 결과가 유지되므로
    새 시각을 적용하려면 조회를 누른다.
 3. 선택 항목의 그래프와 관측 수를 확인하고 지도의 근거 이동으로 **파일과 검증 근거**를 읽는다.
-   **결과 내려받기**는 같은 버전·조회 범위의 CSV와 manifest를 묶는다.
+   **결과 내려받기**는 같은 버전·조회 범위의 CSV, manifest와 읽을 검토 요약을 묶는다.
 4. **전달 누락 체험** 후에도 이전 검증 버전의 지도와 결과가 유지되는지 확인한다. 경고는 파일 전달 실험의 상태이며
    설비의 고장 표시가 아니다. **보관 원본으로 복구**로 다시 검사할 수 있다.
 
@@ -157,7 +171,7 @@ Telemetry Review의 저장소가 아니다.
 검색어 입력·지우기·페이지 이동은 현재 선택과 조회 결과를 바꾸지 않는다. 검색 결과에 없더라도 현재 선택은 유지된다.
 다른 항목을 명시적으로 선택한 뒤 **조회**해야 새 통계와 ZIP을 만든다. 파일/설비를 바꾸거나 파일 상태를 새로고침하면 검색을 지운다.
 
-화면 확대·이동으로 숨은 항목을 찾는 기능은 포함하지 않는다. 새로운 물리 관계나 설비 건강 판정도 추가되지 않았다.
+지도 자체의 확대·이동은 위의 **복잡한 지도 확대·이동하기** 흐름을 따른다. 물리 관계나 설비 건강 판정은 제공하지 않는다.
 이번 기능의 실제 검증 단계는 [현재 상태](../PROJECT_STATUS.md), 수용된 동작은
 [탐색 계약](FILE_REVIEW_CONTRACT.md#review-navigation--wide-view-fullscreen-and-item-search)이 소유한다.
 
@@ -241,6 +255,8 @@ python3 scripts/verify_file_review_browser.py --mode sample
 python3 scripts/verify_review_explanation_browser.py --mode full
 # 설비 지도: 실제 CSV/ZIP·선택·동일 이름·실패·모바일/키보드:
 python3 scripts/verify_equipment_map_browser.py --mode full
+# 전달 카드·읽을 요약과 같은 버전의 세 파일 확인:
+python3 scripts/verify_review_handoff_browser.py --url http://127.0.0.1:8000 --output .cache/handoff-browser/one-run
 # 넓게 보기·검색·전체화면과 동일 결과/ZIP 보존:
 python3 scripts/verify_review_navigation_browser.py --mode full
 # Xvfb/XTest가 이미 있는 Linux 검증 환경에서 실제 브라우저 Esc·200% 확대도 확인:

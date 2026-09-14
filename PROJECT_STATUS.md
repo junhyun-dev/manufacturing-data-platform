@@ -5,16 +5,20 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-14 결과 전달 경험 로컬 구현·검수, 2026-09-14. 같은 조회의 읽을 요약과 CSV/JSON 근거를 함께 전달한다. MFG-02 공유 시계 교정은 승인 대기로 보존 |
+| 현재 작업 | MFG-14 결과 전달 경험 LOCAL VERIFIED, 2026-09-14. 같은 조회의 한국어 요약과 CSV/JSON 근거를 함께 전달한다. MFG-02 공유 시계 교정은 승인 대기로 보존 |
 | 수용한 범위 | [MFG-14](docs/BACKLOG.md#mfg-14--portable-review-handoff), [전달 계약](docs/FILE_REVIEW_CONTRACT.md#portable-review-handoff). 기존 버전·선택·구간·계산·권한을 유지하는 표시/첨부 요약. 공유 시계·환경·외부 행동은 변경하지 않는다 |
-| Git 기준 | `feat/review-handoff`, 기준 `5b89c455f84a5074e35994f4767a1ca18751ce0e`; 기존 source `a86195b`/지도 `d33ed90`. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
+| Git 기준 | `feat/review-handoff`, 계약 `9524bde`, 구현·검사 `99e2454c192ac23129e38a53921bc5300506c526`; 기존 시계 진단 `a86195b`/지도 `d33ed90`. 실제 HEAD/dirty는 Git에서 확인. push/merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 전달 요약·화면을 구현하고 같은 입력의 전후·실제 ZIP·모바일/키보드·이전/빈 결과를 직접 검수한다. [MFG-02 교정안](docs/VERIFICATION.md#clock-layer-diagnosis)의 별도 승인 대기와 MFG-09/12 사람의 과제 관찰은 유지 |
+| 다음 한 행동 | 실제 검토자가 전달 누락 체험 뒤 ZIP만 보고 온도 결과의 구간·이전 버전·원본 근거를 설명할 수 있는지 관찰한다(MFG-09/12). [MFG-02 교정안](docs/VERIFICATION.md#clock-layer-diagnosis)은 별도 승인 대기 |
 
 ## 실행과 근거
 
+- 2026-09-14 [전달 경험 검증](docs/VERIFICATION.md#portable-review-handoff-verification): 한국어 `review.txt`와 전달 카드 추가.
+  API/무결성 **41 passed**, 실제 browser full/sample **8/5개 묶음 PASS**. 독립 CSV·요약·manifest 대조, 날짜 초안·이전/빈 결과,
+  1440/390/320px·키보드·긴 이름·실제 삭제 후 다운로드 거부를 확인했다. [데스크톱](docs/assets/file-review-handoff-desktop.png) ·
+  [390px](docs/assets/file-review-handoff-mobile.png). 사용자 전달 시간·과제 성공은 미측정이다.
 - 2026-09-11 KST [커널 호출·시각 보정 대조와 교정안](docs/VERIFICATION.md#clock-layer-diagnosis):
   별도 C 프로세스 두 개에서도 같은 UTC 역행을 확인했다. 커널 `tick=11000`과 보정 전 시계 대비 약 1.1배의 속도가 일치하며,
   네 번의 뒤로 이동은 NTP 보정량과 각각 1μs 이내로 맞았다. 앞으로 이동하는 경로는 호스트 동기화가 유력하지만 호출 주체는 미확정이다.
@@ -26,11 +30,10 @@
   실제 UTC가 약 5.86초 역행한 수집 실패를 재현했다. 기존 순서 검증은 유지하고 오류에 두 시각·정수 μs 차이를 추가했다.
   통합 후 industrial-source/event-time 검사 **37 passed**(32.78초), 기존 발행 파일 37개·9개 event의 hash read-back은 동일하다.
   전체 저장소/브라우저 재검사를 반복하지 않았으며 과거 두 실패의 정확한 시각·호스트 근본 원인은 미확인이다.
-- 로컬 샘플 미리보기 **http://127.0.0.1:8000**. 새로고침 후 지도 안의 **지도 전체화면**을 누른다.
-  2026-09-10 12:43 UTC 실제 health가 `sample`/source `d33ed90`이며 네 UI 파일의 commit bytes·지도 전용 화면,
-  출처 복귀·온도 7,144개·평균 55.74811730123181·동일 ZIP을 확인했다. 기존 preview DB를 유지했다.
-  실행/검수 기록은 `.cache/map-fullscreen-preview/20260910T124229287203Z/server.json`과
-  `readback.json`. 이 주소는 로컬 프로세스이며 PC/환경 재시작 뒤 자동 복구를 보장하지 않는다.
+- 로컬 샘플 미리보기 **http://127.0.0.1:8000**. **공개 샘플 열기 → Oil_temperature 선택·조회 → 이 조회를 전달하기**에서 ZIP을 연다.
+  2026-09-14 `sample`/source `99e2454`로 기동했다. 이전 preview 프로세스가 없는 것을 확인하고 이번 작업의 새 DB를 사용했으며
+  기존 사용자 DB는 변경하지 않았다. 실행/검수 기록은 `.cache/handoff-checks/20260914/sample-server-final.json`과
+  `preview-readback.json`. 이 주소는 로컬 프로세스이며 PC/환경 재시작 뒤 자동 복구를 보장하지 않는다.
 - 지도 전용 전체화면: [검증·직접 보완·분담 관찰](docs/VERIFICATION.md#map-fullscreen-verification).
   full/sample **9/7개 묶음 PASS**. 실제 지도 폭은 1440px에서 97.4%, 스크롤바가 있는 320px에서도 90.9%다.
   실제 native Esc·200% 확대와 종료 클릭, 설명/삭제 dialog, 지연 응답·진입 실패·동일 버전 ZIP을 확인했다.

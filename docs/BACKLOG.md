@@ -6,12 +6,14 @@
 
 ## MFG-14 — Portable review handoff
 
-**로컬 구현·직접 검수 진행 — 2026-09-14.** 기존 CSV 결과 전달 목표의 마지막 장면을 개선한다.
+**로컬 구현·직접 검수 완료 — 2026-09-14, `99e2454`.** 기존 CSV 결과 전달 목표의 마지막 장면을 개선한다.
 [비교·선택 근거](research/file-review-workflow.md#portable-review-handoff)와 [수용 범위](FILE_REVIEW_CONTRACT.md#portable-review-handoff)를 따른다.
 ZIP 안에 읽을 검토 요약을 추가하고, 화면은 제출한 구간·버전과 포함 파일의 용도를 설명한다. CSV/JSON·계산·권한·이전 결과 보호는 유지한다.
 가장 큰 반례는 날짜 초안이나 실패한 교체의 값을 요약에 섞는 것이다. 같은 입력의 전후 화면·실제 다운로드·독립 CSV/manifest 대조로 닫는다.
 Main은 내용·직접 화면·oracle·통합, 기존 Worker는 한정된 formatter/UI·회귀 검사를 맡는다. 사용자 효용은 MFG-09/12에 계속 남긴다.
 MFG-02 시계 교정과 독립적이며 공유 환경·외부 전송·AI·공개/배포를 추가하지 않는다.
+관련 API/무결성 41 passed, 실제 full/sample browser 8/5개 묶음 PASS. [실제 ZIP·전후 화면·검증 한계](VERIFICATION.md#portable-review-handoff-verification).
+다음은 실제 검토자가 ZIP만 보고 구간·이전 결과·원본 근거를 찾는지 관찰하는 것이다. 자동 검사로 사용자 전달 성공을 대신하지 않는다.
 
 ## MFG-13 — Equipment data map discovery
 

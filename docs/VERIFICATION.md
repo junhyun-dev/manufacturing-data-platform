@@ -7,6 +7,44 @@
 현재 CSV 웹 서비스는 [사용·검증 guide](FILE_REVIEW_GUIDE.md)의 `make serve`·`make verify-service`로
 실행한다. 이 문서의 OPC UA·Spark·historical report 검증은 별도의 기존 실험이며 웹 실행의 선행조건이 아니다.
 
+<a id="portable-review-handoff-verification"></a>
+## Portable review handoff — 2026-09-14 local verification
+
+수용 범위는 [전달 계약](FILE_REVIEW_CONTRACT.md#portable-review-handoff), 선택 이유는
+[같은 전달 과업의 공개 참고와 대안](research/file-review-workflow.md#portable-review-handoff)이 소유한다.
+기준 `5b89c45` → 계약 `9524bde` → 구현·검사 `99e2454c192ac23129e38a53921bc5300506c526`이다.
+**LOCAL VERIFIED / NOT RELEASED·NOT DEPLOYED**. 이번 목표는 한국어 요약과 정확한 재검증 데이터를 함께 전달하는 것이다.
+
+| 실제 검사 | 결과와 해석 |
+|---|---|
+| API·전달·무결성 tests | `PYTHONPATH=src .venv/bin/python -B -m pytest -q -p no:cacheprovider tests/test_file_review_handoff.py tests/test_file_review_api.py tests/test_file_review_integrity.py` **41 passed**(9.82초), 기존 deprecation warning 2개. 이전/명시적 과거 버전, UTC·빈 구간·수식 문자, 소유권·삭제·만료·변조 경계 포함 |
+| 실제 full/sample Chromium | [전달 verifier](../scripts/verify_review_handoff_browser.py) **8/5개 묶음 PASS**. 1440/390/320px, 키보드 내려받기, 날짜 초안·넓게 보기 후 동일 ZIP, 기존 설명 일치, 전달 미완료 뒤 이전 결과, 합성 종료 경계·빈 구간·128자 markup·실제 삭제 후 거부 |
+| 독립 다운로드 대조 | 샘플 원본 CSV에서 읽은 온도 7,144개·평균 55.74811730123181와 실제 ZIP의 CSV/요약/manifest 일치. 보존 ZIP 10개의 한국어 관측 수·평균·최솟값·최댓값도 CSV에서 다시 계산해 대조 |
+| 문법·변경 경계 | `node --check static/app.js`, browser script 구문, `git diff --check` PASS. API/DB/schema·시간·권한·지도 카메라·외부 전송 변화 없음 |
+| 문서·공개 근거 경계 | `tests/test_portfolio_release.py` **43 passed**(0.08초). 기존 공개 artifact·진입 링크·라이선스 구분·private path/secret 규칙 유지 |
+
+근거 root는 `.cache/handoff-checks/20260914/`다. `baseline.json`과 `before-sample.zip`은 변경 전 실제 두 파일 ZIP이며,
+새 oracle이 요약 누락을 거부함을 확인했다. `before-desktop-framed.png`와 `after-desktop-framed.png`는 같은 1440×1100
+샘플·온도·넓게 보기·분석 위치를 비교한 화면이다. 최종 [데스크톱](assets/file-review-handoff-desktop.png)과
+[390px](assets/file-review-handoff-mobile.png), `full-01/long-label-320.png`를 Main이 직접 열고 실제 텍스트도 읽었다.
+원본과 합성 사례를 섞지 않았고, 최종 캡처는 다운로드 알림이 자연스럽게 닫힌 뒤 촬영했다.
+
+`full-01/receipt.json`, `sample-01/receipt.json`에 실제 HTTP·브라우저 결과가 있다. `sample-review.txt`와
+`retained-sample.zip`은 최근 검사와 내보낸 버전을 구분한다. CSV digest는 변경 전후와 날짜 초안/미완료 뒤 모두
+`edc66c2b9a3fa1e2ec8448b1b9598b20e7e7d811447d8954a9ffed554b948a11`이다. 합성 10/20/30에서 종료20초를
+제외해 10/20·평균15를 확인했고, 빈 구간은 0개·평균 없음이었다. 테스트는 제품 formatter를 기대값 생성에 쓰지 않는다.
+최종 preview는 `sample-server-final.json`과 `preview-readback.json`이 source·실제 HTTP bytes·다운로드를 연결한다.
+
+기존 Worker는 일곱 파일의 formatter/UI/회귀 검사를 맡았고 30 passed를 반환했다. Main은 실제 diff를 읽고
+카드 ID, 한국어 상태 설명, 불필요한 구현 안내와 글자 크기를 직접 보완한 뒤 통합 검사를 수행했다.
+Worker 실행은 00:27:39–00:34:56 UTC, clarification 0·내부 재작업 1로 반환됐으며 사용량은 UNKNOWN이다.
+Main/Worker 전체 시간·토큰 절감은 측정하지 않았으므로 개선 효과로 주장하지 않는다. 기존 브라우저 실행 환경만 재사용하고
+격리된 검사 venv에 Playwright를 설치했으며 제품 dependency·브라우저 다운로드·시스템 설정은 바꾸지 않았다.
+
+남은 근거는 실제 수신자가 ZIP만 보고 구간·이전 결과·원본 근거를 찾는지다. 사람의 이해도·전달 시간·사용자 과제 성공은
+미측정이며 MFG-09/12를 완료하지 않는다. MFG-02 공유 시계 승인 대기와 과거 전체 검사 실패는 별도로 유지한다.
+이 결과와 무관한 전체 저장소/OPC UA·Docker·지도 전체화면 검사를 반복하지 않았다.
+
 <a id="review-navigation-verification"></a>
 ## Review navigation — 2026-09-10 local verification
 
