@@ -5,13 +5,13 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 현재 작업 | MFG-14 결과 전달 경험 LOCAL VERIFIED, 2026-09-14. 같은 조회의 한국어 요약과 CSV/JSON 근거를 함께 전달한다. MFG-02 공유 시계 교정은 승인 대기로 보존 |
+| 현재 작업 | PAUSED — 2026-09-14 사용자 종료 요청. MFG-14 LOCAL VERIFIED·원격 백업 완료. 자동 수행할 새 개발은 없으며 MFG-02 공유 시계 교정은 승인 대기로 보존 |
 | 수용한 범위 | [MFG-14](docs/BACKLOG.md#mfg-14--portable-review-handoff), [전달 계약](docs/FILE_REVIEW_CONTRACT.md#portable-review-handoff). 기존 버전·선택·구간·계산·권한을 유지하는 표시/첨부 요약. 공유 시계·환경·외부 행동은 변경하지 않는다 |
 | Git 기준 | `feat/review-handoff`, 계약 `9524bde`, 구현·검사 `99e2454c192ac23129e38a53921bc5300506c526`; 기존 시계 진단 `a86195b`/지도 `d33ed90`. 2026-09-14 사용자 승인 백업 ref는 `origin/feat/review-handoff`. 실제 HEAD/dirty·원격 SHA는 Git에서 확인. merge/Release/배포 없음 |
 | 기존 제품 | CSV 검토·구간 분석·교체·근거 ZIP과 공개 샘플 보관 입력 복구. 코드 병합 `2e8e58c346d0eaec0722cdaba83f9a576e70d68e` |
 | 외부 확인 | 2026-09-09 원격 `main@c4b3814` 유지 확인. 2026-09-08 [PR #1](https://github.com/junhyun-dev/manufacturing-data-platform/pull/1) squash MERGED와 [CI 4/4 PASS](https://github.com/junhyun-dev/manufacturing-data-platform/actions/runs/34188251022)는 기존 근거. 작업 브랜치 백업은 새 PR·원격 CI 통과·Release·배포를 의미하지 않음 |
 | Release·운영 | NOT TAGGED / NOT RELEASED / NOT DEPLOYED. tag·GitHub Release·배포는 별도 최종 승인 대상 |
-| 다음 한 행동 | 실제 검토자가 전달 누락 체험 뒤 ZIP만 보고 온도 결과의 구간·이전 버전·원본 근거를 설명할 수 있는지 관찰한다(MFG-09/12). [MFG-02 교정안](docs/VERIFICATION.md#clock-layer-diagnosis)은 별도 승인 대기 |
+| 다음 한 행동 | 공고에서 실제 부족한 역량·막힌 행동이 발견되면 기존 owner에서 재개 범위를 정한다. MFG-09/12 사람의 전달 과제 관찰과 [MFG-02 교정안](docs/VERIFICATION.md#clock-layer-diagnosis)의 별도 승인 대기는 유지 |
 
 ## 실행과 근거
 
@@ -30,10 +30,20 @@
   실제 UTC가 약 5.86초 역행한 수집 실패를 재현했다. 기존 순서 검증은 유지하고 오류에 두 시각·정수 μs 차이를 추가했다.
   통합 후 industrial-source/event-time 검사 **37 passed**(32.78초), 기존 발행 파일 37개·9개 event의 hash read-back은 동일하다.
   전체 저장소/브라우저 재검사를 반복하지 않았으며 과거 두 실패의 정확한 시각·호스트 근본 원인은 미확인이다.
-- 로컬 샘플 미리보기 **http://127.0.0.1:8000**. **공개 샘플 열기 → Oil_temperature 선택·조회 → 이 조회를 전달하기**에서 ZIP을 연다.
-  2026-09-14 `sample`/source `99e2454`로 기동했다. 이전 preview 프로세스가 없는 것을 확인하고 이번 작업의 새 DB를 사용했으며
-  기존 사용자 DB는 변경하지 않았다. 실행/검수 기록은 `.cache/handoff-checks/20260914/sample-server-final.json`과
-  `preview-readback.json`. 이 주소는 로컬 프로세스이며 PC/환경 재시작 뒤 자동 복구를 보장하지 않는다.
+- 로컬 샘플 미리보기 **중지 — 2026-09-14**. 사용자 종료 범위의 `sample`/source `99e2454` 프로세스만 소유를 확인해 정상 종료했다.
+  8000 listener는 없으며 DB·정적 파일·기존 검증 근거는 보존했다. 실행/검수 기록은
+  `.cache/handoff-checks/20260914/sample-server-final.json`과 `preview-readback.json`이다. 아래 명령은 기존 checkout의
+  `.venv`와 보존 DB로 재개할 때 사용한다. 8000을 다른 서비스가 쓰면 그 서비스를 중지하지 않는다.
+
+  ```bash
+  MFG_REVIEW_MODE=sample MFG_REVIEW_REVISION=99e2454c192ac23129e38a53921bc5300506c526 \
+    MFG_REVIEW_DB=.cache/handoff-checks/20260914/sample-preview.sqlite3 make serve
+  ```
+
+  재개 뒤 주소는 `http://127.0.0.1:8000`이다. 비활성 workspace는 기존 24시간 만료 정책에 따라 재기동 시 정리될 수 있으므로,
+  DB 파일 보존이 브라우저 작업의 영구 보존을 뜻하지 않는다. 필요하면 공개 샘플을 다시 연다.
+  종료 checkpoint는 `feat/review-handoff@31d89ed`다. 당시 미커밋이던 이 보류 메모는 9/14 사용자 승인 Git 백업에 포함한다. 별도 Worker의 7파일 중간 patch는
+  동결 보존돼 있고 최종 수용 결과는 `99e2454`에 통합됐다. Main/Worker 세션 종료는 조정 담당이 확인했다. 제품 실행은 자동 재개하지 않는다.
 - 지도 전용 전체화면: [검증·직접 보완·분담 관찰](docs/VERIFICATION.md#map-fullscreen-verification).
   full/sample **9/7개 묶음 PASS**. 실제 지도 폭은 1440px에서 97.4%, 스크롤바가 있는 320px에서도 90.9%다.
   실제 native Esc·200% 확대와 종료 클릭, 설명/삭제 dialog, 지연 응답·진입 실패·동일 버전 ZIP을 확인했다.
