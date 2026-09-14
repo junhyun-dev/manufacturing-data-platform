@@ -6,6 +6,7 @@ import sqlite3
 import zipfile
 from datetime import datetime
 
+from .handoff import render_review_text
 from .model import CONTRACT, FIELDS, ReviewError, digest, now, parse_time, quality_counts
 
 
@@ -103,6 +104,7 @@ def export_zip(result, rows, stored):
                                 "Sample mean over selected observations; no interpolation or time weighting."]}
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("review.txt", render_review_text(manifest))
         archive.writestr("observations.csv", csv_bytes)
         archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
     return buffer.getvalue()

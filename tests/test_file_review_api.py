@@ -106,7 +106,7 @@ def test_upload_query_half_open_range_and_export_same_version(browser):
     )
     assert response.status_code == 200, response.text
     with ZipFile(io.BytesIO(response.content)) as archive:
-        assert set(archive.namelist()) == {"observations.csv", "manifest.json"}
+        assert set(archive.namelist()) == {"review.txt", "observations.csv", "manifest.json"}
         csv_bytes = archive.read("observations.csv")
         manifest = json.loads(archive.read("manifest.json"))
     exported = list(csv.DictReader(io.StringIO(csv_bytes.decode("utf-8-sig"))))
