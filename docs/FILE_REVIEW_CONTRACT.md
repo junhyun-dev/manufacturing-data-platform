@@ -89,7 +89,7 @@ Every dataset route checks workspace ownership. Errors use `{"error":{"code":"..
 | `DELETE /api/datasets/{id}` | `{deleted: true}` |
 | `GET /api/datasets/{id}/query?equipment=...&tag=...&start=...&end=...&version=...` | Query result below; omitted range selects all; omitted version pins current at read time |
 | `GET /api/datasets/{id}/explanation?question=...&latest_attempt_id=...&version=...&equipment=...&tag=...&start=...&end=...` | Guided explanation preview defined below; requires explicit version and the latest attempt seen by the query |
-| `GET /api/datasets/{id}/export?...same filters...&version=...` | ZIP with selected `observations.csv` and `manifest.json`; version is required |
+| `GET /api/datasets/{id}/export?...same filters...&version=...` | ZIP with selected `observations.csv`, `manifest.json` and readable `review.txt`; version is required |
 | `GET /api/template.csv` | Small valid user-file template |
 | `GET /healthz` | `{status, contract, release, revision, mode}` after a SQLite read; no private file paths |
 
@@ -139,6 +139,37 @@ sets current to null and preserves access to file management; query/export still
 `previous_result` is true when the displayed version differs from the latest successful attempt or the latest attempt
 was refused. It is not a freshness/SLA promise. Export text fields escape spreadsheet-formula prefixes and the manifest
 records that transformation, source hash, version, query, quality limitations, CSV digest and generation time.
+
+<a id="portable-review-handoff"></a>
+## Portable review handoff
+
+The 2026-09-14 local experience improvement adds a human-readable companion to the existing pinned export. It does not
+add a sharing service, transmission, new calculation or permission. `observations.csv` and `manifest.json` keep their
+existing meaning; `review.txt` is additive UTF-8 plain text built from the exact manifest used in that same ZIP.
+
+- Read order: a Korean review summary first, complete selected CSV for reanalysis, manifest for machine-readable evidence.
+  The summary names the file/equipment/tag/unit, exact version/source/CSV SHA-256, normalized half-open filter and time basis,
+  selected count/mean/min/max and quality counts, descriptive >60-second gaps and relevant limitations. It records server
+  export-generation time as such, separate from observation time. It is not approval to share or a physical diagnosis.
+- Null start/end means no lower/upper filter bound. Zero observations means no mean/min/max; never use a prior result or
+  say zero mean. Fewer than two observations cannot establish a gap. Do not round or recompute the manifest's statistics.
+- `previous_result` and `latest_status` describe the export snapshot. A failed latest attempt must be distinguished from
+  the retained result being exported; an explicitly pinned older version is not silently replaced. Latest status may
+  change since the browser query; describe it as the status checked when preparing the ZIP, not a live/freshness promise.
+- Limits remain: file validation is not sensor accuracy; unspecified quality is not Good; gaps do not infer missing-row
+  counts or equipment outages; sample means are not interpolated or time-weighted. Explain spreadsheet text escaping
+  without changing CSV bytes, schema or digest. Uploaded labels remain inert text; no HTML/Markdown renderer is added.
+- The browser's compact `handoff-card` lives inside `query-results` beside the existing download action (`export-button`,
+  one instance). It describes the last submitted result, its range/time basis/count and short version, plus the three files
+  and what to read first. No full hash dump is needed on the card. Date-only draft edits, search and view/camera changes
+  do not change this result or ZIP parameters. Different item/file and observed invalid context use existing invalidation.
+- Keep the one-click download, explanation and source paths. Empty results remain downloadable with headers and honest
+  empty summary. Busy/error/denied/deleted/corrupt paths must not claim a new ZIP was prepared or resurrect prior content.
+  Narrow screens wrap the content/action, with reachable keyboard focus and no new modal or clipboard permission.
+
+Local verification must compare source CSV/independent expected values, actual browser result and all three ZIP files,
+including retained/empty/UTC/half-open cases and submitted-versus-draft scope. Technical preparation does not close
+MFG-09/12 human observation or the independent MFG-02 shared-clock decision.
 
 ## Guided result explanation — first local preview
 
