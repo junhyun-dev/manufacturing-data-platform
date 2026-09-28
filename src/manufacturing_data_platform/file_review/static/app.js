@@ -1387,6 +1387,9 @@ function renderQuery(result) {
   $("gap-description").textContent = result.summary.count < 2 ? "간격을 비교할 관측값이 부족합니다." : `60초 초과 원본 간격 ${number(result.summary.gap_count)}곳 · 최대 ${number(maximumGap)}초${result.summary.gap_count ? " · 공백 구간은 선을 잇지 않습니다" : ""}`;
   const qualities = result.summary.quality_counts || {};
   $("quality-description").textContent = `제공된 품질: Good ${number(qualities.good || 0)}행, 미제공 ${number(qualities.unspecified || 0)}행. ${qualities.unspecified ? "미제공은 정상 품질을 뜻하지 않습니다. " : ""}파일 검증은 센서 정확도를 보증하지 않으며, 시간 공백은 설비 중단이나 누락 행 수로 해석하지 않습니다.`;
+  const handoffStart = result.filter?.start ? `${dateLabel(result.filter.start)} 포함` : "첫 관측부터";
+  const handoffEnd = result.filter?.end ? `${dateLabel(result.filter.end)} 미포함` : "마지막 관측까지";
+  $("handoff-context").textContent = `${result.equipment} / ${result.tag} · ${number(result.summary.count)}개 · ${handoffStart}–${handoffEnd} · ${result.time_basis === "unspecified" ? "시간대 미제공" : "UTC"} · 버전 ${shortHash(result.version)}`;
   renderChart(result);
   const rows = result.rows || [];
   $("preview-description").textContent = `${number(rows.length)} / ${number(result.summary.count)}행`;
@@ -1488,7 +1491,7 @@ async function downloadResult() {
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    showToast("관측값 CSV와 검토 기록을 ZIP으로 내려받습니다.");
+    showToast("검토 요약, 전체 관측값과 출처 기록을 ZIP으로 내려받습니다.");
   });
 }
 

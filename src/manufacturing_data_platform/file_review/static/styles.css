@@ -980,6 +980,80 @@ code {
   line-height: 1.8;
 }
 
+.handoff-card {
+  margin: 0 0 18px;
+  padding: 19px 21px;
+  border: 1px solid #bfd9cf;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg,#edf8f4 0%,#f8fbf8 72%);
+}
+
+.handoff-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.handoff-heading .eyebrow {
+  margin-bottom: 4px;
+  color: #568878;
+  font-size: 8px;
+}
+
+.handoff-heading h3 {
+  font-size: 14px;
+}
+
+.handoff-context {
+  margin-top: 12px;
+  color: #486b5e;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.handoff-files {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.handoff-files li {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid #d4e6de;
+  border-radius: 8px;
+  background: #ffffffa8;
+}
+
+.handoff-files strong,.handoff-files span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.handoff-files strong {
+  color: #2b6556;
+  font-size: 11px;
+}
+
+.handoff-files span,.handoff-note {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.handoff-files span {
+  margin-top: 3px;
+}
+
+.handoff-note {
+  margin-top: 11px;
+}
+
 .info-mark {
   border: 1px solid #adbdb3;
   border-radius: 50%;
@@ -1526,6 +1600,20 @@ dialog p {
     padding: 10px 15px;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .handoff-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .handoff-heading .button {
+    width: 100%;
+  }
+
+  .handoff-files {
+    grid-template-columns: 1fr;
   }
 
   .details-grid {

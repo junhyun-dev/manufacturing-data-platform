@@ -118,13 +118,19 @@
               <div id="query-error" class="alert error" role="alert" hidden></div>
               <div id="query-placeholder" class="query-placeholder" role="status">선택한 항목을 조회해 주세요.</div>
               <div id="query-results" hidden>
-                <div class="analysis-heading"><h2>선택 구간 분석</h2><button id="export-button" class="button secondary small" type="button" disabled>결과 내려받기 <span aria-hidden="true">↓</span></button></div>
+                <div class="analysis-heading"><h2>선택 구간 분석</h2></div>
                 <p id="query-selection" class="selection-description"></p>
                 <div id="previous-query" class="alert caution" hidden>최근 검사가 완료되지 않아 이전에 검증한 결과를 표시합니다.</div>
                 <div class="metrics"><article class="metric"><p>관측값 수</p><strong id="metric-count">—</strong><span>선택 구간의 전체 행</span></article><article class="metric"><p>표본 평균</p><strong id="metric-mean">—</strong><span class="metric-unit"></span></article><article class="metric"><p>최솟값</p><strong id="metric-min">—</strong><span class="metric-unit"></span></article><article class="metric"><p>최댓값</p><strong id="metric-max">—</strong><span class="metric-unit"></span></article></div>
                 <article class="chart-card"><div class="card-heading"><div><h3 id="chart-title">관측값 추이</h3><p id="chart-description"></p></div><span class="chart-legend"><i aria-hidden="true"></i>원본 관측값</span></div><div id="chart" class="chart" aria-live="polite"></div><div class="chart-footnotes"><span id="gap-description"></span><span>보간 없음 · 표본 평균</span></div></article>
                 <div class="quality-note"><span class="info-mark" aria-hidden="true">i</span><p id="quality-description"></p></div>
-                <article class="table-card"><div class="card-heading"><h3>관측값 미리보기</h3><span id="preview-description" class="muted"></span></div><div class="table-scroll"><table><thead><tr><th scope="col">관측 시각</th><th scope="col">설비</th><th scope="col">측정 항목</th><th scope="col" class="numeric">값</th><th scope="col">단위</th><th scope="col">제공된 품질</th></tr></thead><tbody id="preview-body"></tbody></table></div><p class="table-footer">내려받기에는 선택 구간의 전체 관측값과 출처·버전·조회 조건을 담은 기록이 포함됩니다.</p></article>
+                <article class="handoff-card" aria-labelledby="handoff-title">
+                  <div class="handoff-heading"><div><p class="eyebrow">PORTABLE REVIEW</p><h3 id="handoff-title">이 조회를 전달하기</h3></div><button id="export-button" class="button primary small" type="button" disabled>결과 내려받기 <span aria-hidden="true">↓</span></button></div>
+                  <p id="handoff-context" class="handoff-context"></p>
+                  <ol id="handoff-files" class="handoff-files"><li><strong>review.txt</strong><span>먼저 읽는 한국어 검토 요약</span></li><li><strong>observations.csv</strong><span>선택 구간의 전체 관측값</span></li><li><strong>manifest.json</strong><span>출처·버전·hash를 확인하는 기록</span></li></ol>
+                  <p class="handoff-note">ZIP은 이 조회의 같은 버전을 사용합니다. 전달 승인이나 설비 상태 판정은 포함하지 않습니다.</p>
+                </article>
+                <article class="table-card"><div class="card-heading"><h3>관측값 미리보기</h3><span id="preview-description" class="muted"></span></div><div class="table-scroll"><table><thead><tr><th scope="col">관측 시각</th><th scope="col">설비</th><th scope="col">측정 항목</th><th scope="col" class="numeric">값</th><th scope="col">단위</th><th scope="col">제공된 품질</th></tr></thead><tbody id="preview-body"></tbody></table></div><p class="table-footer">ZIP에는 먼저 읽는 검토 요약, 선택 구간의 전체 관측값, 출처·버전·hash 기록이 함께 들어 있습니다.</p></article>
               </div>
             </div>
           </div>
