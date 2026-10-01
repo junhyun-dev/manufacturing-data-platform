@@ -1,5 +1,7 @@
 # Telemetry Review — 설비 CSV를 검토하고 분석 결과를 전달하는 도구
 
+> **보관(2026-10-01).** 이 저장소는 더 고치지 않습니다. 코드와 기록은 그대로 열어 볼 수 있습니다. 지금 진행 중인 프로젝트는 [쇼핑 플랫폼](https://github.com/junhyun-dev/shopping-data-platform)입니다.
+
 [![Unit, contract and local telemetry tests](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/junhyun-dev/manufacturing-data-platform/actions/workflows/ci.yml)
 
 설비 기록을 CSV로 받아 분석하는 데이터 엔지니어·분석가를 위한 작은 웹 도구입니다.
